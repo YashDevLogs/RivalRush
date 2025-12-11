@@ -92,6 +92,16 @@ public class PlayerController : MonoBehaviour, IPlayerController
             }
         }
 
+        if (Keyboard.current != null)
+        {
+            if (Keyboard.current.eKey.wasPressedThisFrame)
+            {
+                var powerup = GetComponent<PlayerPowerUpHandler>();
+                powerup?.UsePowerUp();
+            }
+        }
+
+
         HandleGround();
         HandleJumpBuffer();
         UpdateAnimator();

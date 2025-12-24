@@ -3,27 +3,20 @@ using UnityEngine;
 [RequireComponent(typeof(Collider2D))]
 public class PowerUpPickup : MonoBehaviour
 {
-    [SerializeField] private MonoBehaviour powerUpScript; // must implement IPowerUp
-    private IPowerUp powerUp;
-
-    private void Awake()
-    {
-        powerUp = powerUpScript as IPowerUp;
-    }
+    [SerializeField] private PowerUpId powerUpId;
 
     private void Reset()
     {
-        var c = GetComponent<Collider2D>();
-        c.isTrigger = true;
+        GetComponent<Collider2D>().isTrigger = true;
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        var handler = other.GetComponent<PlayerPowerUpHandler>();
-        if (handler != null && powerUp != null)
-        {
-            handler.GivePowerUp(powerUp);
-            gameObject.SetActive(false); // hide pickup
-        }
+        var controller = other.GetComponent<PowerUpController>();
+        if (controller == null) return;
+
+        var powerUp = PowerUpFactory.Create(powerUpId);
+        controller.Pickup(powerUp);
+        gameObject.SetActive(false);
     }
 }

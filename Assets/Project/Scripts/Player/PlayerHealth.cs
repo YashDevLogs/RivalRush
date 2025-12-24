@@ -47,6 +47,9 @@ public class PlayerHealth : MonoBehaviour, IHealth
 
     public void Die()
     {
+        // CLEAR POWER UPS IMMEDIATELY ON DEATH
+        GetComponent<PowerUpController>()?.ForceClear();
+
         // Record death position
         lastDeathPosition = transform.position;
 
@@ -87,6 +90,9 @@ public class PlayerHealth : MonoBehaviour, IHealth
         if (cameraFollow != null)
             cameraFollow.SnapToPlayer();
 
+        // SAFETY CLEAR (in case death was skipped)
+        GetComponent<PowerUpController>()?.ForceClear();
+
         // Start invincible flashing & emit event
         StartCoroutine(InvincibilityRoutine());
         GameEvents.OnPlayerRespawned?.Invoke();
@@ -107,6 +113,10 @@ public class PlayerHealth : MonoBehaviour, IHealth
         RespawnAt(pos);
     }
 
+    public void SetInvincible(bool value)
+    {
+        IsInvincible = value;
+    }
 
     private IEnumerator InvincibilityRoutine()
     {

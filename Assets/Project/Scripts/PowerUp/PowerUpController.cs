@@ -1,7 +1,9 @@
 using UnityEngine;
 using System.Collections;
+using Game.Core;
 
 [RequireComponent(typeof(Collider2D))]
+[RequireComponent(typeof(PlayerHealth))]
 public class PowerUpController : MonoBehaviour
 {
     private PowerUpInventory inventory;
@@ -11,13 +13,22 @@ public class PowerUpController : MonoBehaviour
     private void Awake()
     {
         inventory = new PowerUpInventory();
-        var player = GetComponent<Game.Core.IPlayerController>();
-        context = new PowerUpContext(player, transform, this);
+
+        var playerController = GetComponent<IPlayerController>();
+        var health = GetComponent<IHealth>();
+
+        context = new PowerUpContext(
+            playerController,
+            health,
+            transform,
+            this
+        );
     }
 
     public void Pickup(IPowerUp powerUp)
     {
         if (inventory.HasPowerUp) return;
+
         inventory.Assign(powerUp);
         GameEvents.OnPowerUpPicked?.Invoke(powerUp.Id);
     }
@@ -30,7 +41,6 @@ public class PowerUpController : MonoBehaviour
         activePowerUp.Activate(context);
 
         Debug.Log($"PowerUp activated: {activePowerUp.Id}");
-
         GameEvents.OnPowerUpActivated?.Invoke(activePowerUp.Id);
 
         if (activePowerUp.Duration > 0f)
@@ -41,12 +51,11 @@ public class PowerUpController : MonoBehaviour
     {
         yield return new WaitForSeconds(duration);
 
-        if (activePowerUp != null)
-        {
-            activePowerUp.Deactivate();
-            GameEvents.OnPowerUpExpired?.Invoke(activePowerUp.Id);
-            activePowerUp = null;
-        }
+        if (activePowerUp == null) yield break;
+
+        activePowerUp.Deactivate();
+        GameEvents.OnPowerUpExpired?.Invoke(activePowerUp.Id);
+        activePowerUp = null;
     }
 
     public void ForceClear()
@@ -57,6 +66,7 @@ public class PowerUpController : MonoBehaviour
             GameEvents.OnPowerUpExpired?.Invoke(activePowerUp.Id);
             activePowerUp = null;
         }
+
         inventory.Clear();
     }
 }

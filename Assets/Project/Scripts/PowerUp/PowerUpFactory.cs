@@ -5,6 +5,7 @@ public static class PowerUpFactory
         return id switch
         {
             PowerUpId.SpeedBoost => new SpeedBoostPowerUp(),
+            PowerUpId.Shield => new ShieldPowerUp(),
             _ => null
         };
     }

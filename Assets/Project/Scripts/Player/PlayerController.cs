@@ -60,7 +60,7 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
 
     public PlayerState CurrentState => state;
     public float CurrentSpeed => currentRunSpeed;
-    private bool shieldActive;
+    public bool IsShieldActive { get; private set; }
 
 
 
@@ -167,9 +167,9 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
     public void ForceJump() => TryPerformJump();
     public void ForceDash() => TryPerformDash();
 
-    public void SetShieldActive(bool active)
+    public void SetShield(bool active)
     {
-        shieldActive = active;
+        IsShieldActive = active;
     }
 
     // ---------------- Movement Logic ----------------

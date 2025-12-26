@@ -8,6 +8,9 @@ public sealed class PowerUpContext
     public Transform PlayerTransform { get; }
     public MonoBehaviour CoroutineOwner { get; }
 
+    public GameObject Owner;
+    public Transform FirePoint;
+
     public PowerUpContext(
         IPlayerController playerController,
         IHealth health,

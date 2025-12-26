@@ -63,7 +63,6 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
     public bool IsShieldActive { get; private set; }
 
 
-
     // ---------------- Lifecycle ----------------
     private void Awake()
     {
@@ -88,7 +87,8 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
 
     private void Update()
     {
-        if (!controlEnabled) return;
+        if (!controlEnabled)
+            return;
 
         if (Keyboard.current != null)
         {
@@ -99,7 +99,7 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
                 TryPerformDash();
 
             if (Keyboard.current.eKey.wasPressedThisFrame)
-                powerUpController?.Activate(); // Activate current power-up
+                powerUpController?.Activate();
         }
 
         HandleGround();

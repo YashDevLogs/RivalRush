@@ -1,5 +1,4 @@
-using UnityEngine;
-using UnityEngine.InputSystem;
+﻿using UnityEngine;
 using System;
 using System.Collections;
 using Game.Core;
@@ -8,7 +7,7 @@ using Game.Core;
 public sealed class PlayerController : MonoBehaviour, IPlayerController
 {
     [Header("Movement (Designer Tuned)")]
-    [SerializeField] private float baseMaxRunSpeed = 12f;     // immutable baseline
+    [SerializeField] private float baseMaxRunSpeed = 12f;
     [SerializeField] private float accelerationRate = 6f;
 
     [Header("Jump")]
@@ -36,18 +35,25 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
     [SerializeField] private string animJumpTrigger = "JumpTrigger";
     [SerializeField] private string animDashTrigger = "Dash";
 
-    // ---------------- Runtime State ----------------
+    // ---------------- Runtime ----------------
     private Rigidbody2D rb;
-    private float maxRunSpeed;          // runtime-modifiable
-    private float currentRunSpeed;      // physics-applied
+    private float maxRunSpeed;
+    private float currentRunSpeed;
+
     private bool controlEnabled = true;
     private bool isGrounded;
     private bool canDash = true;
+
     private int jumpsLeft;
     private float lastGroundTime = -999f;
     private float lastJumpPressTime = -999f;
-    private float nextAllowedGroundCheckTime = 0f;
+    private float nextAllowedGroundCheckTime;
+
     private PlayerState state = PlayerState.Idle;
+
+    // ---------------- Dependencies ----------------
+    private PowerUpController powerUpController;
+    private IInputSource inputSource;
 
     // ---------------- Events ----------------
     public event Action OnJump;
@@ -55,19 +61,21 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
     public event Action OnLand;
     public event Action<PlayerState> OnStateChanged;
 
-    // ---------------- References ----------------
-    private PowerUpController powerUpController;
-
     public PlayerState CurrentState => state;
     public float CurrentSpeed => currentRunSpeed;
-    public bool IsShieldActive { get; private set; }
-
 
     // ---------------- Lifecycle ----------------
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         powerUpController = GetComponent<PowerUpController>();
+        inputSource = GetComponent<IInputSource>();
+
+        if (inputSource == null)
+        {
+            Debug.LogError($"[PlayerController] No IInputSource found on {name}");
+        }
+
         maxRunSpeed = baseMaxRunSpeed;
 
         if (groundCheck == null)
@@ -87,20 +95,18 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
 
     private void Update()
     {
-        if (!controlEnabled)
+        if (!controlEnabled || inputSource == null)
             return;
 
-        if (Keyboard.current != null)
-        {
-            if (Keyboard.current.spaceKey.wasPressedThisFrame)
-                lastJumpPressTime = Time.time;
+        // 🔑 INPUT SOURCE (Human / AI / Network)
+        if (inputSource.JumpPressed)
+            lastJumpPressTime = Time.time;
 
-            if (Keyboard.current.shiftKey.wasPressedThisFrame)
-                TryPerformDash();
+        if (inputSource.DashPressed)
+            TryPerformDash();
 
-            if (Keyboard.current.eKey.wasPressedThisFrame)
-                powerUpController?.Activate();
-        }
+        if (inputSource.PowerUpPressed)
+            powerUpController?.Activate();
 
         HandleGround();
         HandleJumpBuffer();
@@ -111,7 +117,6 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
     {
         if (!controlEnabled) return;
 
-        // Accelerate toward max speed
         currentRunSpeed = Mathf.MoveTowards(
             currentRunSpeed,
             maxRunSpeed,
@@ -124,7 +129,7 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
             UpdateState(PlayerState.Falling);
     }
 
-    // ---------------- Public Control API ----------------
+    // ---------------- Control API ----------------
     public void EnableControl()
     {
         controlEnabled = true;
@@ -137,7 +142,7 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
         controlEnabled = false;
         rb.linearVelocity = Vector2.zero;
 
-        if (animator != null)
+        if (animator)
             animator.SetFloat(animSpeedParam, 0f);
 
         UpdateState(PlayerState.Disabled);
@@ -166,11 +171,6 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
     // ---------------- IPlayerController ----------------
     public void ForceJump() => TryPerformJump();
     public void ForceDash() => TryPerformDash();
-
-    public void SetShield(bool active)
-    {
-        IsShieldActive = active;
-    }
 
     // ---------------- Movement Logic ----------------
     private void HandleGround()
@@ -205,7 +205,8 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
 
     private void HandleJumpBuffer()
     {
-        if (Time.time - lastJumpPressTime > jumpBufferTime) return;
+        if (Time.time - lastJumpPressTime > jumpBufferTime)
+            return;
 
         if (isGrounded || (Time.time - lastGroundTime) <= coyoteTime || jumpsLeft > 0)
         {
@@ -253,7 +254,7 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
     // ---------------- Animation ----------------
     private void UpdateAnimator()
     {
-        if (animator == null) return;
+        if (!animator) return;
 
         animator.SetFloat(animSpeedParam, currentRunSpeed);
         animator.SetBool(animIsGroundedParam, isGrounded);
@@ -262,7 +263,6 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
     private void UpdateState(PlayerState newState)
     {
         if (state == newState) return;
-
         state = newState;
         OnStateChanged?.Invoke(newState);
     }
@@ -270,8 +270,7 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
-        if (groundCheck == null) return;
-
+        if (!groundCheck) return;
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireCube(
             groundCheck.position,

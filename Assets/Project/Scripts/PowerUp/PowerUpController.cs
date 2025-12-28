@@ -15,6 +15,8 @@ public class PowerUpController : MonoBehaviour
 
     public event Action<PowerUpId> OnPowerUpChanged;
 
+    [SerializeField] private PowerUpAssets powerUpAssets;
+
     private void Awake()
     {
         inventory = new PowerUpInventory();
@@ -26,7 +28,8 @@ public class PowerUpController : MonoBehaviour
             playerController,
             health,
             transform,
-            this
+            this,
+            powerUpAssets
         );
     }
 
@@ -50,20 +53,32 @@ public class PowerUpController : MonoBehaviour
 
     public void Activate()
     {
-        if (!inventory.HasPowerUp || activePowerUp != null) return;
+        if (!inventory.HasPowerUp)
+            return;
+
+        // 🔁 Override existing power-up if one is active
+        if (activePowerUp != null)
+        {
+            Debug.Log($"[PowerUpController] Overriding active power-up: {activePowerUp.Id}");
+
+            activePowerUp.Deactivate();
+            GameEvents.OnPowerUpExpired?.Invoke(activePowerUp.Id);
+            activePowerUp = null;
+        }
 
         activePowerUp = inventory.Consume();
         activePowerUp.Activate(context);
 
-        Debug.Log($"PowerUp activated: {activePowerUp.Id}");
+        Debug.Log($"[PowerUpController] Activated power-up: {activePowerUp.Id}");
         GameEvents.OnPowerUpActivated?.Invoke(activePowerUp.Id);
 
-        // 🔑 Notify UI that slot is now empty
+        // Notify UI: slot is now empty
         OnPowerUpChanged?.Invoke(PowerUpId.None);
 
         if (activePowerUp.Duration > 0f)
             StartCoroutine(ExpireAfter(activePowerUp.Duration));
     }
+
 
     private IEnumerator ExpireAfter(float duration)
     {

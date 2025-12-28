@@ -1,8 +1,9 @@
 using System.Collections;
 using UnityEngine;
+using Game.Core;
 
-[RequireComponent(typeof(PlayerController))]
-public class PlayerHealth : MonoBehaviour, IHealth
+[RequireComponent(typeof(Collider2D))]
+public sealed class PlayerHealth : MonoBehaviour, IHealth
 {
     [Header("Respawn")]
     [SerializeField] private float respawnInvincibilityTime = 1.0f;
@@ -16,22 +17,32 @@ public class PlayerHealth : MonoBehaviour, IHealth
 
     private Vector3 lastDeathPosition;
     private Vector3 checkpointRespawnPoint;
-    private bool hasCheckpoint = false;
-    private PlayerController controller;
+    private bool hasCheckpoint;
+
+    private IPlayerEntity playerEntity;
     private Rigidbody2D rb;
     private Collider2D col;
     private SpriteRenderer spriteRenderer;
 
     private void Awake()
     {
-        controller = GetComponent<PlayerController>();
+        playerEntity = GetComponent<IPlayerEntity>();
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+
         checkpointRespawnPoint = transform.position;
         hasCheckpoint = false;
+
+        if (playerEntity == null)
+        {
+            Debug.LogError(
+                $"[PlayerHealth] No IPlayerEntity found on {name}. Death handling will fail."
+            );
+        }
     }
 
+    // ---------------- Checkpoints ----------------
     public void SetRespawnPoint(Vector3 position)
     {
         checkpointRespawnPoint = position;
@@ -39,80 +50,60 @@ public class PlayerHealth : MonoBehaviour, IHealth
         GameEvents.OnCheckpointReached?.Invoke(position);
     }
 
+    // ---------------- Damage ----------------
     public void TakeDamage(int amount)
     {
-        if (IsInvincible) return;
+        if (IsInvincible)
+            return;
+
         Die();
     }
 
     public void Die()
     {
-        // CLEAR POWER UPS IMMEDIATELY ON DEATH
-        GetComponent<PowerUpController>()?.ForceClear();
-
-        // Record death position
         lastDeathPosition = transform.position;
 
-        // Emit event
         GameEvents.OnPlayerDied?.Invoke();
 
-        // Stop motion immediately
-        controller.ResetVelocity();
-        controller.DisableControl();
+        // Stop physics immediately
+        if (rb != null)
+            rb.linearVelocity = Vector2.zero;
 
-        // Trigger death animation
-        if (controller != null && controller.animator != null)
-        {
-            controller.animator.SetTrigger("DieTrigger");
-        }
+        // Delegate kill logic (player OR AI)
+        playerEntity?.Kill();
 
-        // Determine respawn location
         Vector3 respawnPos = (useCheckpointRespawn && hasCheckpoint)
             ? checkpointRespawnPoint
             : lastDeathPosition + (Vector3)respawnOffset;
 
-        // Use delayed respawn
         StartCoroutine(DelayedRespawn(respawnPos));
     }
 
-
-    public void RespawnAt(Vector3 position)
+    // ---------------- Respawn ----------------
+    private IEnumerator DelayedRespawn(Vector3 position)
     {
-        if (controller != null && controller.animator != null)
-        {
-            controller.animator.Rebind();
-            controller.animator.Update(0f);
-        }
+        yield return new WaitForSeconds(1f);
+        RespawnAt(position);
+    }
 
+    public void RespawnAt(Vector3 position) // make public to implement IHealth
+    {
         transform.position = position;
-        rb.linearVelocity = Vector2.zero;
+
+        if (rb != null)
+            rb.linearVelocity = Vector2.zero;
 
         if (cameraFollow != null)
             cameraFollow.SnapToPlayer();
 
-        // SAFETY CLEAR (in case death was skipped)
+        // Safety: clear any lingering power-ups
         GetComponent<PowerUpController>()?.ForceClear();
 
-        // Start invincible flashing & emit event
         StartCoroutine(InvincibilityRoutine());
         GameEvents.OnPlayerRespawned?.Invoke();
-
-        // Reset run speed (important) BEFORE enabling control
-        controller.ResetRunSpeed();
-
-        // finally re-enable player control
-        controller.EnableControl();
     }
 
-
-    private IEnumerator DelayedRespawn(Vector3 pos)
-    {
-        // Delay lets Die animation actually play for a frame or more
-        yield return new WaitForSeconds(1f);
-
-        RespawnAt(pos);
-    }
-
+    // ---------------- Invincibility ----------------
     public void SetInvincible(bool value)
     {
         IsInvincible = value;
@@ -125,20 +116,17 @@ public class PlayerHealth : MonoBehaviour, IHealth
         float timer = respawnInvincibilityTime;
         float blinkInterval = 0.1f;
 
-        // optional: disable collider or use layer mask to ignore hazards
-        // Example (commented): col.enabled = false;
-
         while (timer > 0f)
         {
-            if (spriteRenderer) spriteRenderer.enabled = !spriteRenderer.enabled;
+            if (spriteRenderer != null)
+                spriteRenderer.enabled = !spriteRenderer.enabled;
+
             timer -= blinkInterval;
             yield return new WaitForSeconds(blinkInterval);
         }
 
-        if (spriteRenderer) spriteRenderer.enabled = true;
-
-        // Restore collider or layers if changed
-        // col.enabled = true;
+        if (spriteRenderer != null)
+            spriteRenderer.enabled = true;
 
         IsInvincible = false;
     }

@@ -1,32 +1,39 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
 
 [CreateAssetMenu(fileName = "PowerUpAssets", menuName = "Game/PowerUp Assets")]
-public class PowerUpAssets : ScriptableObject
+public sealed class PowerUpAssets : ScriptableObject
 {
+    [System.Serializable]
+    public struct PowerUpIcon
+    {
+        public PowerUpId id;
+        public Sprite icon;
+    }
+
+    [Header("Icons")]
+    [SerializeField] private List<PowerUpIcon> icons;
+
     [Header("Prefabs")]
     public GameObject trapPrefab;
+    public GameObject shieldVisualPrefab;
 
-    [Header("UI Icons")]
-    public Sprite speedBoostIcon;
-    public Sprite shieldIcon;
-    public Sprite trapIcon;
+    private Dictionary<PowerUpId, Sprite> iconLookup;
+
+    private void OnEnable()
+    {
+        iconLookup = new Dictionary<PowerUpId, Sprite>();
+        foreach (var entry in icons)
+        {
+            iconLookup[entry.id] = entry.icon;
+        }
+    }
 
     public Sprite GetIcon(PowerUpId id)
     {
-        Sprite icon = id switch
-        {
-            PowerUpId.SpeedBoost => speedBoostIcon,
-            PowerUpId.Shield => shieldIcon,
-            PowerUpId.Trap => trapIcon,
-            _ => null
-        };
+        if (iconLookup == null)
+            OnEnable();
 
-        Debug.Log(
-            icon != null
-                ? $"[PowerUpAssets] Icon FOUND for {id}: {icon.name}"
-                : $"[PowerUpAssets] ❌ Icon MISSING for {id}"
-        );
-
-        return icon;
+        return iconLookup.TryGetValue(id, out var sprite) ? sprite : null;
     }
 }

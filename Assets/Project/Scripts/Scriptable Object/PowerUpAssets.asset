@@ -12,9 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e3ee6e81b43ad945b4fac46586cff2c, type: 3}
   m_Name: PowerUpAssets
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpAssets
+  icons:
+  - id: 1
+    icon: {fileID: 21300000, guid: bb446700f11e8bf4ca06bc6ef8c7a842, type: 3}
+  - id: 2
+    icon: {fileID: 21300000, guid: 4da143fc948f628439fa4dd190689077, type: 3}
+  - id: 3
+    icon: {fileID: 21300000, guid: 7ea85df2145fc1848b3c35ae9b15cdeb, type: 3}
   trapPrefab: {fileID: 4842330695178494300, guid: c72f57552e45083438e7de85c96ac671, type: 3}
-  speedBoostPrefab: {fileID: 0}
-  shieldPrefab: {fileID: 0}
-  trapIcon: {fileID: 21300000, guid: 1ef24e2bca00cce4ca61cf9258a84945, type: 3}
-  speedBoostIcon: {fileID: -7955728382716621001, guid: ce2256a943b7d01429ede6f2d3ed7fb0, type: 3}
-  shieldIcon: {fileID: 4904633118695352057, guid: a870eab75e564fa4f95f2815f5f00755, type: 3}
+  shieldVisualPrefab: {fileID: 2209752518295568787, guid: bdc4b41b1247fb44cb4398e0266a36c5, type: 3}

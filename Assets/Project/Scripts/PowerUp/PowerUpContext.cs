@@ -1,5 +1,5 @@
+﻿using Game.Core;
 using UnityEngine;
-using Game.Core;
 
 public sealed class PowerUpContext
 {
@@ -8,18 +8,19 @@ public sealed class PowerUpContext
     public Transform PlayerTransform { get; }
     public MonoBehaviour CoroutineOwner { get; }
 
-    public GameObject Owner;
-    public Transform FirePoint;
+    public PowerUpAssets PowerUpAssets { get; }
 
     public PowerUpContext(
         IPlayerController playerController,
         IHealth health,
         Transform playerTransform,
-        MonoBehaviour coroutineOwner)
+        MonoBehaviour coroutineOwner,
+        PowerUpAssets powerUpAssets)
     {
         PlayerController = playerController;
         Health = health;
         PlayerTransform = playerTransform;
         CoroutineOwner = coroutineOwner;
+        PowerUpAssets = powerUpAssets;
     }
 }

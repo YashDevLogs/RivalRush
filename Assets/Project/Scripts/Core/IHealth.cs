@@ -12,5 +12,10 @@ public interface IHealth
     /// </summary>
     void SetRespawnPoint(Vector3 position);
 
+    /// <summary>
+    /// Enables or disables damage immunity (used by shield, spawn protection, etc.)
+    /// </summary>
+    void SetInvincible(bool value);
+
     bool IsInvincible { get; }
 }

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e3ee6e81b43ad945b4fac46586cff2c, type: 3}
+  m_Name: PowerUpAssets
+  m_EditorClassIdentifier: Assembly-CSharp::PowerUpAssets
+  icons:
+  - id: 1
+    icon: {fileID: 21300000, guid: bb446700f11e8bf4ca06bc6ef8c7a842, type: 3}
+  - id: 2
+    icon: {fileID: 21300000, guid: 4da143fc948f628439fa4dd190689077, type: 3}
+  - id: 3
+    icon: {fileID: 21300000, guid: 7ea85df2145fc1848b3c35ae9b15cdeb, type: 3}
+  trapPrefab: {fileID: 4842330695178494300, guid: c72f57552e45083438e7de85c96ac671, type: 3}
+  shieldVisualPrefab: {fileID: 2209752518295568787, guid: bdc4b41b1247fb44cb4398e0266a36c5, type: 3}

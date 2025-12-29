@@ -42,7 +42,6 @@ GameObject:
   - component: {fileID: 513986933525043728}
   - component: {fileID: 7567159818122729006}
   - component: {fileID: 182107558573801670}
-  - component: {fileID: 7340854853258670059}
   - component: {fileID: 4706878075686042359}
   - component: {fileID: 7797538079168336331}
   - component: {fileID: 3706095692324910717}
@@ -50,10 +49,11 @@ GameObject:
   - component: {fileID: 5648618459781708128}
   - component: {fileID: 4436704186500225256}
   - component: {fileID: 2306693795434095376}
+  - component: {fileID: 4486409919620301181}
   m_Layer: 9
   m_Name: AI_Player
   m_TagString: AI_Player
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 5132851093641282708, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -119,9 +119,9 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: 2c1999c329e074f47aa655e36cab94e7, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.990566, g: 0.28502133, b: 0.28502133, a: 1}
   m_FlipX: 1
   m_FlipY: 0
   m_DrawMode: 0
@@ -158,52 +158,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 4
---- !u!61 &7340854853258670059
-BoxCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8296394138938738586}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: -0.3254981, y: -0.34358048}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 10.24, y: 10.24}
-    newSize: {x: 1, y: 1}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  m_Size: {x: 2.4280672, y: 5.212875}
-  m_EdgeRadius: 0
 --- !u!114 &4706878075686042359
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -216,10 +170,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc6bff5bca0dbf6469ff637ca80801dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
+  respawnDelay: 1
   respawnInvincibilityTime: 1
   respawnOffset: {x: 1, y: 0.5}
-  cameraFollow: {fileID: 0}
-  useCheckpointRespawn: 0
 --- !u!95 &7797538079168336331
 Animator:
   serializedVersion: 7
@@ -267,11 +220,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75728392cf3edf14a9adbeecaa15ed76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AISensor
-  obstacleCheckDistance: 1.2
-  obstacleLayer:
+  hazardLayer:
     serializedVersion: 2
     m_Bits: 256
-  sensorOrigin: {fileID: 513986933525043728}
+  hazardLookDistance: 5
+  hazardRayOffset: {x: 0, y: -2.48}
+  jumpDecisionCooldown: 0.25
 --- !u!114 &5648618459781708128
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -284,6 +238,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd186afcb9d977a46962c3a550a48df3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AIPowerUpBrain
+  expectedRaceDuration: 30
+  minDecisionDelay: 0.4
+  maxDecisionDelay: 1.2
+  usageCooldown: 2
 --- !u!114 &4436704186500225256
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -308,10 +266,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2ee728be14efdf4db1de0408e8e69ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  baseMaxRunSpeed: 6
+  baseMaxRunSpeed: 12
   accelerationRate: 6
-  jumpVelocity: 12
-  maxJumps: 1
+  jumpVelocity: 15
+  maxJumps: 2
   dashForce: 10
   dashCooldown: 1
   groundCheck: {fileID: 5810270714879650185}
@@ -327,3 +285,40 @@ MonoBehaviour:
   animIsGroundedParam: IsGrounded
   animJumpTrigger: JumpTrigger
   animDashTrigger: Dash
+--- !u!70 &4486409919620301181
+CapsuleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8296394138938738586}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: -0.23685408, y: -0.37348795}
+  m_Size: {x: 2.4411001, y: 5.1377525}
+  m_Direction: 0

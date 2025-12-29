@@ -1,56 +1,41 @@
+﻿using Game.Core;
 using System.Collections;
 using UnityEngine;
-using Game.Core;
 
+[RequireComponent(typeof(PlayerController))]
+[RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Collider2D))]
 public sealed class PlayerHealth : MonoBehaviour, IHealth
 {
     [Header("Respawn")]
+    [SerializeField] private float respawnDelay = 1.0f;
     [SerializeField] private float respawnInvincibilityTime = 1.0f;
     [SerializeField] private Vector2 respawnOffset = new Vector2(-0.5f, 0.5f);
-    [SerializeField] private CameraFollow2D cameraFollow;
-
-    [Tooltip("If true the player will respawn at last checkpoint instead of death position.")]
-    [SerializeField] private bool useCheckpointRespawn = false;
 
     public bool IsInvincible { get; private set; }
 
-    private Vector3 lastDeathPosition;
-    private Vector3 checkpointRespawnPoint;
-    private bool hasCheckpoint;
-
-    private IPlayerEntity playerEntity;
+    private PlayerController controller;
     private Rigidbody2D rb;
     private Collider2D col;
     private SpriteRenderer spriteRenderer;
 
+    private Vector3 lastDeathPosition;
+    private float originalGravity;
+
+    // ---------------- Lifecycle ----------------
+
     private void Awake()
     {
-        playerEntity = GetComponent<IPlayerEntity>();
+        controller = GetComponent<PlayerController>();
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
 
-        checkpointRespawnPoint = transform.position;
-        hasCheckpoint = false;
-
-        if (playerEntity == null)
-        {
-            Debug.LogError(
-                $"[PlayerHealth] No IPlayerEntity found on {name}. Death handling will fail."
-            );
-        }
-    }
-
-    // ---------------- Checkpoints ----------------
-    public void SetRespawnPoint(Vector3 position)
-    {
-        checkpointRespawnPoint = position;
-        hasCheckpoint = true;
-        GameEvents.OnCheckpointReached?.Invoke(position);
+        originalGravity = rb.gravityScale;
     }
 
     // ---------------- Damage ----------------
+
     public void TakeDamage(int amount)
     {
         if (IsInvincible)
@@ -61,49 +46,80 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
 
     public void Die()
     {
+        if (IsInvincible)
+            return;
+
+        IsInvincible = true;
+
+        // Capture death position FIRST
         lastDeathPosition = transform.position;
 
-        GameEvents.OnPlayerDied?.Invoke();
+        // Stop motion & physics completely
+        rb.linearVelocity = Vector2.zero;
+        rb.angularVelocity = 0f;
+        rb.gravityScale = 0f;
+        rb.simulated = false;
 
-        // Stop physics immediately
-        if (rb != null)
-            rb.linearVelocity = Vector2.zero;
+        // Disable control
+        controller.DisableControl();
 
-        // Delegate kill logic (player OR AI)
-        playerEntity?.Kill();
+        // Play death animation
+        if (controller.animator != null)
+        {
+            controller.animator.SetTrigger("DieTrigger");
+        }
 
-        Vector3 respawnPos = (useCheckpointRespawn && hasCheckpoint)
-            ? checkpointRespawnPoint
-            : lastDeathPosition + (Vector3)respawnOffset;
-
-        StartCoroutine(DelayedRespawn(respawnPos));
+        // Start respawn flow
+        StartCoroutine(RespawnRoutine());
     }
 
     // ---------------- Respawn ----------------
-    private IEnumerator DelayedRespawn(Vector3 position)
+
+    private IEnumerator RespawnRoutine()
     {
-        yield return new WaitForSeconds(1f);
-        RespawnAt(position);
+        yield return new WaitForSeconds(respawnDelay);
+
+        RespawnAt(lastDeathPosition + (Vector3)respawnOffset);
     }
 
-    public void RespawnAt(Vector3 position) // make public to implement IHealth
+    public void RespawnAt(Vector3 position)
     {
+        // Move first
         transform.position = position;
 
-        if (rb != null)
-            rb.linearVelocity = Vector2.zero;
+        // Restore physics BEFORE control
+        RestorePhysics();
 
-        if (cameraFollow != null)
-            cameraFollow.SnapToPlayer();
+        // Reset animator completely
+        if (controller.animator != null)
+        {
+            controller.animator.Rebind();
+            controller.animator.Update(0f);
+            controller.animator.ResetTrigger("DieTrigger");
+        }
 
-        // Safety: clear any lingering power-ups
-        GetComponent<PowerUpController>()?.ForceClear();
+        // Reset movement state
+        controller.ResetRunSpeed();
 
+        // Re-enable control
+        controller.EnableControl();
+
+        // Respawn invincibility
         StartCoroutine(InvincibilityRoutine());
-        GameEvents.OnPlayerRespawned?.Invoke();
+
+        Debug.Log($"[PlayerHealth] {name} respawned correctly");
+    }
+
+    private void RestorePhysics()
+    {
+        rb.simulated = true;
+        rb.gravityScale = originalGravity;
+        rb.linearVelocity = Vector2.zero;
+        rb.angularVelocity = 0f;
     }
 
     // ---------------- Invincibility ----------------
+
     public void SetInvincible(bool value)
     {
         IsInvincible = value;
@@ -118,16 +134,23 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
 
         while (timer > 0f)
         {
-            if (spriteRenderer != null)
+            if (spriteRenderer)
                 spriteRenderer.enabled = !spriteRenderer.enabled;
 
             timer -= blinkInterval;
             yield return new WaitForSeconds(blinkInterval);
         }
 
-        if (spriteRenderer != null)
+        if (spriteRenderer)
             spriteRenderer.enabled = true;
 
         IsInvincible = false;
+    }
+
+    // ---------------- Optional ----------------
+
+    public void SetRespawnPoint(Vector3 position)
+    {
+        // Reserved for checkpoints
     }
 }

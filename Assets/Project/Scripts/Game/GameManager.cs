@@ -6,30 +6,30 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
     }
 
     private void OnEnable()
     {
-        GameEvents.OnPlayerDied += HandlePlayerDied;
         GameEvents.OnRaceFinished += HandleRaceFinished;
     }
 
     private void OnDisable()
     {
-        GameEvents.OnPlayerDied -= HandlePlayerDied;
         GameEvents.OnRaceFinished -= HandleRaceFinished;
-    }
-
-    private void HandlePlayerDied()
-    {
-        // analytics, stats, UI update
-        Debug.Log("GameManager: Player died.");
     }
 
     private void HandleRaceFinished()
     {
-        Debug.Log("GameManager: Race finished. Show results.");
-        // handle UI / results / stopping gameplay
+        Debug.Log("[GameManager] Race finished. Waiting for results UI.");
+
+        // UI / analytics / progression hooks go here
+        // DO NOT control race logic here
     }
 }

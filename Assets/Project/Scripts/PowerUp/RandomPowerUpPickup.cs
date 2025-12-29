@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [RequireComponent(typeof(Collider2D))]
 public class RandomPowerUpPickup : MonoBehaviour
@@ -21,8 +21,10 @@ public class RandomPowerUpPickup : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         var controller = other.GetComponent<PowerUpController>();
-        if (controller == null) return;
+        if (controller == null)
+            return;
 
+        // Per-racer gating only
         if (controller.HasPowerUp)
             return;
 
@@ -31,11 +33,11 @@ public class RandomPowerUpPickup : MonoBehaviour
         ];
 
         IPowerUp powerUp = PowerUpFactory.Create(randomId, assets);
-        if (powerUp == null) return;
+        if (powerUp == null)
+            return;
 
         controller.Pickup(powerUp);
 
-        // Disable ONLY this pickup instance
-        gameObject.SetActive(false);
+        // Pickup remains active for all racers
     }
 }

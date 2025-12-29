@@ -4,7 +4,7 @@ using System.Collections;
 using Game.Core;
 
 [RequireComponent(typeof(Rigidbody2D))]
-public sealed class PlayerController : MonoBehaviour, IPlayerController
+public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayerEntity
 {
     [Header("Movement (Designer Tuned)")]
     [SerializeField] private float baseMaxRunSpeed = 12f;
@@ -61,8 +61,14 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
     public event Action OnLand;
     public event Action<PlayerState> OnStateChanged;
 
-    public PlayerState CurrentState => state;
-    public float CurrentSpeed => currentRunSpeed;
+    // ---------------- IPlayerEntity ----------------
+    public Transform Transform => transform;
+    public Rigidbody2D Rigidbody => rb;
+
+    public void Kill()
+    {
+        gameObject.SetActive(false);
+    }
 
     // ---------------- Lifecycle ----------------
     private void Awake()
@@ -98,7 +104,6 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
         if (!controlEnabled || inputSource == null)
             return;
 
-        // 🔑 INPUT SOURCE (Human / AI / Network)
         if (inputSource.JumpPressed)
             lastJumpPressTime = Time.time;
 
@@ -115,7 +120,8 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
 
     private void FixedUpdate()
     {
-        if (!controlEnabled) return;
+        if (!controlEnabled)
+            return;
 
         currentRunSpeed = Mathf.MoveTowards(
             currentRunSpeed,
@@ -123,11 +129,13 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
             accelerationRate * Time.fixedDeltaTime
         );
 
+        // ✅ THIS LINE GOES HERE
         rb.linearVelocity = new Vector2(currentRunSpeed, rb.linearVelocity.y);
 
         if (!isGrounded && rb.linearVelocity.y < -0.1f && state != PlayerState.Falling)
             UpdateState(PlayerState.Falling);
     }
+
 
     // ---------------- Control API ----------------
     public void EnableControl()
@@ -251,7 +259,6 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
             UpdateState(PlayerState.Running);
     }
 
-    // ---------------- Animation ----------------
     private void UpdateAnimator()
     {
         if (!animator) return;

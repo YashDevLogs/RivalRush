@@ -22,6 +22,9 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
     private Vector3 lastDeathPosition;
     private float originalGravity;
 
+    [Header("VFX")]
+    [SerializeField] private PowerUpAssets powerUpAssets;
+
     // ---------------- Lifecycle ----------------
 
     private void Awake()
@@ -54,6 +57,17 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
         // Capture death position FIRST
         lastDeathPosition = transform.position;
 
+        // ---------------- DEATH VFX ----------------
+        if (powerUpAssets != null && powerUpAssets.DeathSmokePrefab != null)
+        {
+            Instantiate(
+                powerUpAssets.DeathSmokePrefab,
+                lastDeathPosition,
+                Quaternion.identity
+            );
+        }
+        // -------------------------------------------
+
         // Stop motion & physics completely
         rb.linearVelocity = Vector2.zero;
         rb.angularVelocity = 0f;
@@ -72,6 +86,7 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
         // Start respawn flow
         StartCoroutine(RespawnRoutine());
     }
+
 
     // ---------------- Respawn ----------------
 

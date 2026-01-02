@@ -188,6 +188,7 @@ MonoBehaviour:
   animIsGroundedParam: IsGrounded
   animJumpTrigger: JumpTrigger
   animDashTrigger: Dash
+  idleSpeedThreshold: 0.15
 --- !u!114 &2381119477031407649
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -203,6 +204,7 @@ MonoBehaviour:
   respawnDelay: 1
   respawnInvincibilityTime: 1
   respawnOffset: {x: 1, y: 0.5}
+  powerUpAssets: {fileID: 11400000, guid: 036bc4c6c569fcd4189b02552d9091a6, type: 2}
 --- !u!95 &674578746763220028
 Animator:
   serializedVersion: 7

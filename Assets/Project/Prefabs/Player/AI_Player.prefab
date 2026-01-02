@@ -121,7 +121,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: 2c1999c329e074f47aa655e36cab94e7, type: 3}
-  m_Color: {r: 0.990566, g: 0.28502133, b: 0.28502133, a: 1}
+  m_Color: {r: 0.8867924, g: 0.35555357, b: 0.35555357, a: 1}
   m_FlipX: 1
   m_FlipY: 0
   m_DrawMode: 0
@@ -173,6 +173,7 @@ MonoBehaviour:
   respawnDelay: 1
   respawnInvincibilityTime: 1
   respawnOffset: {x: 1, y: 0.5}
+  powerUpAssets: {fileID: 11400000, guid: 036bc4c6c569fcd4189b02552d9091a6, type: 2}
 --- !u!95 &7797538079168336331
 Animator:
   serializedVersion: 7
@@ -223,9 +224,10 @@ MonoBehaviour:
   hazardLayer:
     serializedVersion: 2
     m_Bits: 256
-  hazardLookDistance: 5
+  hazardLookDistance: 4
   hazardRayOffset: {x: 0, y: -2.48}
   jumpDecisionCooldown: 0.25
+  personality: 3
 --- !u!114 &5648618459781708128
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -238,6 +240,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd186afcb9d977a46962c3a550a48df3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AIPowerUpBrain
+  personality: 3
   expectedRaceDuration: 30
   minDecisionDelay: 0.4
   maxDecisionDelay: 1.2
@@ -267,7 +270,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   baseMaxRunSpeed: 12
-  accelerationRate: 6
+  accelerationRate: 10
   jumpVelocity: 15
   maxJumps: 2
   dashForce: 10
@@ -285,6 +288,7 @@ MonoBehaviour:
   animIsGroundedParam: IsGrounded
   animJumpTrigger: JumpTrigger
   animDashTrigger: Dash
+  idleSpeedThreshold: 0.15
 --- !u!70 &4486409919620301181
 CapsuleCollider2D:
   m_ObjectHideFlags: 0

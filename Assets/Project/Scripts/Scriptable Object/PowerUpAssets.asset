@@ -16,8 +16,9 @@ MonoBehaviour:
   - id: 1
     icon: {fileID: 21300000, guid: bb446700f11e8bf4ca06bc6ef8c7a842, type: 3}
   - id: 2
-    icon: {fileID: 21300000, guid: 4da143fc948f628439fa4dd190689077, type: 3}
+    icon: {fileID: 21300000, guid: 67f94b2339533b74aac1dec5c4b78f99, type: 3}
   - id: 3
     icon: {fileID: 21300000, guid: 7ea85df2145fc1848b3c35ae9b15cdeb, type: 3}
   trapPrefab: {fileID: 4842330695178494300, guid: c72f57552e45083438e7de85c96ac671, type: 3}
   shieldVisualPrefab: {fileID: 2209752518295568787, guid: bdc4b41b1247fb44cb4398e0266a36c5, type: 3}
+  DeathSmokePrefab: {fileID: 3296415062219888227, guid: 1d16a5f2934398241a76921059fa98e9, type: 3}

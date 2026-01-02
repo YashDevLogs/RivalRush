@@ -50,6 +50,7 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
     private float nextAllowedGroundCheckTime;
 
     private PlayerState state = PlayerState.Idle;
+    private bool hasFinishedRace = false;
 
     // ---------------- Dependencies ----------------
     private PowerUpController powerUpController;
@@ -69,6 +70,9 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
     {
         gameObject.SetActive(false);
     }
+
+    [Header("Finish State")]
+    [SerializeField] private float idleSpeedThreshold = 0.15f;
 
     // ---------------- Lifecycle ----------------
     private void Awake()
@@ -101,25 +105,43 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
 
     private void Update()
     {
-        if (!controlEnabled || inputSource == null)
-            return;
+        // ---------------- INPUT & GAMEPLAY ----------------
+        if (controlEnabled && inputSource != null)
+        {
+            if (inputSource.JumpPressed)
+                lastJumpPressTime = Time.time;
 
-        if (inputSource.JumpPressed)
-            lastJumpPressTime = Time.time;
+            if (inputSource.DashPressed)
+                TryPerformDash();
 
-        if (inputSource.DashPressed)
-            TryPerformDash();
+            if (inputSource.PowerUpPressed)
+                powerUpController?.Activate();
 
-        if (inputSource.PowerUpPressed)
-            powerUpController?.Activate();
+            HandleGround();
+            HandleJumpBuffer();
+        }
 
-        HandleGround();
-        HandleJumpBuffer();
+        // ---------------- ANIMATION ALWAYS UPDATES ----------------
         UpdateAnimator();
     }
 
+
     private void FixedUpdate()
     {
+        // ---------------- FINISH BEHAVIOR ----------------
+        if (hasFinishedRace)
+        {
+            // When momentum is gone, transition to Idle
+            if (Mathf.Abs(rb.linearVelocity.x) <= idleSpeedThreshold)
+            {
+                rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+                UpdateState(PlayerState.Idle);
+            }
+
+            return;
+        }
+
+        // ---------------- NORMAL RACE ----------------
         if (!controlEnabled)
             return;
 
@@ -129,12 +151,12 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
             accelerationRate * Time.fixedDeltaTime
         );
 
-        // ✅ THIS LINE GOES HERE
         rb.linearVelocity = new Vector2(currentRunSpeed, rb.linearVelocity.y);
 
         if (!isGrounded && rb.linearVelocity.y < -0.1f && state != PlayerState.Falling)
             UpdateState(PlayerState.Falling);
     }
+
 
 
     // ---------------- Control API ----------------
@@ -272,6 +294,17 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
         if (state == newState) return;
         state = newState;
         OnStateChanged?.Invoke(newState);
+    }
+
+    public void OnFinishRace()
+    {
+        hasFinishedRace = true;
+        controlEnabled = false;
+
+        // Stop injecting forward speed, keep current momentum
+        currentRunSpeed = 0f;
+
+        UpdateState(PlayerState.Disabled);
     }
 
 #if UNITY_EDITOR

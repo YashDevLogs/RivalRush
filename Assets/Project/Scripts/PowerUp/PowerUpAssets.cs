@@ -17,6 +17,7 @@ public sealed class PowerUpAssets : ScriptableObject
     [Header("Prefabs")]
     public GameObject trapPrefab;
     public GameObject shieldVisualPrefab;
+    public GameObject DeathSmokePrefab;
 
     private Dictionary<PowerUpId, Sprite> iconLookup;
 

@@ -16,22 +16,39 @@ public sealed class AISensor : MonoBehaviour
 
     public bool IsHazardAhead => hazardAhead;
 
+    [SerializeField] private AIPersonality personality = AIPersonality.Balanced;
+
+
     public bool ShouldJump()
     {
-        if (Time.time < lastJumpDecisionTime + jumpDecisionCooldown)
+        float personalityDelay = GetJumpDelay();
+
+        if (Time.time < lastJumpDecisionTime + personalityDelay)
             return false;
 
-        bool hazardAhead = DetectHazardAhead();
+        hazardAhead = DetectHazardAhead();
 
         if (hazardAhead)
         {
             lastJumpDecisionTime = Time.time;
-            Debug.Log($"[AISensor] Hazard detected → recommending jump ({name})");
+            Debug.Log($"[AISensor] {personality} jump decision");
             return true;
         }
 
         return false;
     }
+
+    private float GetJumpDelay()
+    {
+        return personality switch
+        {
+            AIPersonality.Aggressive => jumpDecisionCooldown * 1.3f,
+            AIPersonality.Defensive => jumpDecisionCooldown * 0.7f,
+            AIPersonality.Risky => jumpDecisionCooldown * 1.6f,
+            _ => jumpDecisionCooldown,
+        };
+    }
+
 
     public bool ShouldDash() => false;
 

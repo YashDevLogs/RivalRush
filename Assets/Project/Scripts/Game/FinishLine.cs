@@ -17,7 +17,14 @@ public sealed class FinishLine : MonoBehaviour
 
         RaceManager.Instance.RegisterFinish(racer);
 
-        // Stop this racer only
-        racer.DisableControl();
+        // Tell controller it has finished (momentum preserved)
+        if (other.TryGetComponent<PlayerController>(out var pc))
+        {
+            pc.OnFinishRace();
+        }
+        else
+        {
+            racer.DisableControl();
+        }
     }
 }

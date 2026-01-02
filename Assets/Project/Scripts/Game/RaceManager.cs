@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Game.Core;
+using TMPro;
 
 public sealed class RaceManager : MonoBehaviour
 {
     public static RaceManager Instance { get; private set; }
+    [Header("Countdown UI")]
+    [SerializeField] private TMP_Text countdownText;
 
     private enum RaceState
     {
@@ -108,7 +111,35 @@ public sealed class RaceManager : MonoBehaviour
         currentState = RaceState.Countdown;
         RaceElapsedTime = 0f;
 
-        yield return new WaitForSeconds(countdownTime);
+        if (countdownText != null)
+        {
+            countdownText.gameObject.SetActive(true);
+        }
+
+        int count = Mathf.CeilToInt(countdownTime);
+
+        while (count > 0)
+        {
+            if (countdownText != null)
+            {
+                countdownText.text = count.ToString();
+            }
+
+            yield return new WaitForSeconds(1f);
+            count--;
+        }
+
+        if (countdownText != null)
+        {
+            countdownText.text = "GO!";
+        }
+
+        yield return new WaitForSeconds(0.5f);
+
+        if (countdownText != null)
+        {
+            countdownText.gameObject.SetActive(false);
+        }
 
         StartRace();
     }
@@ -141,15 +172,20 @@ public sealed class RaceManager : MonoBehaviour
             EndRace();
     }
 
+    public IReadOnlyList<IPlayerController> GetFinishOrder()
+    {
+        return finishOrder;
+    }
+
+
     private void EndRace()
     {
         currentState = RaceState.Finished;
 
-        Debug.Log("[RaceManager] Race complete");
+        Debug.Log("[RaceManager] Race complete → firing OnRaceFinished");
 
         GameEvents.OnRaceFinished?.Invoke();
     }
-
     // ---------------- POWER-UP SPAWN SUPPORT ----------------
 
     private void CachePowerUpSpawnPoints()

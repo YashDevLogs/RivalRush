@@ -4,7 +4,7 @@ using System.Collections;
 using Game.Core;
 
 [RequireComponent(typeof(Rigidbody2D))]
-public sealed class PlayerController : MonoBehaviour, IPlayerController
+public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayerEntity
 {
     [Header("Movement (Designer Tuned)")]
     [SerializeField] private float baseMaxRunSpeed = 12f;
@@ -50,6 +50,7 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
     private float nextAllowedGroundCheckTime;
 
     private PlayerState state = PlayerState.Idle;
+    private bool hasFinishedRace = false;
 
     // ---------------- Dependencies ----------------
     private PowerUpController powerUpController;
@@ -61,8 +62,17 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
     public event Action OnLand;
     public event Action<PlayerState> OnStateChanged;
 
-    public PlayerState CurrentState => state;
-    public float CurrentSpeed => currentRunSpeed;
+    // ---------------- IPlayerEntity ----------------
+    public Transform Transform => transform;
+    public Rigidbody2D Rigidbody => rb;
+
+    public void Kill()
+    {
+        gameObject.SetActive(false);
+    }
+
+    [Header("Finish State")]
+    [SerializeField] private float idleSpeedThreshold = 0.15f;
 
     // ---------------- Lifecycle ----------------
     private void Awake()
@@ -95,27 +105,45 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
 
     private void Update()
     {
-        if (!controlEnabled || inputSource == null)
-            return;
+        // ---------------- INPUT & GAMEPLAY ----------------
+        if (controlEnabled && inputSource != null)
+        {
+            if (inputSource.JumpPressed)
+                lastJumpPressTime = Time.time;
 
-        // 🔑 INPUT SOURCE (Human / AI / Network)
-        if (inputSource.JumpPressed)
-            lastJumpPressTime = Time.time;
+            if (inputSource.DashPressed)
+                TryPerformDash();
 
-        if (inputSource.DashPressed)
-            TryPerformDash();
+            if (inputSource.PowerUpPressed)
+                powerUpController?.Activate();
 
-        if (inputSource.PowerUpPressed)
-            powerUpController?.Activate();
+            HandleGround();
+            HandleJumpBuffer();
+        }
 
-        HandleGround();
-        HandleJumpBuffer();
+        // ---------------- ANIMATION ALWAYS UPDATES ----------------
         UpdateAnimator();
     }
 
+
     private void FixedUpdate()
     {
-        if (!controlEnabled) return;
+        // ---------------- FINISH BEHAVIOR ----------------
+        if (hasFinishedRace)
+        {
+            // When momentum is gone, transition to Idle
+            if (Mathf.Abs(rb.linearVelocity.x) <= idleSpeedThreshold)
+            {
+                rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+                UpdateState(PlayerState.Idle);
+            }
+
+            return;
+        }
+
+        // ---------------- NORMAL RACE ----------------
+        if (!controlEnabled)
+            return;
 
         currentRunSpeed = Mathf.MoveTowards(
             currentRunSpeed,
@@ -128,6 +156,8 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
         if (!isGrounded && rb.linearVelocity.y < -0.1f && state != PlayerState.Falling)
             UpdateState(PlayerState.Falling);
     }
+
+
 
     // ---------------- Control API ----------------
     public void EnableControl()
@@ -251,7 +281,6 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
             UpdateState(PlayerState.Running);
     }
 
-    // ---------------- Animation ----------------
     private void UpdateAnimator()
     {
         if (!animator) return;
@@ -265,6 +294,17 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController
         if (state == newState) return;
         state = newState;
         OnStateChanged?.Invoke(newState);
+    }
+
+    public void OnFinishRace()
+    {
+        hasFinishedRace = true;
+        controlEnabled = false;
+
+        // Stop injecting forward speed, keep current momentum
+        currentRunSpeed = 0f;
+
+        UpdateState(PlayerState.Disabled);
     }
 
 #if UNITY_EDITOR

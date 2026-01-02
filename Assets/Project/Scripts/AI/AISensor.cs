@@ -1,66 +1,96 @@
-using UnityEngine;
+﻿using UnityEngine;
 
-/// <summary>
-/// AI perception layer.
-/// Responsible ONLY for sensing the world,
-/// NOT for executing actions.
-/// </summary>
 public sealed class AISensor : MonoBehaviour
 {
-    [Header("Jump Detection")]
-    [SerializeField] private float obstacleCheckDistance = 1.2f;
-    [SerializeField] private LayerMask obstacleLayer;
-    [SerializeField] private Transform sensorOrigin;
+    [Header("Hazard Detection")]
+    [SerializeField] private LayerMask hazardLayer;
+    [SerializeField] private float hazardLookDistance = 1.5f;
+    [SerializeField] private Vector2 hazardRayOffset = new Vector2(0f, -0.2f);
 
-    private void Awake()
-    {
-        if (sensorOrigin == null)
-            sensorOrigin = transform;
-    }
+    [Header("Timing")]
+    [SerializeField] private float jumpDecisionCooldown = 0.25f;
 
-    /// <summary>
-    /// Returns true if an obstacle is detected ahead that requires a jump.
-    /// </summary>
+    private float lastJumpDecisionTime;
+
+    private bool hazardAhead;
+
+    public bool IsHazardAhead => hazardAhead;
+
+    [SerializeField] private AIPersonality personality = AIPersonality.Balanced;
+
+
     public bool ShouldJump()
     {
+        float personalityDelay = GetJumpDelay();
+
+        if (Time.time < lastJumpDecisionTime + personalityDelay)
+            return false;
+
+        hazardAhead = DetectHazardAhead();
+
+        if (hazardAhead)
+        {
+            lastJumpDecisionTime = Time.time;
+            Debug.Log($"[AISensor] {personality} jump decision");
+            return true;
+        }
+
+        return false;
+    }
+
+    private float GetJumpDelay()
+    {
+        return personality switch
+        {
+            AIPersonality.Aggressive => jumpDecisionCooldown * 1.3f,
+            AIPersonality.Defensive => jumpDecisionCooldown * 0.7f,
+            AIPersonality.Risky => jumpDecisionCooldown * 1.6f,
+            _ => jumpDecisionCooldown,
+        };
+    }
+
+
+    public bool ShouldDash() => false;
+
+    private bool DetectHazardAhead()
+    {
+        Vector2 origin = (Vector2)transform.position + hazardRayOffset;
+        Vector2 direction = Vector2.right;
+
+        Debug.DrawRay(origin, direction * hazardLookDistance, Color.red);
+
         RaycastHit2D hit = Physics2D.Raycast(
-            sensorOrigin.position,
-            Vector2.right,
-            obstacleCheckDistance,
-            obstacleLayer
+            origin,
+            direction,
+            hazardLookDistance,
+            hazardLayer
         );
 
-        return hit.collider != null;
+        hazardAhead = hit.collider != null;
+
+        if (hazardAhead)
+        {
+            Debug.Log($"[AISensor] Hazard ray HIT: {hit.collider.name}");
+        }
+
+        return hazardAhead;
     }
 
-    /// <summary>
-    /// Dash logic not implemented yet.
-    /// Safe default: AI never dashes.
-    /// </summary>
-    public bool ShouldDash()
+
+
+    public bool IsInDanger()
     {
-        return false;
+        return hazardAhead;
     }
 
-    /// <summary>
-    /// Power-up logic not implemented yet.
-    /// Safe default: AI uses power-up opportunistically later.
-    /// </summary>
-    public bool ShouldUsePowerUp()
+    private void OnDrawGizmos()
     {
-        return false;
-    }
-
-#if UNITY_EDITOR
-    private void OnDrawGizmosSelected()
-    {
-        if (sensorOrigin == null) return;
-
         Gizmos.color = Color.red;
-        Gizmos.DrawLine(
-            sensorOrigin.position,
-            sensorOrigin.position + Vector3.right * obstacleCheckDistance
-        );
+        Vector2 origin = (Vector2)transform.position + hazardRayOffset;
+        Vector2 end = origin + Vector2.right * hazardLookDistance;
+
+        Gizmos.DrawSphere(origin, 0.05f);   // Ray origin
+        Gizmos.DrawLine(origin, end);        // Ray direction
+        Gizmos.DrawSphere(end, 0.05f);       // Ray end
     }
-#endif
 }

@@ -1,15 +1,24 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(Hazard))]
+[RequireComponent(typeof(Collider2D))]
+[RequireComponent(typeof(Rigidbody2D))]
 public class TrapController : MonoBehaviour
 {
-    [SerializeField] private float armDelay = 0.4f;  // Delay before trap activates
+    [Header("Trap Timing")]
+    [SerializeField] private float armDelay = 0.4f;
     [SerializeField] private float lifeTime = 6f;
 
+    [Header("Physics")]
+    [SerializeField] private LayerMask groundLayer;
+
     private Collider2D trapCollider;
+    private Rigidbody2D rb;
     private GameObject owner;
     private bool armed;
+    private bool grounded;
+
+    // ---------------- INITIALIZATION ----------------
 
     public void Initialize(GameObject owner)
     {
@@ -19,8 +28,18 @@ public class TrapController : MonoBehaviour
     private void Awake()
     {
         trapCollider = GetComponent<Collider2D>();
-        trapCollider.enabled = false;  // completely prevent triggers
-        Debug.Log("collider of trap disabled");
+        rb = GetComponent<Rigidbody2D>();
+
+        // Start as falling object
+        rb.bodyType = RigidbodyType2D.Dynamic;
+        rb.gravityScale = 4f;              // tune per feel
+        rb.freezeRotation = true;
+        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+
+        trapCollider.isTrigger = false;
+        trapCollider.enabled = true;
+
+        Debug.Log("[TrapController] Trap spawned (falling)");
     }
 
     private void Start()
@@ -29,27 +48,48 @@ public class TrapController : MonoBehaviour
         Destroy(gameObject, lifeTime);
     }
 
+    // ---------------- ARMING ----------------
+
     private IEnumerator ArmRoutine()
     {
-        // Trap is safe for this duration
         yield return new WaitForSeconds(armDelay);
 
-        // Activate hazard after arm delay
-        trapCollider.enabled = true;
-        Debug.Log("collider of tran enabled");
         armed = true;
-
-        // Optional: visual/audio cue to show trap is active
+        Debug.Log("[TrapController] Trap armed");
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (!armed) return;  // Ignore collisions before arming
-        if (other.gameObject == owner) return; // Never hurt the owner
+    // ---------------- LANDING ----------------
 
-        if (other.TryGetComponent(out IHealth health))
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        // First contact with ground → lock trap
+        if (!grounded && IsGround(collision))
         {
-            health.TakeDamage(1); // Kill or damage the player
+            grounded = true;
+
+            rb.linearVelocity = Vector2.zero;
+            rb.bodyType = RigidbodyType2D.Kinematic;
+
+            Debug.Log("[TrapController] Trap landed and locked");
+            return;
         }
+
+        // Damage logic (after arming)
+        if (!armed)
+            return;
+
+        if (collision.gameObject == owner)
+            return;
+
+        if (collision.gameObject.TryGetComponent(out IHealth health))
+        {
+            Debug.Log($"[TrapController] Trap hit {collision.gameObject.name}");
+            health.TakeDamage(1);
+        }
+    }
+
+    private bool IsGround(Collision2D collision)
+    {
+        return ((1 << collision.gameObject.layer) & groundLayer) != 0;
     }
 }

@@ -19,20 +19,30 @@ public sealed class AIInputSource : MonoBehaviour, IInputSource
 
     private void Update()
     {
-        // Reset every frame (button-press semantics)
         JumpPressed = false;
         DashPressed = false;
         PowerUpPressed = false;
 
-        // Movement decisions
-        if (sensor.ShouldJump())
+        bool shouldJump = sensor.ShouldJump();
+        bool shouldDash = sensor.ShouldDash();
+
+        if (shouldJump)
+        {
+            Debug.Log($"[AIInputSource] Jump triggered by sensor on {name}");
             JumpPressed = true;
+        }
 
-        if (sensor.ShouldDash())
+        if (shouldDash)
+        {
+            Debug.Log($"[AIInputSource] Dash triggered by sensor on {name}");
             DashPressed = true;
+        }
 
-        // Power-up decision (delegated to brain)
         if (powerUpBrain.ShouldUsePowerUp())
+        {
+            Debug.Log($"[AIInputSource] PowerUp triggered on {name}");
             PowerUpPressed = true;
+        }
     }
+
 }

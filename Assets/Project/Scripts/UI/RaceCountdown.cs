@@ -2,7 +2,7 @@ using UnityEngine;
 using TMPro;
 using System.Collections;
 
-public class RaceCountdown : MonoBehaviour
+public sealed class RaceCountdown : MonoBehaviour
 {
     [Header("UI")]
     [SerializeField] private TMP_Text countdownText;
@@ -10,16 +10,26 @@ public class RaceCountdown : MonoBehaviour
     [Header("Countdown Settings")]
     [SerializeField] private float interval = 1f;
 
-    [Header("Player Reference")]
-    [SerializeField] private PlayerController playerController;
+    private PlayerController playerController;
 
-    private void Start()
+    private IEnumerator Start()
     {
-        // Stop player at the beginning
-        if (playerController != null)
-            playerController.DisableControl();
+        // Wait until local player exists
+        yield return new WaitUntil(() => PlayerMarker.Local != null);
 
-        StartCoroutine(StartCountdownRoutine());
+        playerController = PlayerMarker.Local.GetComponent<PlayerController>();
+
+        if (playerController == null)
+        {
+            Debug.LogError("[RaceCountdown] PlayerController not found on local player.");
+            yield break;
+        }
+
+        // Ensure player is initialized
+        yield return null;
+
+        playerController.DisableControl();
+        yield return StartCoroutine(StartCountdownRoutine());
     }
 
     private IEnumerator StartCountdownRoutine()
@@ -38,10 +48,8 @@ public class RaceCountdown : MonoBehaviour
         countdownText.text = "GO!";
         yield return new WaitForSeconds(0.5f);
 
-        // Hide UI
         countdownText.gameObject.SetActive(false);
 
-        // Start player run
         playerController.EnableControl();
     }
 }

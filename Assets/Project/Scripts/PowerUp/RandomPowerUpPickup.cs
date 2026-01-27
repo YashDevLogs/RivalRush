@@ -1,17 +1,9 @@
 ﻿using UnityEngine;
 
 [RequireComponent(typeof(Collider2D))]
-public class RandomPowerUpPickup : MonoBehaviour
+public sealed class RandomPowerUpPickup : MonoBehaviour
 {
-    [SerializeField] private PowerUpAssets assets;
-
-    [SerializeField]
-    private PowerUpId[] availablePowerUps =
-    {
-        PowerUpId.SpeedBoost,
-        PowerUpId.Shield,
-        PowerUpId.Trap
-    };
+    [SerializeField] private PowerUpDefinition[] availablePowerUps;
 
     private void Reset()
     {
@@ -20,24 +12,16 @@ public class RandomPowerUpPickup : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        var controller = other.GetComponent<PowerUpController>();
-        if (controller == null)
+        if (!other.TryGetComponent(out PowerUpController controller))
             return;
 
-        // Per-racer gating only
         if (controller.HasPowerUp)
             return;
 
-        PowerUpId randomId = availablePowerUps[
-            Random.Range(0, availablePowerUps.Length)
-        ];
-
-        IPowerUp powerUp = PowerUpFactory.Create(randomId, assets);
-        if (powerUp == null)
+        if (availablePowerUps.Length == 0)
             return;
 
-        controller.Pickup(powerUp);
-
-        // Pickup remains active for all racers
+        var def = availablePowerUps[Random.Range(0, availablePowerUps.Length)];
+        controller.Pickup(def);
     }
 }

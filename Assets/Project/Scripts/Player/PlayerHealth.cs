@@ -23,7 +23,7 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
     private float originalGravity;
 
     [Header("VFX")]
-    [SerializeField] private PowerUpAssets powerUpAssets;
+    [SerializeField] private VFXLibrary vfxLibrary; // ✅ ONLY CHANGE
 
     // ---------------- Lifecycle ----------------
 
@@ -58,10 +58,10 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
         lastDeathPosition = transform.position;
 
         // ---------------- DEATH VFX ----------------
-        if (powerUpAssets != null && powerUpAssets.DeathSmokePrefab != null)
+        if (vfxLibrary != null && vfxLibrary.deathSmokePrefab != null)
         {
             Instantiate(
-                powerUpAssets.DeathSmokePrefab,
+                vfxLibrary.deathSmokePrefab,
                 lastDeathPosition,
                 Quaternion.identity
             );
@@ -87,13 +87,11 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
         StartCoroutine(RespawnRoutine());
     }
 
-
     // ---------------- Respawn ----------------
 
     private IEnumerator RespawnRoutine()
     {
         yield return new WaitForSeconds(respawnDelay);
-
         RespawnAt(lastDeathPosition + (Vector3)respawnOffset);
     }
 

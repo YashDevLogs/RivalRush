@@ -36,6 +36,8 @@ public sealed class RaceManager : MonoBehaviour
 
     public bool IsRaceActive => currentState == RaceState.Race;
 
+    private readonly List<IPlayerEntity> playerEntities = new();
+
     /// <summary>
     /// Elapsed time since race actually started (used by AI).
     /// </summary>
@@ -79,19 +81,31 @@ public sealed class RaceManager : MonoBehaviour
         // Spawn player
         Transform playerSpawn = PickRandomSpawn(availableSpawns);
         GameObject player = Instantiate(playerPrefab, playerSpawn.position, Quaternion.identity);
-        racers.Add(player.GetComponent<IPlayerController>());
+
+        var playerController = player.GetComponent<IPlayerController>();
+        racers.Add(playerController);
+
+        playerEntities.Add(player.GetComponent<IPlayerEntity>());
 
         // Spawn AI
         for (int i = 0; i < 3; i++)
         {
             Transform aiSpawn = PickRandomSpawn(availableSpawns);
             GameObject ai = Instantiate(aiPrefab, aiSpawn.position, Quaternion.identity);
-            racers.Add(ai.GetComponent<IPlayerController>());
+
+            var aiController = ai.GetComponent<IPlayerController>();
+            racers.Add(aiController);
+
+            playerEntities.Add(ai.GetComponent<IPlayerEntity>());
         }
 
-        // Disable all controls initially
         foreach (var racer in racers)
             racer.DisableControl();
+    }
+
+    public IReadOnlyList<IPlayerEntity> GetPlayerEntities()
+    {
+        return playerEntities;
     }
 
     private Transform PickRandomSpawn(List<Transform> available)

@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 3889011537300903916}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.33, y: -3.14, z: 0}
+  m_LocalPosition: {x: -0.094, y: -1.532, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -173,7 +173,7 @@ MonoBehaviour:
   respawnDelay: 1
   respawnInvincibilityTime: 1
   respawnOffset: {x: 1, y: 0.5}
-  powerUpAssets: {fileID: 11400000, guid: 036bc4c6c569fcd4189b02552d9091a6, type: 2}
+  vfxLibrary: {fileID: 11400000, guid: 2c3eef65aba1a8041937c388ea5a31e1, type: 2}
 --- !u!95 &7797538079168336331
 Animator:
   serializedVersion: 7
@@ -208,7 +208,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 89707e9cb60745b4487ea9c4ddcb2de4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpController
-  powerUpAssets: {fileID: 11400000, guid: 036bc4c6c569fcd4189b02552d9091a6, type: 2}
+  sharedAssets: {fileID: 11400000, guid: 036bc4c6c569fcd4189b02552d9091a6, type: 2}
 --- !u!114 &2563727532454615659
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -224,8 +224,8 @@ MonoBehaviour:
   hazardLayer:
     serializedVersion: 2
     m_Bits: 256
-  hazardLookDistance: 4
-  hazardRayOffset: {x: 0, y: -2.48}
+  hazardLookDistance: 3
+  hazardRayOffset: {x: 0, y: -1.5}
   jumpDecisionCooldown: 0.25
   personality: 3
 --- !u!114 &5648618459781708128
@@ -323,6 +323,6 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.23685408, y: -0.37348795}
-  m_Size: {x: 2.4411001, y: 5.1377525}
+  m_Offset: {x: -0.09, y: -0.16}
+  m_Size: {x: 1.22, y: 2.63}
   m_Direction: 0

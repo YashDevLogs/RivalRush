@@ -4,4 +4,8 @@ public enum PowerUpId
     SpeedBoost,
     Shield,
     Trap,
+    Sawblade,
+    Rocket,
+    Revolver,
+    Shocker
 }

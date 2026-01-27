@@ -6,9 +6,6 @@ public sealed class PowerUpUIController : MonoBehaviour
     [Header("UI")]
     [SerializeField] private Image powerUpIcon;
 
-    [Header("Assets")]
-    [SerializeField] private PowerUpAssets powerUpAssets;
-
     private PowerUpController boundController;
 
     private void Start()
@@ -33,7 +30,6 @@ public sealed class PowerUpUIController : MonoBehaviour
         }
 
         boundController.OnPowerUpChanged += HandlePowerUpChanged;
-
         Debug.Log("[PowerUpUI] Bound to local player power-up controller.");
     }
 
@@ -45,27 +41,25 @@ public sealed class PowerUpUIController : MonoBehaviour
             return;
         }
 
-        Sprite icon = powerUpAssets.GetIcon(id);
+        PowerUpDefinition def = boundController.CurrentDefinition;
 
-        if (icon == null)
+        if (def == null || def.icon == null)
         {
-            Debug.LogWarning($"[PowerUpUI] No icon found for {id}");
+            Debug.LogWarning("[PowerUpUI] PowerUpDefinition or icon missing.");
             ClearIcon();
             return;
         }
 
+        powerUpIcon.sprite = def.icon;
         powerUpIcon.enabled = true;
-        powerUpIcon.sprite = icon;
 
-        Debug.Log($"[PowerUpUI] Showing icon for {id}");
+        Debug.Log($"[PowerUpUI] Showing icon for {def.id}");
     }
 
     private void ClearIcon()
     {
         powerUpIcon.sprite = null;
         powerUpIcon.enabled = false;
-
-        Debug.Log("[PowerUpUI] Cleared icon");
     }
 
     private void OnDestroy()

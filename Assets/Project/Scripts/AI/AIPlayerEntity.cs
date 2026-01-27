@@ -13,6 +13,21 @@ public sealed class AIPlayerEntity : MonoBehaviour, IPlayerEntity
         rb = GetComponent<Rigidbody2D>();
     }
 
+    public bool IsTargetable
+    {
+        get
+        {
+            if (!gameObject.activeInHierarchy)
+                return false;
+
+            var health = GetComponent<PlayerHealth>();
+            if (health == null)
+                return false;
+
+            return !health.IsInvincible && rb.simulated;
+        }
+    }
+
     public void Kill()
     {
         gameObject.SetActive(false);

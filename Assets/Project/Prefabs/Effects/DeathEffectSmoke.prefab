@@ -29,8 +29,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 212.80565, y: -4.10748, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 2}
-  m_ConstrainProportionsScale: 1
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8856585926008931894}
   - {fileID: 2346765726246510573}
@@ -4696,7 +4696,7 @@ ParticleSystemRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 5
   m_RenderMode: 0
   m_MeshDistribution: 0
   m_SortMode: 2
@@ -5028,7 +5028,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.05
+      scalar: 0.1
       minScalar: 1
       maxCurve:
         serializedVersion: 2
@@ -9826,8 +9826,8 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 0.5
-      minScalar: 0.3
+      scalar: 0.8
+      minScalar: 0.5
       maxCurve:
         serializedVersion: 2
         m_Curve:

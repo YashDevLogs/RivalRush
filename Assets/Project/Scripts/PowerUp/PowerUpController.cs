@@ -1,105 +1,81 @@
 ﻿using UnityEngine;
 using System.Collections;
-using Game.Core;
 using System;
+using Game.Core;
 
-[RequireComponent(typeof(Collider2D))]
 [RequireComponent(typeof(PlayerHealth))]
-public class PowerUpController : MonoBehaviour
+public sealed class PowerUpController : MonoBehaviour
 {
-    private PowerUpInventory inventory;
-    private IPowerUp activePowerUp;
+    private PowerUpDefinition heldDefinition;
+    private IPowerUpEffect activeEffect;
     private PowerUpContext context;
 
-    public bool HasPowerUp => inventory.HasPowerUp;
+    public bool HasPowerUp => heldDefinition != null;
 
     public event Action<PowerUpId> OnPowerUpChanged;
 
-    [SerializeField] private PowerUpAssets powerUpAssets;
+    [SerializeField] private PowerUpAssets sharedAssets;
+
+    public PowerUpDefinition CurrentDefinition => heldDefinition;
 
     private void Awake()
     {
-        inventory = new PowerUpInventory();
-
-        var playerController = GetComponent<IPlayerController>();
-        var health = GetComponent<IHealth>();
-
         context = new PowerUpContext(
-            playerController,
-            health,
+            GetComponent<IPlayerController>(),
+            GetComponent<IHealth>(),
             transform,
             this,
-            powerUpAssets
+            sharedAssets
         );
     }
 
-    public void Pickup(IPowerUp powerUp)
+    public void Pickup(PowerUpDefinition definition)
     {
-        if (inventory.HasPowerUp)
-        {
-            Debug.Log("[PowerUpController] Pickup blocked – already holding power-up");
+        if (HasPowerUp)
             return;
-        }
 
-        inventory.Assign(powerUp);
-
-        Debug.Log($"[PowerUpController] Picked up power-up: {powerUp.Id}");
-
-        GameEvents.OnPowerUpPicked?.Invoke(powerUp.Id);
-        OnPowerUpChanged?.Invoke(powerUp.Id);
+        heldDefinition = definition;
+        OnPowerUpChanged?.Invoke(definition.id);
     }
-
-
 
     public void Activate()
     {
-        if (!inventory.HasPowerUp)
+        if (!HasPowerUp)
             return;
 
-        // 🔁 Override existing power-up if one is active
-        if (activePowerUp != null)
+        // Stop previous
+        if (activeEffect != null)
         {
-            Debug.Log($"[PowerUpController] Overriding active power-up: {activePowerUp.Id}");
-
-            activePowerUp.Deactivate();
-            GameEvents.OnPowerUpExpired?.Invoke(activePowerUp.Id);
-            activePowerUp = null;
+            activeEffect.Deactivate();
+            activeEffect = null;
         }
 
-        activePowerUp = inventory.Consume();
-        activePowerUp.Activate(context);
+        activeEffect = heldDefinition.CreateEffect();
+        activeEffect.Activate(context);
 
-        Debug.Log($"[PowerUpController] Activated power-up: {activePowerUp.Id}");
-        GameEvents.OnPowerUpActivated?.Invoke(activePowerUp.Id);
-
-        // Notify UI: slot is now empty
         OnPowerUpChanged?.Invoke(PowerUpId.None);
 
-        if (activePowerUp.Duration > 0f)
-            StartCoroutine(ExpireAfter(activePowerUp.Duration));
-    }
+        if (heldDefinition.duration > 0f)
+            StartCoroutine(ExpireAfter(heldDefinition.duration));
 
+        heldDefinition = null;
+    }
 
     private IEnumerator ExpireAfter(float duration)
     {
         yield return new WaitForSeconds(duration);
 
-        if (activePowerUp == null) yield break;
-
-        activePowerUp.Deactivate();
-        GameEvents.OnPowerUpExpired?.Invoke(activePowerUp.Id);
-        activePowerUp = null;
+        if (activeEffect != null)
+        {
+            activeEffect.Deactivate();
+            activeEffect = null;
+        }
     }
 
     public void ForceClear()
     {
-        if (activePowerUp != null)
-        {
-            activePowerUp.Deactivate();
-            GameEvents.OnPowerUpExpired?.Invoke(activePowerUp.Id);
-            activePowerUp = null;
-        }
-
-        inventory.Clear();
+        activeEffect?.Deactivate();
+        activeEffect = null;
+        heldDefinition = null;
     }
 }

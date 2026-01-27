@@ -163,7 +163,6 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
     public void EnableControl()
     {
         controlEnabled = true;
-        currentRunSpeed = 0f;
         UpdateState(PlayerState.Running);
     }
 
@@ -232,6 +231,29 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
             }
         }
     }
+
+    public bool IsTargetable
+    {
+        get
+        {
+            // Finished racers are immune
+            if (hasFinishedRace)
+                return false;
+
+            // Object must be active
+            if (!gameObject.activeInHierarchy)
+                return false;
+
+            // Health must exist and not be invincible
+            var health = GetComponent<PlayerHealth>();
+            if (health == null || health.IsInvincible)
+                return false;
+
+            // Physics must be active (not during death)
+            return rb.simulated;
+        }
+    }
+
 
     private void HandleJumpBuffer()
     {

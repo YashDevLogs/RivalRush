@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a427904069e2d4419e959b4993e202e, type: 3}
+  m_Name: Shocker
+  m_EditorClassIdentifier: Assembly-CSharp::ShockerPowerUpDefinition
+  id: 7
+  category: 3
+  icon: {fileID: 21300000, guid: a057799551b812f48b091c5da38aa79f, type: 3}
+  duration: 0
+  shockerPrefab: {fileID: 5285898528878059922, guid: 752b0789649a0f741a3171e528fdc576, type: 3}

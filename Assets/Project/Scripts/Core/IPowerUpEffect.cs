@@ -1,5 +1,8 @@
-public interface IPowerUpEffect
+namespace Game.Core
 {
-    void Activate(PowerUpContext context);
-    void Deactivate();
+    public interface IPowerUpEffect
+    {
+        void Activate(PowerUpContext context);
+        void Deactivate();
+    }
 }

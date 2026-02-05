@@ -1,5 +1,6 @@
 using UnityEngine;
 
+using Game.Core;
 public sealed class RocketController : MonoBehaviour
 {
     [Header("Movement")]
@@ -57,7 +58,7 @@ public sealed class RocketController : MonoBehaviour
             {
                 health.TakeDamage(1);
 
-                GameEvents.OnPlayerKilled?.Invoke(
+                GameEvents.RaisePlayerKilled(
                     new KillEventData(owner, victim, PowerUpId.Rocket)
                 );
             }

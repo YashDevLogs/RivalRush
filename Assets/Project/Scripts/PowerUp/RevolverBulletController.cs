@@ -1,5 +1,6 @@
 using UnityEngine;
 
+using Game.Core;
 public sealed class RevolverBulletController : MonoBehaviour
 {
     [Header("Movement")]
@@ -46,7 +47,7 @@ public sealed class RevolverBulletController : MonoBehaviour
         {
             health.TakeDamage(1);
 
-            GameEvents.OnPlayerKilled?.Invoke(
+            GameEvents.RaisePlayerKilled(
                 new KillEventData(
                     ownerPlayerEntity,
                     victim,

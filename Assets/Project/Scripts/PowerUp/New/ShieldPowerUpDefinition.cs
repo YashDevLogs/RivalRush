@@ -1,5 +1,6 @@
 using UnityEngine;
 
+using Game.Core;
 [CreateAssetMenu(menuName = "PowerUps/Shield")]
 public sealed class ShieldPowerUpDefinition : PowerUpDefinition
 {

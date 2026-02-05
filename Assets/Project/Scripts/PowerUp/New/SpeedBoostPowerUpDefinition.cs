@@ -1,5 +1,6 @@
 using UnityEngine;
 
+using Game.Core;
 [CreateAssetMenu(menuName = "PowerUps/SpeedBoost")]
 public sealed class SpeedBoostPowerUpDefinition : PowerUpDefinition
 {

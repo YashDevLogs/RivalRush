@@ -1,6 +1,9 @@
 using UnityEngine;
 
-public interface ICheckpoint
+namespace Game.Core
 {
-    void ActivateCheckpoint(Vector3 pos);
+    public interface ICheckpoint
+    {
+        void ActivateCheckpoint(Vector3 pos);
+    }
 }

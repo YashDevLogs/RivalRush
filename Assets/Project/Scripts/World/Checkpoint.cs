@@ -1,4 +1,5 @@
 using UnityEngine;
+using Game.Core;
 
 [RequireComponent(typeof(Collider2D))]
 public class Checkpoint : MonoBehaviour, ICheckpoint
@@ -27,7 +28,7 @@ public class Checkpoint : MonoBehaviour, ICheckpoint
     public void ActivateCheckpoint(Vector3 pos)
     {
         // local effects: sound, particles, UI indicator
-        GameEvents.OnCheckpointReached?.Invoke(pos);
+        GameEvents.RaiseCheckpointReached(pos);
         Debug.Log($"Checkpoint activated: {checkpointId} at {pos}");
     }
 }

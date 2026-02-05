@@ -1,5 +1,6 @@
 using UnityEngine;
 
+using Game.Core;
 [RequireComponent(typeof(Collider2D))]
 public class Hazard : MonoBehaviour, IHazard
 {

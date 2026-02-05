@@ -1,4 +1,7 @@
-public interface IEndPoint
+namespace Game.Core
 {
-    void TriggerEnd();
+    public interface IEndPoint
+    {
+        void TriggerEnd();
+    }
 }

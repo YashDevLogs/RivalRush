@@ -1,4 +1,7 @@
-public interface IHazard
+namespace Game.Core
 {
-    void ApplyDamage(IHealth health);
+    public interface IHazard
+    {
+        void ApplyDamage(IHealth health);
+    }
 }

@@ -1,5 +1,6 @@
 using UnityEngine;
 
+using Game.Core;
 [RequireComponent(typeof(Rigidbody2D))]
 public sealed class AIPlayerEntity : MonoBehaviour, IPlayerEntity
 {

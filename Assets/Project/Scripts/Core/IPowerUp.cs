@@ -1,7 +1,10 @@
-public interface IPowerUp
+namespace Game.Core
 {
-    PowerUpId Id { get; }
-    float Duration { get; }
-    void Activate(PowerUpContext context);
-    void Deactivate();
+    public interface IPowerUp
+    {
+        PowerUpId Id { get; }
+        float Duration { get; }
+        void Activate(PowerUpContext context);
+        void Deactivate();
+    }
 }

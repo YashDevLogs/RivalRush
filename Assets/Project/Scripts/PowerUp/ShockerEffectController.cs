@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
+using Game.Core;
 public sealed class ShockerEffectController : MonoBehaviour
 {
     [Header("Timing")]
@@ -91,7 +92,7 @@ public sealed class ShockerEffectController : MonoBehaviour
     {
         health.TakeDamage(1);
 
-        GameEvents.OnPlayerKilled?.Invoke(
+        GameEvents.RaisePlayerKilled(
             new KillEventData(
                 owner.GetComponent<IPlayerEntity>(),
                 victim,

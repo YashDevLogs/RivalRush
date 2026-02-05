@@ -18,11 +18,15 @@ public class EndPoint : MonoBehaviour, IEndPoint
         var player = other.GetComponent<IPlayerController>();
         if (player != null)
         {
+            RaceManager.Instance?.RegisterFinish(player);
+
             if (disablePlayerOnFinish)
             {
-                // disable player control if concrete type available
                 var pc = other.GetComponent<PlayerController>();
-                if (pc != null) pc.DisableControl();
+                if (pc != null)
+                    pc.OnFinishRace();
+                else
+                    player.DisableControl();
             }
 
             TriggerEnd();
@@ -31,7 +35,6 @@ public class EndPoint : MonoBehaviour, IEndPoint
 
     public void TriggerEnd()
     {
-        Debug.Log("EndPoint reached - race finished.");
-        GameEvents.OnRaceFinished?.Invoke();
+        Debug.Log("EndPoint reached - finish forwarded to RaceManager.");
     }
 }

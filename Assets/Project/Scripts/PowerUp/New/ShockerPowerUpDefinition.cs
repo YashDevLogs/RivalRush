@@ -1,5 +1,6 @@
 using UnityEngine;
 
+using Game.Core;
 [CreateAssetMenu(menuName = "PowerUps/Shocker")]
 public sealed class ShockerPowerUpDefinition : PowerUpDefinition
 {

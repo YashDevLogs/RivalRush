@@ -1,5 +1,6 @@
 using UnityEngine;
 
+using Game.Core;
 public sealed class SawbladeController : MonoBehaviour
 {
     [Header("Movement")]
@@ -82,7 +83,7 @@ public sealed class SawbladeController : MonoBehaviour
     {
         health.TakeDamage(1);
 
-        GameEvents.OnPlayerKilled?.Invoke(
+        GameEvents.RaisePlayerKilled(
             new KillEventData(
                 owner.GetComponent<IPlayerEntity>(),
                 victim,

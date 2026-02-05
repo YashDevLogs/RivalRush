@@ -9,6 +9,7 @@ public sealed class PowerUpController : MonoBehaviour
     private PowerUpDefinition heldDefinition;
     private IPowerUpEffect activeEffect;
     private PowerUpContext context;
+    private PowerUpId activePowerUpId = PowerUpId.None;
 
     public bool HasPowerUp => heldDefinition != null;
 
@@ -35,6 +36,7 @@ public sealed class PowerUpController : MonoBehaviour
             return;
 
         heldDefinition = definition;
+        GameEvents.RaisePowerUpPicked(definition.id);
         OnPowerUpChanged?.Invoke(definition.id);
     }
 
@@ -44,14 +46,12 @@ public sealed class PowerUpController : MonoBehaviour
             return;
 
         // Stop previous
-        if (activeEffect != null)
-        {
-            activeEffect.Deactivate();
-            activeEffect = null;
-        }
+        DeactivateCurrentEffect();
 
         activeEffect = heldDefinition.CreateEffect();
+        activePowerUpId = heldDefinition.id;
         activeEffect.Activate(context);
+        GameEvents.RaisePowerUpActivated(activePowerUpId);
 
         OnPowerUpChanged?.Invoke(PowerUpId.None);
 
@@ -64,18 +64,26 @@ public sealed class PowerUpController : MonoBehaviour
     private IEnumerator ExpireAfter(float duration)
     {
         yield return new WaitForSeconds(duration);
-
-        if (activeEffect != null)
-        {
-            activeEffect.Deactivate();
-            activeEffect = null;
-        }
+        DeactivateCurrentEffect();
     }
 
     public void ForceClear()
     {
-        activeEffect?.Deactivate();
-        activeEffect = null;
+        DeactivateCurrentEffect();
         heldDefinition = null;
+    }
+
+    private void DeactivateCurrentEffect()
+    {
+        if (activeEffect == null)
+            return;
+
+        activeEffect.Deactivate();
+        activeEffect = null;
+
+        if (activePowerUpId != PowerUpId.None)
+            GameEvents.RaisePowerUpExpired(activePowerUpId);
+
+        activePowerUpId = PowerUpId.None;
     }
 }

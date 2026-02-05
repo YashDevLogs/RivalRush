@@ -7,6 +7,8 @@ using TMPro;
 public sealed class RaceManager : MonoBehaviour
 {
     public static RaceManager Instance { get; private set; }
+    private const int ExpectedRacerCount = 4;
+
     [Header("Countdown UI")]
     [SerializeField] private TMP_Text countdownText;
 
@@ -60,6 +62,12 @@ public sealed class RaceManager : MonoBehaviour
 
     private void Start()
     {
+        if (!ValidateConfiguration())
+        {
+            enabled = false;
+            return;
+        }
+
         SpawnRacers();
         StartCoroutine(RaceCountdown());
     }
@@ -70,6 +78,23 @@ public sealed class RaceManager : MonoBehaviour
         {
             RaceElapsedTime += Time.deltaTime;
         }
+    }
+
+    private bool ValidateConfiguration()
+    {
+        if (spawnPoints == null || spawnPoints.Length < ExpectedRacerCount)
+        {
+            Debug.LogError($"[RaceManager] {ExpectedRacerCount} spawn points are required.");
+            return false;
+        }
+
+        if (playerPrefab == null || aiPrefab == null)
+        {
+            Debug.LogError("[RaceManager] Player and AI prefabs must both be assigned.");
+            return false;
+        }
+
+        return true;
     }
 
     // ---------------- SPAWNING ----------------
@@ -163,6 +188,7 @@ public sealed class RaceManager : MonoBehaviour
         Debug.Log("[RaceManager] Race started");
 
         currentState = RaceState.Race;
+        GameEvents.RaiseRaceStarted();
 
         foreach (var racer in racers)
             racer.EnableControl();
@@ -198,12 +224,20 @@ public sealed class RaceManager : MonoBehaviour
 
         Debug.Log("[RaceManager] Race complete → firing OnRaceFinished");
 
-        GameEvents.OnRaceFinished?.Invoke();
+        GameEvents.RaiseRaceFinished();
     }
     // ---------------- POWER-UP SPAWN SUPPORT ----------------
 
     private void CachePowerUpSpawnPoints()
     {
+        if (powerUpSpawnPoints == null)
+        {
+            powerUpSpawnPoints = new List<Transform>();
+            Debug.LogWarning("[RaceManager] Power-up spawn list was null. Initialized empty list.");
+            return;
+        }
+
+        powerUpSpawnPoints.RemoveAll(point => point == null);
         Debug.Log($"[RaceManager] Cached {powerUpSpawnPoints.Count} power-up spawn points");
     }
 

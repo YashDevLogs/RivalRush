@@ -1,5 +1,6 @@
 using UnityEngine;
 
+using Game.Core;
 public abstract class ProjectilePowerUp : PowerUpDefinition
 {
     [Header("Projectile")]

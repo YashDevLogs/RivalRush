@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 using System.Collections.Generic;
 
+using Game.Core;
 public sealed class KillFeedManager : MonoBehaviour
 {
     [Header("UI")]

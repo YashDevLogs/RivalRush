@@ -1,5 +1,6 @@
 using UnityEngine;
 
+using Game.Core;
 [CreateAssetMenu(menuName = "PowerUps/Trap")]
 public sealed class TrapPowerUpDefinition : PowerUpDefinition
 {

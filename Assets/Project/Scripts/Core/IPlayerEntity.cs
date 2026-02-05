@@ -1,9 +1,12 @@
 using UnityEngine;
 
-public interface IPlayerEntity
+namespace Game.Core
 {
-    Transform Transform { get; }
-    Rigidbody2D Rigidbody { get; }
-    bool IsTargetable { get; }
-    void Kill();
+    public interface IPlayerEntity
+    {
+        Transform Transform { get; }
+        Rigidbody2D Rigidbody { get; }
+        bool IsTargetable { get; }
+        void Kill();
+    }
 }

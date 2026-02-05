@@ -1,5 +1,6 @@
 using UnityEngine;
 
+using Game.Core;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }

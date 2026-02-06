@@ -50,6 +50,8 @@ GameObject:
   - component: {fileID: 4436704186500225256}
   - component: {fileID: 2306693795434095376}
   - component: {fileID: 4486409919620301181}
+  - component: {fileID: 7265477492017224474}
+  - component: {fileID: 4967246958461666671}
   m_Layer: 9
   m_Name: AI_Player
   m_TagString: AI_Player
@@ -226,6 +228,15 @@ MonoBehaviour:
     m_Bits: 256
   hazardLookDistance: 3
   hazardRayOffset: {x: 0, y: -1.5}
+  wallDetectionMask:
+    serializedVersion: 2
+    m_Bits: 2048
+  wallLookDistance: 2
+  wallRayOffset: {x: 0, y: 0.2}
+  wallJumpDecisionCooldown: 0.15
+  slideLookDistance: 1.2
+  slideRayOffset: {x: 0, y: -0.6}
+  slideDecisionCooldown: 0.35
   jumpDecisionCooldown: 0.25
   personality: 3
 --- !u!114 &5648618459781708128
@@ -269,26 +280,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2ee728be14efdf4db1de0408e8e69ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  baseMaxRunSpeed: 12
-  accelerationRate: 10
-  jumpVelocity: 15
-  maxJumps: 2
-  dashForce: 10
-  dashCooldown: 1
-  groundCheck: {fileID: 5810270714879650185}
-  groundCheckSize: {x: 0.6, y: 0.08}
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 64
-  groundGraceDelay: 0.05
-  coyoteTime: 0.12
-  jumpBufferTime: 0.12
-  animator: {fileID: 7797538079168336331}
-  animSpeedParam: Speed
-  animIsGroundedParam: IsGrounded
-  animJumpTrigger: JumpTrigger
-  animDashTrigger: Dash
-  idleSpeedThreshold: 0.15
 --- !u!70 &4486409919620301181
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -326,3 +317,34 @@ CapsuleCollider2D:
   m_Offset: {x: -0.09, y: -0.16}
   m_Size: {x: 1.22, y: 2.63}
   m_Direction: 0
+--- !u!114 &7265477492017224474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8296394138938738586}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee34d81edfdc3274fae9110a1131f633, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Core.PlayerModel
+  config: {fileID: 11400000, guid: 4b7418e7690c1ca44939a7edfeda8959, type: 2}
+  groundCheck: {fileID: 5810270714879650185}
+--- !u!114 &4967246958461666671
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8296394138938738586}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aba221d10de79154b8333bdf2af2be8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Core.PlayerView
+  animator: {fileID: 7797538079168336331}
+  animSpeedParam: Speed
+  animIsGroundedParam: IsGrounded
+  animJumpTrigger: JumpTrigger
+  animDieTrigger: DieTrigger

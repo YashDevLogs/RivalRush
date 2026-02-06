@@ -49,6 +49,8 @@ GameObject:
   - component: {fileID: 3898855470037163218}
   - component: {fileID: 656263902877205795}
   - component: {fileID: 8840320077289958960}
+  - component: {fileID: 6939316051787753272}
+  - component: {fileID: 2405149427800790551}
   m_Layer: 7
   m_Name: Player
   m_TagString: Player
@@ -169,26 +171,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2ee728be14efdf4db1de0408e8e69ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  baseMaxRunSpeed: 12
-  accelerationRate: 10
-  jumpVelocity: 15
-  maxJumps: 2
-  dashForce: 10
-  dashCooldown: 1
-  groundCheck: {fileID: 8887669200658719451}
-  groundCheckSize: {x: 0.6, y: 0.08}
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 64
-  groundGraceDelay: 0.05
-  coyoteTime: 0.12
-  jumpBufferTime: 0.12
-  animator: {fileID: 674578746763220028}
-  animSpeedParam: Speed
-  animIsGroundedParam: IsGrounded
-  animJumpTrigger: JumpTrigger
-  animDashTrigger: Dash
-  idleSpeedThreshold: 0.15
 --- !u!114 &2381119477031407649
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -301,3 +283,35 @@ CapsuleCollider2D:
   m_Offset: {x: -0.09, y: -0.16}
   m_Size: {x: 1.22, y: 2.63}
   m_Direction: 0
+--- !u!114 &6939316051787753272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7825518955140388769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee34d81edfdc3274fae9110a1131f633, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Core.PlayerModel
+  config: {fileID: 11400000, guid: 4b7418e7690c1ca44939a7edfeda8959, type: 2}
+  groundCheck: {fileID: 8887669200658719451}
+--- !u!114 &2405149427800790551
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7825518955140388769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aba221d10de79154b8333bdf2af2be8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Core.PlayerView
+  animator: {fileID: 674578746763220028}
+  animSpeedParam: Speed
+  animIsGroundedParam: IsGrounded
+  animJumpTrigger: JumpTrigger
+  animDashTrigger: Dash
+  animDieTrigger: DieTrigger

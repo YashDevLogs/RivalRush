@@ -1,6 +1,6 @@
 public interface IInputSource
 {
     bool JumpPressed { get; }
-    bool DashPressed { get; }
+    bool SlidePressed { get; }
     bool PowerUpPressed { get; }
 }

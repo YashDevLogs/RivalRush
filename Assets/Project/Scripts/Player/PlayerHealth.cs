@@ -15,6 +15,7 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
     public bool IsInvincible { get; private set; }
 
     private PlayerController controller;
+    private PlayerView view;
     private Rigidbody2D rb;
     private Collider2D col;
     private SpriteRenderer spriteRenderer;
@@ -30,6 +31,7 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
     private void Awake()
     {
         controller = GetComponent<PlayerController>();
+        view = GetComponent<PlayerView>();
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -78,10 +80,7 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
         controller.DisableControl();
 
         // Play death animation
-        if (controller.animator != null)
-        {
-            controller.animator.SetTrigger("DieTrigger");
-        }
+        view?.TriggerDie();
 
         // Start respawn flow
         StartCoroutine(RespawnRoutine());
@@ -104,12 +103,7 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
         RestorePhysics();
 
         // Reset animator completely
-        if (controller.animator != null)
-        {
-            controller.animator.Rebind();
-            controller.animator.Update(0f);
-            controller.animator.ResetTrigger("DieTrigger");
-        }
+        view?.ResetAnimatorState();
 
         // Reset movement state
         controller.ResetRunSpeed();

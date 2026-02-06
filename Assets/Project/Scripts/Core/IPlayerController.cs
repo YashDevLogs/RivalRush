@@ -8,14 +8,12 @@ namespace Game.Core
         void EnableControl();
         void DisableControl();
         void ForceJump();
-        void ForceDash();
 
         // Add these for power-ups
         void ModifyMaxRunSpeed(float multiplier);
         void ResetMaxRunSpeed();
 
         event Action OnJump;
-        event Action OnDash;
         event Action OnLand;
         event Action<PlayerState> OnStateChanged;
     }
@@ -27,7 +25,8 @@ namespace Game.Core
         Running,
         Jumping,
         Falling,
-        Dashing,
+        Sliding,
+        WallCling,
         Dead
     }
 }

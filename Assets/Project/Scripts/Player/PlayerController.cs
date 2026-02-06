@@ -1,68 +1,31 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System;
-using System.Collections;
 using Game.Core;
 
 [RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(PlayerModel))]
+[RequireComponent(typeof(PlayerView))]
 public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayerEntity
 {
-    [Header("Movement (Designer Tuned)")]
-    [SerializeField] private float baseMaxRunSpeed = 12f;
-    [SerializeField] private float accelerationRate = 6f;
-
-    [Header("Jump")]
-    [SerializeField] private float jumpVelocity = 12f;
-    [SerializeField] private int maxJumps = 1;
-
-    [Header("Dash (Optional)")]
-    [SerializeField] private float dashForce = 10f;
-    [SerializeField] private float dashCooldown = 1f;
-
-    [Header("Ground Check")]
-    [SerializeField] private Transform groundCheck;
-    [SerializeField] private Vector2 groundCheckSize = new Vector2(0.6f, 0.08f);
-    [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private float groundGraceDelay = 0.05f;
-
-    [Header("Coyote & Buffer")]
-    [SerializeField] private float coyoteTime = 0.12f;
-    [SerializeField] private float jumpBufferTime = 0.12f;
-
-    [Header("Animation")]
-    public Animator animator;
-    [SerializeField] private string animSpeedParam = "Speed";
-    [SerializeField] private string animIsGroundedParam = "IsGrounded";
-    [SerializeField] private string animJumpTrigger = "JumpTrigger";
-    [SerializeField] private string animDashTrigger = "Dash";
-
-    // ---------------- Runtime ----------------
     private Rigidbody2D rb;
-    private float maxRunSpeed;
-    private float currentRunSpeed;
+    private PlayerModel model;
+    private PlayerView view;
+    private BoxCollider2D boxCollider;
+    private CapsuleCollider2D capsuleCollider;
+    private Vector2 colliderOriginalSize;
+    private Vector2 colliderOriginalOffset;
+    private bool colliderCached;
+    private float slideEndTime;
+    private float originalGravityScale;
+    private int climbableWallLayer;
 
-    private bool controlEnabled = true;
-    private bool isGrounded;
-    private bool canDash = true;
-
-    private int jumpsLeft;
-    private float lastGroundTime = -999f;
-    private float lastJumpPressTime = -999f;
-    private float nextAllowedGroundCheckTime;
-
-    private PlayerState state = PlayerState.Idle;
-    private bool hasFinishedRace = false;
-
-    // ---------------- Dependencies ----------------
     private PowerUpController powerUpController;
     private IInputSource inputSource;
 
-    // ---------------- Events ----------------
     public event Action OnJump;
-    public event Action OnDash;
     public event Action OnLand;
     public event Action<PlayerState> OnStateChanged;
 
-    // ---------------- IPlayerEntity ----------------
     public Transform Transform => transform;
     public Rigidbody2D Rigidbody => rb;
 
@@ -71,48 +34,62 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
         gameObject.SetActive(false);
     }
 
-    [Header("Finish State")]
-    [SerializeField] private float idleSpeedThreshold = 0.15f;
-
-    // ---------------- Lifecycle ----------------
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        model = GetComponent<PlayerModel>();
+        view = GetComponent<PlayerView>();
         powerUpController = GetComponent<PowerUpController>();
         inputSource = GetComponent<IInputSource>();
+        CacheCollider();
+        originalGravityScale = rb.gravityScale;
+        climbableWallLayer = LayerMask.NameToLayer("ClimbableWall");
 
         if (inputSource == null)
-        {
             Debug.LogError($"[PlayerController] No IInputSource found on {name}");
-        }
 
-        maxRunSpeed = baseMaxRunSpeed;
+        if (model == null)
+            Debug.LogError($"[PlayerController] No PlayerModel found on {name}");
 
-        if (groundCheck == null)
+        if (view == null)
+            Debug.LogError($"[PlayerController] No PlayerView found on {name}");
+
+        model.MaxRunSpeed = model.BaseMaxRunSpeed;
+
+        if (model.GroundCheck == null)
         {
             var go = new GameObject("GroundCheck");
             go.transform.SetParent(transform);
             go.transform.localPosition = new Vector3(0f, -0.5f, 0f);
-            groundCheck = go.transform;
+            model.GroundCheck = go.transform;
         }
     }
 
     private void Start()
     {
-        jumpsLeft = maxJumps;
+        model.JumpsLeft = model.MaxJumps;
         UpdateState(PlayerState.Running);
     }
 
     private void Update()
     {
-        // ---------------- INPUT & GAMEPLAY ----------------
-        if (controlEnabled && inputSource != null)
+        if (model.ControlEnabled && inputSource != null)
         {
             if (inputSource.JumpPressed)
-                lastJumpPressTime = Time.time;
+            {
+                if (model.IsWallClinging)
+                    TryPerformWallJump();
+                else
+                    model.LastJumpPressTime = Time.time;
+            }
 
-            if (inputSource.DashPressed)
-                TryPerformDash();
+            if (inputSource.SlidePressed)
+            {
+                if (model.IsGrounded)
+                    TryStartSlide();
+                else
+                    TryPerformAirDive();
+            }
 
             if (inputSource.PowerUpPressed)
                 powerUpController?.Activate();
@@ -121,18 +98,14 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
             HandleJumpBuffer();
         }
 
-        // ---------------- ANIMATION ALWAYS UPDATES ----------------
         UpdateAnimator();
     }
 
-
     private void FixedUpdate()
     {
-        // ---------------- FINISH BEHAVIOR ----------------
-        if (hasFinishedRace)
+        if (model.HasFinishedRace)
         {
-            // When momentum is gone, transition to Idle
-            if (Mathf.Abs(rb.linearVelocity.x) <= idleSpeedThreshold)
+            if (Mathf.Abs(rb.linearVelocity.x) <= model.IdleSpeedThreshold)
             {
                 rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
                 UpdateState(PlayerState.Idle);
@@ -141,39 +114,59 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
             return;
         }
 
-        // ---------------- NORMAL RACE ----------------
-        if (!controlEnabled)
+        if (!model.ControlEnabled)
             return;
 
-        currentRunSpeed = Mathf.MoveTowards(
-            currentRunSpeed,
-            maxRunSpeed,
-            accelerationRate * Time.fixedDeltaTime
+        if (model.State == PlayerState.WallCling)
+        {
+            model.CurrentRunSpeed = 0f;
+            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+
+            if (Time.time >= model.WallClingEndTime)
+                EndWallCling();
+
+            return;
+        }
+
+        if (model.State == PlayerState.Sliding)
+        {
+            model.CurrentRunSpeed = Mathf.MoveTowards(
+                model.CurrentRunSpeed,
+                0f,
+                model.SlideSpeedDecay * Time.fixedDeltaTime
+            );
+
+            rb.linearVelocity = new Vector2(model.CurrentRunSpeed, rb.linearVelocity.y);
+
+            if (Time.time >= slideEndTime || !model.IsGrounded)
+                EndSlide();
+
+            return;
+        }
+
+        model.CurrentRunSpeed = Mathf.MoveTowards(
+            model.CurrentRunSpeed,
+            model.MaxRunSpeed,
+            model.AccelerationRate * Time.fixedDeltaTime
         );
 
-        rb.linearVelocity = new Vector2(currentRunSpeed, rb.linearVelocity.y);
+        rb.linearVelocity = new Vector2(model.CurrentRunSpeed, rb.linearVelocity.y);
 
-        if (!isGrounded && rb.linearVelocity.y < -0.1f && state != PlayerState.Falling)
+        if (!model.IsGrounded && rb.linearVelocity.y < -0.1f && model.State != PlayerState.Falling)
             UpdateState(PlayerState.Falling);
     }
 
-
-
-    // ---------------- Control API ----------------
     public void EnableControl()
     {
-        controlEnabled = true;
+        model.ControlEnabled = true;
         UpdateState(PlayerState.Running);
     }
 
     public void DisableControl()
     {
-        controlEnabled = false;
+        model.ControlEnabled = false;
         rb.linearVelocity = Vector2.zero;
-
-        if (animator)
-            animator.SetFloat(animSpeedParam, 0f);
-
+        view?.SetSpeed(0f);
         UpdateState(PlayerState.Disabled);
     }
 
@@ -184,45 +177,42 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
 
     public void ResetRunSpeed()
     {
-        currentRunSpeed = 0f;
+        model.CurrentRunSpeed = 0f;
     }
 
     public void ModifyMaxRunSpeed(float multiplier)
     {
-        maxRunSpeed = baseMaxRunSpeed * multiplier;
+        model.MaxRunSpeed = model.BaseMaxRunSpeed * multiplier;
     }
 
     public void ResetMaxRunSpeed()
     {
-        maxRunSpeed = baseMaxRunSpeed;
+        model.MaxRunSpeed = model.BaseMaxRunSpeed;
     }
 
-    // ---------------- IPlayerController ----------------
     public void ForceJump() => TryPerformJump();
-    public void ForceDash() => TryPerformDash();
 
-    // ---------------- Movement Logic ----------------
     private void HandleGround()
     {
-        bool wasGrounded = isGrounded;
+        bool wasGrounded = model.IsGrounded;
 
-        if (Time.time < nextAllowedGroundCheckTime)
+        if (Time.time < model.NextAllowedGroundCheckTime)
         {
-            isGrounded = false;
+            model.IsGrounded = false;
             return;
         }
 
-        isGrounded = Physics2D.OverlapBox(
-            groundCheck.position,
-            groundCheckSize,
+        model.IsGrounded = Physics2D.OverlapBox(
+            model.GroundCheck.position,
+            model.GroundCheckSize,
             0f,
-            groundLayer
+            model.GroundLayer
         );
 
-        if (isGrounded)
+        if (model.IsGrounded)
         {
-            lastGroundTime = Time.time;
-            jumpsLeft = maxJumps;
+            model.LastGroundTime = Time.time;
+            model.JumpsLeft = model.MaxJumps;
 
             if (!wasGrounded)
             {
@@ -236,107 +226,278 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
     {
         get
         {
-            // Finished racers are immune
-            if (hasFinishedRace)
+            if (model.HasFinishedRace)
                 return false;
 
-            // Object must be active
             if (!gameObject.activeInHierarchy)
                 return false;
 
-            // Health must exist and not be invincible
             var health = GetComponent<PlayerHealth>();
             if (health == null || health.IsInvincible)
                 return false;
 
-            // Physics must be active (not during death)
             return rb.simulated;
         }
     }
 
-
     private void HandleJumpBuffer()
     {
-        if (Time.time - lastJumpPressTime > jumpBufferTime)
+        if (model.IsWallClinging)
             return;
 
-        if (isGrounded || (Time.time - lastGroundTime) <= coyoteTime || jumpsLeft > 0)
+        if (Time.time - model.LastJumpPressTime > model.JumpBufferTime)
+            return;
+
+        if (model.IsGrounded || (Time.time - model.LastGroundTime) <= model.CoyoteTime || model.JumpsLeft > 0)
         {
             TryPerformJump();
-            lastJumpPressTime = -999f;
+            model.LastJumpPressTime = -999f;
         }
     }
-
     private void TryPerformJump()
     {
-        if (!controlEnabled) return;
+        if (!model.ControlEnabled) return;
+        if (model.State == PlayerState.Sliding)
+            EndSlide();
 
-        rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpVelocity);
-        jumpsLeft = Mathf.Max(0, jumpsLeft - 1);
-        nextAllowedGroundCheckTime = Time.time + groundGraceDelay;
+        // 🔽 Reduce momentum at the SOURCE
+        model.CurrentRunSpeed *= model.JumpHorizontalSpeedMultiplier;
 
-        animator?.SetTrigger(animJumpTrigger);
+        rb.linearVelocity = new Vector2(
+            model.CurrentRunSpeed,
+            model.JumpVelocity
+        );
+
+        model.JumpsLeft = Mathf.Max(0, model.JumpsLeft - 1);
+        model.NextAllowedGroundCheckTime = Time.time + model.GroundGraceDelay;
+
+        view?.TriggerJump();
         OnJump?.Invoke();
         UpdateState(PlayerState.Jumping);
     }
 
-    private void TryPerformDash()
+    private void TryStartSlide()
     {
-        if (!controlEnabled || !canDash) return;
+        if (!model.ControlEnabled) return;
+        if (!model.IsGrounded) return;
+        if (model.State == PlayerState.Sliding) return;
+        if (!colliderCached) return;
 
-        canDash = false;
-        rb.AddForce(Vector2.right * dashForce, ForceMode2D.Impulse);
+        ApplySlideCollider();
+        model.CurrentRunSpeed = Mathf.Min(
+            model.CurrentRunSpeed,
+            model.MaxRunSpeed * model.SlideStartSpeedMultiplier
+        );
 
-        animator?.SetTrigger(animDashTrigger);
-        OnDash?.Invoke();
-        UpdateState(PlayerState.Dashing);
-
-        StartCoroutine(ResetDashAfter(dashCooldown));
+        slideEndTime = Time.time + model.SlideDuration;
+        UpdateState(PlayerState.Sliding);
     }
 
-    private IEnumerator ResetDashAfter(float delay)
+    private void EndSlide()
     {
-        yield return new WaitForSeconds(delay);
-        canDash = true;
+        RestoreCollider();
 
-        if (isGrounded)
+        if (model.IsGrounded)
             UpdateState(PlayerState.Running);
+        else
+            UpdateState(PlayerState.Falling);
+    }
+
+    private void TryPerformAirDive()
+    {
+        if (!model.ControlEnabled) return;
+        if (model.IsGrounded) return;
+        if (model.State == PlayerState.WallCling) return;
+        if (model.AirDiveDownVelocity <= 0f) return;
+
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, -model.AirDiveDownVelocity);
+        UpdateState(PlayerState.Falling);
     }
 
     private void UpdateAnimator()
     {
-        if (!animator) return;
-
-        animator.SetFloat(animSpeedParam, currentRunSpeed);
-        animator.SetBool(animIsGroundedParam, isGrounded);
+        view?.UpdateMovement(model.CurrentRunSpeed, model.IsGrounded);
     }
 
     private void UpdateState(PlayerState newState)
     {
-        if (state == newState) return;
-        state = newState;
+        if (model.State == newState) return;
+        model.State = newState;
         OnStateChanged?.Invoke(newState);
     }
 
     public void OnFinishRace()
     {
-        hasFinishedRace = true;
-        controlEnabled = false;
-
-        // Stop injecting forward speed, keep current momentum
-        currentRunSpeed = 0f;
-
+        model.HasFinishedRace = true;
+        model.ControlEnabled = false;
+        model.CurrentRunSpeed = 0f;
+        RestoreCollider();
+        EndWallCling();
         UpdateState(PlayerState.Disabled);
+    }
+
+    private void CacheCollider()
+    {
+        if (colliderCached)
+            return;
+
+        boxCollider = GetComponent<BoxCollider2D>();
+        capsuleCollider = GetComponent<CapsuleCollider2D>();
+
+        if (boxCollider != null)
+        {
+            colliderOriginalSize = boxCollider.size;
+            colliderOriginalOffset = boxCollider.offset;
+            colliderCached = true;
+            return;
+        }
+
+        if (capsuleCollider != null)
+        {
+            colliderOriginalSize = capsuleCollider.size;
+            colliderOriginalOffset = capsuleCollider.offset;
+            colliderCached = true;
+            return;
+        }
+
+        Debug.LogWarning($"[PlayerController] No BoxCollider2D or CapsuleCollider2D found on {name}. Slide disabled.");
+    }
+
+    private void ApplySlideCollider()
+    {
+        float heightMultiplier = model.SlideColliderHeightMultiplier;
+
+        if (boxCollider != null)
+        {
+            float newHeight = colliderOriginalSize.y * heightMultiplier;
+            float delta = (colliderOriginalSize.y - newHeight) * 0.5f;
+            boxCollider.size = new Vector2(colliderOriginalSize.x, newHeight);
+            boxCollider.offset = new Vector2(colliderOriginalOffset.x, colliderOriginalOffset.y - delta);
+            return;
+        }
+
+        if (capsuleCollider != null)
+        {
+            float newHeight = colliderOriginalSize.y * heightMultiplier;
+            float delta = (colliderOriginalSize.y - newHeight) * 0.5f;
+            capsuleCollider.size = new Vector2(colliderOriginalSize.x, newHeight);
+            capsuleCollider.offset = new Vector2(colliderOriginalOffset.x, colliderOriginalOffset.y - delta);
+        }
+    }
+
+    private void RestoreCollider()
+    {
+        if (boxCollider != null)
+        {
+            boxCollider.size = colliderOriginalSize;
+            boxCollider.offset = colliderOriginalOffset;
+            return;
+        }
+
+        if (capsuleCollider != null)
+        {
+            capsuleCollider.size = colliderOriginalSize;
+            capsuleCollider.offset = colliderOriginalOffset;
+        }
+    }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        if (!model.ControlEnabled || model.HasFinishedRace)
+            return;
+
+        if (model.IsGrounded)
+            return;
+
+        if (!IsClingableWall(collision.collider))
+            return;
+
+        foreach (var contact in collision.contacts)
+        {
+            if (Mathf.Abs(contact.normal.x) <= 0.7f)
+                continue;
+
+            TryStartWallCling(contact.normal.x);
+            break;
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (!model.IsWallClinging)
+            return;
+
+        if (IsClingableWall(collision.collider))
+            EndWallCling();
+    }
+
+    private bool IsClingableWall(Collider2D collider2D)
+    {
+        if (collider2D == null)
+            return false;
+
+        if (collider2D.CompareTag("Wall"))
+            return true;
+
+        if (climbableWallLayer != -1 && collider2D.gameObject.layer == climbableWallLayer)
+            return true;
+
+        return false;
+    }
+
+    private void TryStartWallCling(float wallNormalX)
+    {
+        if (model.IsWallClinging)
+            return;
+
+        model.IsWallClinging = true;
+        model.WallClingNormalX = Mathf.Sign(wallNormalX);
+        model.WallClingEndTime = Time.time + model.WallClingDuration;
+        rb.gravityScale = model.WallClingGravityScale;
+        rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+        UpdateState(PlayerState.WallCling);
+    }
+
+    private void EndWallCling()
+    {
+        if (!model.IsWallClinging)
+            return;
+
+        model.IsWallClinging = false;
+        rb.gravityScale = originalGravityScale;
+
+        if (model.IsGrounded)
+            UpdateState(PlayerState.Running);
+        else
+            UpdateState(PlayerState.Falling);
+    }
+
+    private void TryPerformWallJump()
+    {
+        if (!model.ControlEnabled) return;
+        if (!model.IsWallClinging) return;
+
+        model.CurrentRunSpeed *= model.JumpHorizontalSpeedMultiplier;
+
+        float away = model.WallClingNormalX == 0f ? 1f : model.WallClingNormalX;
+        rb.linearVelocity = new Vector2(
+            away * model.WallJumpHorizontalVelocity,
+            model.WallJumpUpVelocity
+        );
+
+        model.WallClingEndTime = 0f;
+        EndWallCling();
+        UpdateState(PlayerState.Jumping);
     }
 
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
-        if (!groundCheck) return;
+        if (model == null || model.GroundCheck == null) return;
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireCube(
-            groundCheck.position,
-            new Vector3(groundCheckSize.x, groundCheckSize.y, 0.1f)
+            model.GroundCheck.position,
+            new Vector3(model.GroundCheckSize.x, model.GroundCheckSize.y, 0.1f)
         );
     }
 #endif

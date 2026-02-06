@@ -8,7 +8,7 @@ public sealed class AIInputSource : MonoBehaviour, IInputSource
     private AIPowerUpBrain powerUpBrain;
 
     public bool JumpPressed { get; private set; }
-    public bool DashPressed { get; private set; }
+    public bool SlidePressed { get; private set; }
     public bool PowerUpPressed { get; private set; }
 
     private void Awake()
@@ -20,11 +20,11 @@ public sealed class AIInputSource : MonoBehaviour, IInputSource
     private void Update()
     {
         JumpPressed = false;
-        DashPressed = false;
+        SlidePressed = false;
         PowerUpPressed = false;
 
-        bool shouldJump = sensor.ShouldJump();
-        bool shouldDash = sensor.ShouldDash();
+        bool shouldSlide = sensor.ShouldSlide();
+        bool shouldJump = !shouldSlide && sensor.ShouldJump();
 
         if (shouldJump)
         {
@@ -32,10 +32,10 @@ public sealed class AIInputSource : MonoBehaviour, IInputSource
             JumpPressed = true;
         }
 
-        if (shouldDash)
+        if (shouldSlide)
         {
-            Debug.Log($"[AIInputSource] Dash triggered by sensor on {name}");
-            DashPressed = true;
+            Debug.Log($"[AIInputSource] Slide triggered by sensor on {name}");
+            SlidePressed = true;
         }
 
         if (powerUpBrain.ShouldUsePowerUp())

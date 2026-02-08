@@ -16,4 +16,4 @@ MonoBehaviour:
   category: 3
   icon: {fileID: 21300000, guid: a057799551b812f48b091c5da38aa79f, type: 3}
   duration: 0
-  shockerPrefab: {fileID: 5285898528878059922, guid: 752b0789649a0f741a3171e528fdc576, type: 3}
+  shockerPrefab: {fileID: 8085255039618227371, guid: effb650189dc5714e9e9801b1cfb3991, type: 3}

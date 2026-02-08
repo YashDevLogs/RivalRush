@@ -7,31 +7,32 @@ public sealed class ShockerPowerUpDefinition : PowerUpDefinition
     public ShockerEffectController shockerPrefab;
 
     public override IPowerUpEffect CreateEffect()
+{
+    return new Effect(this);
+}
+
+private sealed class Effect : IPowerUpEffect
+{
+    private readonly ShockerPowerUpDefinition def;
+
+    public Effect(ShockerPowerUpDefinition def)
     {
-        return new Effect(this);
+        this.def = def;
     }
 
-    private sealed class Effect : IPowerUpEffect
+    public void Activate(PowerUpContext context)
     {
-        private readonly ShockerPowerUpDefinition def;
+        var shocker = Object.Instantiate(
+            def.shockerPrefab,
+            context.PlayerTransform.position,
+            Quaternion.identity
+        );
 
-        public Effect(ShockerPowerUpDefinition def)
-        {
-            this.def = def;
-        }
-
-        public void Activate(PowerUpContext context)
-        {
-            ShockerEffectController shocker =
-                Object.Instantiate(
-                    def.shockerPrefab,
-                    context.PlayerTransform
-                );
-
-            shocker.Initialize(context.PlayerTransform);
-        }
-
-        public void Deactivate() { }
+        shocker.Initialize(context.PlayerTransform);
     }
+
+    public void Deactivate() { }
+}
+
 }
  

@@ -28,19 +28,16 @@ public sealed class AIInputSource : MonoBehaviour, IInputSource
 
         if (shouldJump)
         {
-            Debug.Log($"[AIInputSource] Jump triggered by sensor on {name}");
             JumpPressed = true;
         }
 
         if (shouldSlide)
         {
-            Debug.Log($"[AIInputSource] Slide triggered by sensor on {name}");
             SlidePressed = true;
         }
 
         if (powerUpBrain.ShouldUsePowerUp())
         {
-            Debug.Log($"[AIInputSource] PowerUp triggered on {name}");
             PowerUpPressed = true;
         }
     }

@@ -62,7 +62,10 @@ public sealed class RaceResultUIController : MonoBehaviour
             if (isLocal)
                 localPlayerRank = i + 1;
 
-            rankTexts[i].text = $"{i + 1}. {(isLocal ? "You" : "AI")}";
+            var identity = racerBehaviour.GetComponent<PlayerIdentity>();
+            string displayName = identity != null ? identity.DisplayName : "Unknown";
+
+            rankTexts[i].text = $"{i + 1}. {displayName}";
             rankTexts[i].color = isLocal ? localPlayerColor : defaultColor;
         }
 

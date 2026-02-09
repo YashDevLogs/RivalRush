@@ -52,6 +52,7 @@ GameObject:
   - component: {fileID: 4486409919620301181}
   - component: {fileID: 7265477492017224474}
   - component: {fileID: 4967246958461666671}
+  - component: {fileID: 5027515369214241357}
   m_Layer: 9
   m_Name: AI_Player
   m_TagString: AI_Player
@@ -348,3 +349,18 @@ MonoBehaviour:
   animIsGroundedParam: IsGrounded
   animJumpTrigger: JumpTrigger
   animDieTrigger: DieTrigger
+--- !u!114 &5027515369214241357
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8296394138938738586}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06e93776e56303a44ab5d5f598145053, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Core.PlayerIdentity
+  isHuman: 0
+  humanDisplayName: 
+  displayName: 

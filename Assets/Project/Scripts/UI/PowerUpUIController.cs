@@ -30,7 +30,6 @@ public sealed class PowerUpUIController : MonoBehaviour
         }
 
         boundController.OnPowerUpChanged += HandlePowerUpChanged;
-        Debug.Log("[PowerUpUI] Bound to local player power-up controller.");
     }
 
     private void HandlePowerUpChanged(PowerUpId id)
@@ -52,8 +51,6 @@ public sealed class PowerUpUIController : MonoBehaviour
 
         powerUpIcon.sprite = def.icon;
         powerUpIcon.enabled = true;
-
-        Debug.Log($"[PowerUpUI] Showing icon for {def.id}");
     }
 
     private void ClearIcon()

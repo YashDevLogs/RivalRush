@@ -90,7 +90,6 @@ public sealed class AISensor : MonoBehaviour
         if (lowHazardAhead)
         {
             lastSlideDecisionTime = Time.time;
-            Debug.Log($"[AISensor] {personality} slide decision");
             return true;
         }
 
@@ -118,11 +117,6 @@ public sealed class AISensor : MonoBehaviour
         );
 
         bool hitHazard = hit.collider != null;
-
-        if (hitHazard)
-        {
-            Debug.Log($"[AISensor] Hazard ray HIT: {hit.collider.name}");
-        }
 
         return hitHazard;
     }

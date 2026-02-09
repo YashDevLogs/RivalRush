@@ -51,6 +51,7 @@ GameObject:
   - component: {fileID: 8840320077289958960}
   - component: {fileID: 6939316051787753272}
   - component: {fileID: 2405149427800790551}
+  - component: {fileID: -8670070712543743521}
   m_Layer: 7
   m_Name: Player
   m_TagString: Player
@@ -313,5 +314,19 @@ MonoBehaviour:
   animSpeedParam: Speed
   animIsGroundedParam: IsGrounded
   animJumpTrigger: JumpTrigger
-  animDashTrigger: Dash
   animDieTrigger: DieTrigger
+--- !u!114 &-8670070712543743521
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7825518955140388769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06e93776e56303a44ab5d5f598145053, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Core.PlayerIdentity
+  isHuman: 1
+  humanDisplayName: Yash
+  displayName: 

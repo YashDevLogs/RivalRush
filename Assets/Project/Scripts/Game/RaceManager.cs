@@ -112,6 +112,10 @@ public sealed class RaceManager : MonoBehaviour
 
         playerEntities.Add(player.GetComponent<IPlayerEntity>());
 
+        var playerIdentity = player.GetComponent<PlayerIdentity>();
+        if (playerIdentity != null && playerIdentity.IsHuman)
+            playerIdentity.SetDisplayName(playerIdentity.DisplayName);
+
         // Spawn AI
         for (int i = 0; i < 3; i++)
         {
@@ -122,6 +126,10 @@ public sealed class RaceManager : MonoBehaviour
             racers.Add(aiController);
 
             playerEntities.Add(ai.GetComponent<IPlayerEntity>());
+
+            var aiIdentity = ai.GetComponent<PlayerIdentity>();
+            if (aiIdentity != null && !aiIdentity.IsHuman)
+                aiIdentity.AssignRandomName();
         }
 
         foreach (var racer in racers)
@@ -145,7 +153,6 @@ public sealed class RaceManager : MonoBehaviour
 
     private IEnumerator RaceCountdown()
     {
-        Debug.Log("[RaceManager] Countdown started");
 
         currentState = RaceState.Countdown;
         RaceElapsedTime = 0f;
@@ -185,8 +192,6 @@ public sealed class RaceManager : MonoBehaviour
 
     private void StartRace()
     {
-        Debug.Log("[RaceManager] Race started");
-
         currentState = RaceState.Race;
         GameEvents.RaiseRaceStarted();
 
@@ -206,8 +211,6 @@ public sealed class RaceManager : MonoBehaviour
 
         finishOrder.Add(racer);
 
-        Debug.Log($"[RaceManager] Racer finished at position {finishOrder.Count}");
-
         if (finishOrder.Count == racers.Count)
             EndRace();
     }
@@ -222,8 +225,6 @@ public sealed class RaceManager : MonoBehaviour
     {
         currentState = RaceState.Finished;
 
-        Debug.Log("[RaceManager] Race complete → firing OnRaceFinished");
-
         GameEvents.RaiseRaceFinished();
     }
     // ---------------- POWER-UP SPAWN SUPPORT ----------------
@@ -233,12 +234,10 @@ public sealed class RaceManager : MonoBehaviour
         if (powerUpSpawnPoints == null)
         {
             powerUpSpawnPoints = new List<Transform>();
-            Debug.LogWarning("[RaceManager] Power-up spawn list was null. Initialized empty list.");
             return;
         }
 
         powerUpSpawnPoints.RemoveAll(point => point == null);
-        Debug.Log($"[RaceManager] Cached {powerUpSpawnPoints.Count} power-up spawn points");
     }
 
     public IReadOnlyList<Transform> GetPowerUpSpawnPoints()

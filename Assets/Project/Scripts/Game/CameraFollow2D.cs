@@ -68,8 +68,6 @@ public sealed class CameraFollow2D : MonoBehaviour
         Vector3 snapPos = target.position;
         snapPos.z = transform.position.z;
         transform.position = snapPos + (Vector3)followOffset;
-
-        Debug.Log("[CameraFollow2D] Bound to local player");
     }
 
     // ---------------- UPDATE ----------------

@@ -16,7 +16,6 @@ public sealed class PlayerMarker : MonoBehaviour
 
         Local = this;
 
-        Debug.Log("[PlayerMarker] Local player registered");
         GameEvents.RaiseLocalPlayerSpawned(); 
     }
 }

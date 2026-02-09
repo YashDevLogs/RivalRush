@@ -10,6 +10,7 @@ public sealed class PowerUpController : MonoBehaviour
     private IPowerUpEffect activeEffect;
     private PowerUpContext context;
     private PowerUpId activePowerUpId = PowerUpId.None;
+    private Coroutine expirationCoroutine;
 
     public bool HasPowerUp => heldDefinition != null;
 
@@ -47,6 +48,7 @@ public sealed class PowerUpController : MonoBehaviour
 
         // Stop previous
         DeactivateCurrentEffect();
+        StopExpirationCoroutine();
 
         activeEffect = heldDefinition.CreateEffect();
         activePowerUpId = heldDefinition.id;
@@ -56,7 +58,7 @@ public sealed class PowerUpController : MonoBehaviour
         OnPowerUpChanged?.Invoke(PowerUpId.None);
 
         if (heldDefinition.duration > 0f)
-            StartCoroutine(ExpireAfter(heldDefinition.duration));
+            expirationCoroutine = StartCoroutine(ExpireAfter(heldDefinition.duration));
 
         heldDefinition = null;
     }
@@ -64,13 +66,21 @@ public sealed class PowerUpController : MonoBehaviour
     private IEnumerator ExpireAfter(float duration)
     {
         yield return new WaitForSeconds(duration);
+        expirationCoroutine = null;
         DeactivateCurrentEffect();
     }
 
     public void ForceClear()
     {
-        DeactivateCurrentEffect();
+        ClearActiveEffects();
+        StopExpirationCoroutine();
         heldDefinition = null;
+    }
+
+    public void ClearActiveEffects()
+    {
+        DeactivateCurrentEffect();
+        StopExpirationCoroutine();
     }
 
     private void DeactivateCurrentEffect()
@@ -85,5 +95,14 @@ public sealed class PowerUpController : MonoBehaviour
             GameEvents.RaisePowerUpExpired(activePowerUpId);
 
         activePowerUpId = PowerUpId.None;
+    }
+
+    private void StopExpirationCoroutine()
+    {
+        if (expirationCoroutine == null)
+            return;
+
+        StopCoroutine(expirationCoroutine);
+        expirationCoroutine = null;
     }
 }

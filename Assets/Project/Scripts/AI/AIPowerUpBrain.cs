@@ -48,8 +48,6 @@ public sealed class AIPowerUpBrain : MonoBehaviour
         {
             lastUseTime = Time.time;
             ScheduleNextDecision();
-
-            Debug.Log($"[AIPowerUpBrain] {personality} using power-up ({GetRacePhase()})");
             return true;
         }
 
@@ -118,21 +116,5 @@ public sealed class AIPowerUpBrain : MonoBehaviour
             AIPersonality.Risky => 0.05f,
             _ => 0.2f,
         };
-    }
-
-    // ----------------------------------------------------
-    // DEBUG / READABILITY
-    // ----------------------------------------------------
-
-    private string GetRacePhase()
-    {
-        if (raceManager == null)
-            return "Unknown";
-
-        float t = raceManager.RaceElapsedTime / expectedRaceDuration;
-
-        if (t < 0.3f) return "Early";
-        if (t < 0.7f) return "Mid";
-        return "Late";
     }
 }

@@ -15,6 +15,7 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
     public bool IsInvincible { get; private set; }
 
     private PlayerController controller;
+    private PowerUpController powerUpController;
     private PlayerView view;
     private Rigidbody2D rb;
     private Collider2D col;
@@ -31,6 +32,7 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
     private void Awake()
     {
         controller = GetComponent<PlayerController>();
+        powerUpController = GetComponent<PowerUpController>();
         view = GetComponent<PlayerView>();
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
@@ -55,6 +57,8 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
             return;
 
         IsInvincible = true;
+
+        powerUpController?.ClearActiveEffects();
 
         // Capture death position FIRST
         lastDeathPosition = transform.position;
@@ -99,6 +103,8 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
         // Move first
         transform.position = position;
 
+        powerUpController?.ClearActiveEffects();
+
         // Restore physics BEFORE control
         RestorePhysics();
 
@@ -113,8 +119,6 @@ public sealed class PlayerHealth : MonoBehaviour, IHealth
 
         // Respawn invincibility
         StartCoroutine(InvincibilityRoutine());
-
-        Debug.Log($"[PlayerHealth] {name} respawned correctly");
     }
 
     private void RestorePhysics()

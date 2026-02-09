@@ -169,12 +169,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: availablePowerUps.Array.size
-      value: 1
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[0]'
       value: 
-      objectReference: {fileID: 11400000, guid: b56ebde87ccb02f43a0e1260e9b961a6, type: 2}
+      objectReference: {fileID: 11400000, guid: 4f36332bb2fc35a4c802cc54e1eccd98, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[1]'
       value: 
@@ -182,19 +182,19 @@ PrefabInstance:
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[2]'
       value: 
-      objectReference: {fileID: 11400000, guid: c8e7e14d4a7e758459920bc0f27df9b6, type: 2}
+      objectReference: {fileID: 11400000, guid: b56ebde87ccb02f43a0e1260e9b961a6, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[3]'
       value: 
-      objectReference: {fileID: 11400000, guid: f2c9418efe9f89e46b1b0eadc9548e06, type: 2}
+      objectReference: {fileID: 11400000, guid: c8e7e14d4a7e758459920bc0f27df9b6, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[4]'
       value: 
-      objectReference: {fileID: 11400000, guid: 377f85ea9ad6c5c41ab330952c21a80e, type: 2}
+      objectReference: {fileID: 11400000, guid: f2c9418efe9f89e46b1b0eadc9548e06, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[5]'
       value: 
-      objectReference: {fileID: 11400000, guid: 4f36332bb2fc35a4c802cc54e1eccd98, type: 2}
+      objectReference: {fileID: 11400000, guid: 377f85ea9ad6c5c41ab330952c21a80e, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[6]'
       value: 
@@ -1004,6 +1004,10 @@ MonoBehaviour:
   entryPrefab: {fileID: 2147517283463539506, guid: bca0aa41aadea6449bae771a76ce00c2, type: 3}
   entryLifetime: 5
   maxEntries: 5
+  killerNameColor: {r: 0.13029104, g: 0.5566038, b: 0.04463333, a: 1}
+  victimNameColor: {r: 1, g: 0, b: 0, a: 1}
+  actionTextColor: {r: 0.627451, g: 0.1254902, b: 0.9411765, a: 1}
+  powerUpNameColor: {r: 1, g: 0.5, b: 0, a: 1}
 --- !u!1 &388554687
 GameObject:
   m_ObjectHideFlags: 0
@@ -1976,12 +1980,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: availablePowerUps.Array.size
-      value: 1
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[0]'
       value: 
-      objectReference: {fileID: 11400000, guid: b56ebde87ccb02f43a0e1260e9b961a6, type: 2}
+      objectReference: {fileID: 11400000, guid: 4f36332bb2fc35a4c802cc54e1eccd98, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[1]'
       value: 
@@ -1989,19 +1993,19 @@ PrefabInstance:
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[2]'
       value: 
-      objectReference: {fileID: 11400000, guid: c8e7e14d4a7e758459920bc0f27df9b6, type: 2}
+      objectReference: {fileID: 11400000, guid: b56ebde87ccb02f43a0e1260e9b961a6, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[3]'
       value: 
-      objectReference: {fileID: 11400000, guid: f2c9418efe9f89e46b1b0eadc9548e06, type: 2}
+      objectReference: {fileID: 11400000, guid: c8e7e14d4a7e758459920bc0f27df9b6, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[4]'
       value: 
-      objectReference: {fileID: 11400000, guid: 377f85ea9ad6c5c41ab330952c21a80e, type: 2}
+      objectReference: {fileID: 11400000, guid: f2c9418efe9f89e46b1b0eadc9548e06, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[5]'
       value: 
-      objectReference: {fileID: 11400000, guid: 4f36332bb2fc35a4c802cc54e1eccd98, type: 2}
+      objectReference: {fileID: 11400000, guid: 377f85ea9ad6c5c41ab330952c21a80e, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[6]'
       value: 
@@ -5669,12 +5673,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: availablePowerUps.Array.size
-      value: 1
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[0]'
       value: 
-      objectReference: {fileID: 11400000, guid: b56ebde87ccb02f43a0e1260e9b961a6, type: 2}
+      objectReference: {fileID: 11400000, guid: 4f36332bb2fc35a4c802cc54e1eccd98, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[1]'
       value: 
@@ -5682,19 +5686,19 @@ PrefabInstance:
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[2]'
       value: 
-      objectReference: {fileID: 11400000, guid: c8e7e14d4a7e758459920bc0f27df9b6, type: 2}
+      objectReference: {fileID: 11400000, guid: b56ebde87ccb02f43a0e1260e9b961a6, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[3]'
       value: 
-      objectReference: {fileID: 11400000, guid: f2c9418efe9f89e46b1b0eadc9548e06, type: 2}
+      objectReference: {fileID: 11400000, guid: c8e7e14d4a7e758459920bc0f27df9b6, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[4]'
       value: 
-      objectReference: {fileID: 11400000, guid: 377f85ea9ad6c5c41ab330952c21a80e, type: 2}
+      objectReference: {fileID: 11400000, guid: f2c9418efe9f89e46b1b0eadc9548e06, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[5]'
       value: 
-      objectReference: {fileID: 11400000, guid: 4f36332bb2fc35a4c802cc54e1eccd98, type: 2}
+      objectReference: {fileID: 11400000, guid: 377f85ea9ad6c5c41ab330952c21a80e, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[6]'
       value: 
@@ -7145,12 +7149,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: availablePowerUps.Array.size
-      value: 1
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[0]'
       value: 
-      objectReference: {fileID: 11400000, guid: b56ebde87ccb02f43a0e1260e9b961a6, type: 2}
+      objectReference: {fileID: 11400000, guid: 4f36332bb2fc35a4c802cc54e1eccd98, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[1]'
       value: 
@@ -7158,19 +7162,19 @@ PrefabInstance:
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[2]'
       value: 
-      objectReference: {fileID: 11400000, guid: c8e7e14d4a7e758459920bc0f27df9b6, type: 2}
+      objectReference: {fileID: 11400000, guid: b56ebde87ccb02f43a0e1260e9b961a6, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[3]'
       value: 
-      objectReference: {fileID: 11400000, guid: f2c9418efe9f89e46b1b0eadc9548e06, type: 2}
+      objectReference: {fileID: 11400000, guid: c8e7e14d4a7e758459920bc0f27df9b6, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[4]'
       value: 
-      objectReference: {fileID: 11400000, guid: 377f85ea9ad6c5c41ab330952c21a80e, type: 2}
+      objectReference: {fileID: 11400000, guid: f2c9418efe9f89e46b1b0eadc9548e06, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[5]'
       value: 
-      objectReference: {fileID: 11400000, guid: 4f36332bb2fc35a4c802cc54e1eccd98, type: 2}
+      objectReference: {fileID: 11400000, guid: 377f85ea9ad6c5c41ab330952c21a80e, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[6]'
       value: 
@@ -7238,12 +7242,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: availablePowerUps.Array.size
-      value: 1
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[0]'
       value: 
-      objectReference: {fileID: 11400000, guid: b56ebde87ccb02f43a0e1260e9b961a6, type: 2}
+      objectReference: {fileID: 11400000, guid: 4f36332bb2fc35a4c802cc54e1eccd98, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[1]'
       value: 
@@ -7251,19 +7255,19 @@ PrefabInstance:
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[2]'
       value: 
-      objectReference: {fileID: 11400000, guid: c8e7e14d4a7e758459920bc0f27df9b6, type: 2}
+      objectReference: {fileID: 11400000, guid: b56ebde87ccb02f43a0e1260e9b961a6, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[3]'
       value: 
-      objectReference: {fileID: 11400000, guid: f2c9418efe9f89e46b1b0eadc9548e06, type: 2}
+      objectReference: {fileID: 11400000, guid: c8e7e14d4a7e758459920bc0f27df9b6, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[4]'
       value: 
-      objectReference: {fileID: 11400000, guid: 377f85ea9ad6c5c41ab330952c21a80e, type: 2}
+      objectReference: {fileID: 11400000, guid: f2c9418efe9f89e46b1b0eadc9548e06, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[5]'
       value: 
-      objectReference: {fileID: 11400000, guid: 4f36332bb2fc35a4c802cc54e1eccd98, type: 2}
+      objectReference: {fileID: 11400000, guid: 377f85ea9ad6c5c41ab330952c21a80e, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[6]'
       value: 
@@ -8107,12 +8111,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: availablePowerUps.Array.size
-      value: 1
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[0]'
       value: 
-      objectReference: {fileID: 11400000, guid: b56ebde87ccb02f43a0e1260e9b961a6, type: 2}
+      objectReference: {fileID: 11400000, guid: 4f36332bb2fc35a4c802cc54e1eccd98, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[1]'
       value: 
@@ -8120,19 +8124,19 @@ PrefabInstance:
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[2]'
       value: 
-      objectReference: {fileID: 11400000, guid: c8e7e14d4a7e758459920bc0f27df9b6, type: 2}
+      objectReference: {fileID: 11400000, guid: b56ebde87ccb02f43a0e1260e9b961a6, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[3]'
       value: 
-      objectReference: {fileID: 11400000, guid: f2c9418efe9f89e46b1b0eadc9548e06, type: 2}
+      objectReference: {fileID: 11400000, guid: c8e7e14d4a7e758459920bc0f27df9b6, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[4]'
       value: 
-      objectReference: {fileID: 11400000, guid: 377f85ea9ad6c5c41ab330952c21a80e, type: 2}
+      objectReference: {fileID: 11400000, guid: f2c9418efe9f89e46b1b0eadc9548e06, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[5]'
       value: 
-      objectReference: {fileID: 11400000, guid: 4f36332bb2fc35a4c802cc54e1eccd98, type: 2}
+      objectReference: {fileID: 11400000, guid: 377f85ea9ad6c5c41ab330952c21a80e, type: 2}
     - target: {fileID: 2660159529888654950, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
       propertyPath: 'availablePowerUps.Array.data[6]'
       value: 

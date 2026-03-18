@@ -16,10 +16,17 @@ MonoBehaviour:
   accelerationRate: 6
   jumpVelocity: 12
   jumpHorizontalSpeedMultiplier: 0.788
-  maxJumps: 1
-  dashForce: 10
-  dashCooldown: 1
-  groundCheckSize: {x: 0.6, y: 0.08}
+  maxJumps: 2
+  slideColliderHeightMultiplier: 0.6
+  slideStartSpeedMultiplier: 0.85
+  slideSpeedDecay: 12
+  slideDuration: 0.6
+  airDiveDownVelocity: 18
+  wallClingDuration: 0.35
+  wallClingGravityScale: 0.2
+  wallJumpUpVelocity: 11
+  wallJumpHorizontalVelocity: 6
+  groundCheckSize: {x: 0.08, y: 0.01}
   groundLayer:
     serializedVersion: 2
     m_Bits: 64

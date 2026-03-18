@@ -218,6 +218,7 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
             {
                 OnLand?.Invoke();
                 UpdateState(PlayerState.Running);
+                
             }
         }
     }
@@ -501,4 +502,16 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
         );
     }
 #endif
+
+private void OnDrawGizmos()
+{
+    if (model == null || model.GroundCheck == null) return;
+
+    Gizmos.color = Color.green;
+    Gizmos.DrawWireCube(
+        model.GroundCheck.position,
+        model.GroundCheckSize
+    );
+}
+
 }

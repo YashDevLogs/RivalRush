@@ -142,7 +142,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1a222a92df1cfc48861dcffcbd8c035, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RocketController
-  maxSpeed: 30
+  maxSpeed: 35
   steeringForce: 60
   turnResponsiveness: 8
   maxLifetime: 0.5

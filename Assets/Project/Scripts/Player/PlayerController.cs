@@ -1,11 +1,13 @@
 using UnityEngine;
 using System;
 using Game.Core;
+using Unity.Netcode;
+using System.Collections;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(PlayerModel))]
 [RequireComponent(typeof(PlayerView))]
-public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayerEntity
+public sealed class PlayerController : NetworkBehaviour, IPlayerController, IPlayerEntity
 {
     private Rigidbody2D rb;
     private PlayerModel model;
@@ -29,9 +31,35 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
     public Transform Transform => transform;
     public Rigidbody2D Rigidbody => rb;
 
+
+    [ServerRpc]
+    private void JumpServerRpc()
+    {
+        JumpClientRpc();
+    }
+
+    [ClientRpc]
+    private void JumpClientRpc()
+    {
+        if (!IsOwner)
+        {
+            StartCoroutine(PlayJumpDelayed());
+        }
+    }
+
+    private IEnumerator PlayJumpDelayed()
+    {
+        yield return null; // wait 1 frame
+        view?.TriggerJump();
+    }
     public void Kill()
     {
         gameObject.SetActive(false);
+    }
+
+    private void OnEnable()
+    {
+        lastPosition = transform.position;
     }
 
     private void Awake()
@@ -63,6 +91,7 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
             go.transform.localPosition = new Vector3(0f, -0.5f, 0f);
             model.GroundCheck = go.transform;
         }
+
     }
 
     private void Start()
@@ -71,9 +100,37 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
         UpdateState(PlayerState.Running);
     }
 
+    public override void OnNetworkSpawn()
+    {
+        Debug.Log($"Player Spawned | Owner: {IsOwner} | ClientId: {OwnerClientId}");
+
+        if (IsServer)
+        {
+            RaceManager.Instance?.RegisterPlayer(
+                this,
+                GetComponent<IPlayerEntity>()
+            );
+        }
+    }
+
     private void Update()
     {
-        if (model.ControlEnabled && inputSource != null)
+        // ✅ ALWAYS update animation
+        UpdateAnimator();
+
+        // ❌ ONLY owner handles gameplay
+        if (!IsOwner) return;
+
+        if (RaceManager.Instance == null)
+            return;
+
+        if (!RaceManager.Instance.CanMove())
+        {
+            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+            return;
+        }
+
+        if (inputSource != null)
         {
             if (inputSource.JumpPressed)
             {
@@ -98,11 +155,11 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
             HandleJumpBuffer();
         }
 
-        UpdateAnimator();
     }
 
     private void FixedUpdate()
     {
+        if (!IsOwner) return;
         if (model.HasFinishedRace)
         {
             if (Mathf.Abs(rb.linearVelocity.x) <= model.IdleSpeedThreshold)
@@ -114,8 +171,14 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
             return;
         }
 
-        if (!model.ControlEnabled)
+        if (RaceManager.Instance == null)
             return;
+
+        if (!RaceManager.Instance.CanMove())
+        {
+            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+            return;
+        }
 
         if (model.State == PlayerState.WallCling)
         {
@@ -218,7 +281,7 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
             {
                 OnLand?.Invoke();
                 UpdateState(PlayerState.Running);
-                
+
             }
         }
     }
@@ -272,7 +335,13 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
         model.JumpsLeft = Mathf.Max(0, model.JumpsLeft - 1);
         model.NextAllowedGroundCheckTime = Time.time + model.GroundGraceDelay;
 
+        view?.UpdateMovement(model.CurrentRunSpeed / model.MaxRunSpeed, false); // 🔥 force airborne
         view?.TriggerJump();
+
+        if (IsOwner)
+        {
+            JumpServerRpc(); // sync to others
+        }
         OnJump?.Invoke();
         UpdateState(PlayerState.Jumping);
     }
@@ -315,11 +384,32 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
         UpdateState(PlayerState.Falling);
     }
 
+
+    private Vector3 lastPosition;
+
     private void UpdateAnimator()
     {
-        view?.UpdateMovement(model.CurrentRunSpeed, model.IsGrounded);
-    }
+        float normalizedSpeed = 0f;
 
+        if (IsOwner)
+        {
+            normalizedSpeed = model.CurrentRunSpeed / model.MaxRunSpeed;
+            view?.UpdateMovement(normalizedSpeed, model.IsGrounded);
+            return;
+        }
+
+        float delta = (transform.position - lastPosition).magnitude;
+
+        float speed = delta / Time.deltaTime;
+        normalizedSpeed = Mathf.Clamp01(speed / model.MaxRunSpeed);
+
+        // 🔥 IMPORTANT: detect airborne using Y movement
+        bool isGrounded = Mathf.Abs(rb.linearVelocity.y) < 0.1f;
+
+        view?.UpdateMovement(normalizedSpeed, isGrounded);
+
+        lastPosition = transform.position;
+    }
     private void UpdateState(PlayerState newState)
     {
         if (model.State == newState) return;
@@ -503,15 +593,15 @@ public sealed class PlayerController : MonoBehaviour, IPlayerController, IPlayer
     }
 #endif
 
-private void OnDrawGizmos()
-{
-    if (model == null || model.GroundCheck == null) return;
+    private void OnDrawGizmos()
+    {
+        if (model == null || model.GroundCheck == null) return;
 
-    Gizmos.color = Color.green;
-    Gizmos.DrawWireCube(
-        model.GroundCheck.position,
-        model.GroundCheckSize
-    );
-}
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireCube(
+            model.GroundCheck.position,
+            model.GroundCheckSize
+        );
+    }
 
 }

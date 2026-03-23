@@ -1,139 +1,163 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using Game.Core;
+using Unity.Netcode;
 using TMPro;
+using Game.Core;
+using System.Collections;
 
-public sealed class RaceManager : MonoBehaviour
+public class RaceManager : NetworkBehaviour
 {
-    public static RaceManager Instance { get; private set; }
-    private const int ExpectedRacerCount = 4;
+    public static RaceManager Instance;
 
-    [Header("Countdown UI")]
+    [Header("UI")]
     [SerializeField] private TMP_Text countdownText;
+
+    // ---------------- NETWORK ----------------
+
+    private NetworkVariable<double> raceStartTime = new NetworkVariable<double>(0);
+    private NetworkVariable<bool> raceStarted = new NetworkVariable<bool>(false);
+
+    // ---------------- DATA ----------------
+
+    private readonly List<IPlayerController> racers = new();
+    private readonly List<IPlayerController> finishOrder = new();
+    private readonly List<IPlayerEntity> playerEntities = new();
+
+    public float RaceElapsedTime { get; private set; }
 
     private enum RaceState
     {
-        Idle,
+        Waiting,
         Countdown,
         Race,
         Finished
     }
 
-    private RaceState currentState = RaceState.Idle;
+    private RaceState currentState = RaceState.Waiting;
 
-    [Header("Spawn Settings")]
-    [SerializeField] private Transform[] spawnPoints; // size = 4
-    [SerializeField] private GameObject playerPrefab;
-    [SerializeField] private GameObject aiPrefab;
-
-    [Header("Power-Up Spawn Points")]
-    [SerializeField] private List<Transform> powerUpSpawnPoints;
-
-    [Header("Race Settings")]
-    [SerializeField] private float countdownTime = 3f;
-
-    private readonly List<IPlayerController> racers = new();
-    private readonly List<IPlayerController> finishOrder = new();
-
-    public bool IsRaceActive => currentState == RaceState.Race;
-
-    private readonly List<IPlayerEntity> playerEntities = new();
-
-    /// <summary>
-    /// Elapsed time since race actually started (used by AI).
-    /// </summary>
-    public float RaceElapsedTime { get; private set; }
-
-    // ---------------- UNITY LIFECYCLE ----------------
+    // ---------------- UNITY ----------------
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
         Instance = this;
-
-        CachePowerUpSpawnPoints();
     }
 
-    private void Start()
+    public override void OnNetworkSpawn()
     {
-        if (!ValidateConfiguration())
-        {
-            enabled = false;
-            return;
-        }
-
-        SpawnRacers();
-        StartCoroutine(RaceCountdown());
+        if (IsServer)
+    {
+        StartCoroutine(WaitForPlayersAndStart());
+    }
     }
 
     private void Update()
     {
+        if (!IsSpawned) return;
+
+        double currentTime = NetworkManager.Singleton.LocalTime.Time;
+        double timeLeft = raceStartTime.Value - currentTime;
+
+        // -------- COUNTDOWN --------
+        if (currentState == RaceState.Waiting && raceStartTime.Value > 0)
+        {
+            currentState = RaceState.Countdown;
+
+            if (countdownText != null)
+                countdownText.gameObject.SetActive(true);
+        }
+
+        if (currentState == RaceState.Countdown)
+        {
+            if (timeLeft > 0)
+            {
+                int display = Mathf.CeilToInt((float)timeLeft);
+
+                if (countdownText != null)
+                    countdownText.text = display.ToString();
+            }
+            else
+            {
+                StartRaceClient();
+            }
+        }
+
+        // -------- RACE --------
         if (currentState == RaceState.Race)
         {
             RaceElapsedTime += Time.deltaTime;
         }
     }
 
-    private bool ValidateConfiguration()
+    private IEnumerator WaitForPlayersAndStart()
+{
+    int minPlayers = 2;
+    float maxWaitTime = 10f;
+
+    float timer = 0f;
+
+    while (NetworkManager.Singleton.ConnectedClientsList.Count < minPlayers && timer < maxWaitTime)
     {
-        if (spawnPoints == null || spawnPoints.Length < ExpectedRacerCount)
-        {
-            Debug.LogError($"[RaceManager] {ExpectedRacerCount} spawn points are required.");
-            return false;
-        }
-
-        if (playerPrefab == null || aiPrefab == null)
-        {
-            Debug.LogError("[RaceManager] Player and AI prefabs must both be assigned.");
-            return false;
-        }
-
-        return true;
+        timer += Time.deltaTime;
+        yield return null;
     }
 
-    // ---------------- SPAWNING ----------------
+    yield return new WaitForSeconds(1.5f);
 
-    private void SpawnRacers()
+    StartRaceServer();
+}
+
+    // ---------------- SERVER START ----------------
+
+    private void StartRaceServer()
     {
-        List<Transform> availableSpawns = new(spawnPoints);
+        double delay = 3.0; // 3 sec countdown
 
-        // Spawn player
-        Transform playerSpawn = PickRandomSpawn(availableSpawns);
-        GameObject player = Instantiate(playerPrefab, playerSpawn.position, Quaternion.identity);
+        raceStartTime.Value =NetworkManager.Singleton.LocalTime.Time + delay;
 
-        var playerController = player.GetComponent<IPlayerController>();
-        racers.Add(playerController);
+        Debug.Log($"[SERVER] Race Start Time: {raceStartTime.Value}");
+    }
 
-        playerEntities.Add(player.GetComponent<IPlayerEntity>());
+    // ---------------- CLIENT START ----------------
 
-        var playerIdentity = player.GetComponent<PlayerIdentity>();
-        if (playerIdentity != null && playerIdentity.IsHuman)
-            playerIdentity.SetDisplayName(playerIdentity.DisplayName);
+    private void StartRaceClient()
+    {
+        if (currentState == RaceState.Race)
+            return;
 
-        // Spawn AI
-        for (int i = 0; i < 3; i++)
+        currentState = RaceState.Race;
+        raceStarted.Value = true;
+
+        if (countdownText != null)
         {
-            Transform aiSpawn = PickRandomSpawn(availableSpawns);
-            GameObject ai = Instantiate(aiPrefab, aiSpawn.position, Quaternion.identity);
-
-            var aiController = ai.GetComponent<IPlayerController>();
-            racers.Add(aiController);
-
-            playerEntities.Add(ai.GetComponent<IPlayerEntity>());
-
-            var aiIdentity = ai.GetComponent<PlayerIdentity>();
-            if (aiIdentity != null && !aiIdentity.IsHuman)
-                aiIdentity.AssignRandomName();
+            countdownText.text = "GO!";
+            Invoke(nameof(HideCountdown), 0.5f);
         }
 
-        foreach (var racer in racers)
-            racer.DisableControl();
+        GameEvents.RaiseRaceStarted();
+    }
+
+    private void HideCountdown()
+    {
+        if (countdownText != null)
+            countdownText.gameObject.SetActive(false);
+    }
+
+    public bool CanMove()
+    {
+        return raceStarted.Value;
+    }
+
+    // ---------------- PLAYER REGISTRATION ----------------
+
+    public void RegisterPlayer(IPlayerController controller, IPlayerEntity entity)
+    {
+        if (!IsServer) return;
+
+        if (!racers.Contains(controller))
+            racers.Add(controller);
+
+        if (!playerEntities.Contains(entity))
+            playerEntities.Add(entity);
     }
 
     public IReadOnlyList<IPlayerEntity> GetPlayerEntities()
@@ -141,70 +165,12 @@ public sealed class RaceManager : MonoBehaviour
         return playerEntities;
     }
 
-    private Transform PickRandomSpawn(List<Transform> available)
-    {
-        int index = Random.Range(0, available.Count);
-        Transform chosen = available[index];
-        available.RemoveAt(index);
-        return chosen;
-    }
-
-    // ---------------- COUNTDOWN ----------------
-
-    private IEnumerator RaceCountdown()
-    {
-
-        currentState = RaceState.Countdown;
-        RaceElapsedTime = 0f;
-
-        if (countdownText != null)
-        {
-            countdownText.gameObject.SetActive(true);
-        }
-
-        int count = Mathf.CeilToInt(countdownTime);
-
-        while (count > 0)
-        {
-            if (countdownText != null)
-            {
-                countdownText.text = count.ToString();
-            }
-
-            yield return new WaitForSeconds(1f);
-            count--;
-        }
-
-        if (countdownText != null)
-        {
-            countdownText.text = "GO!";
-        }
-
-        yield return new WaitForSeconds(0.5f);
-
-        if (countdownText != null)
-        {
-            countdownText.gameObject.SetActive(false);
-        }
-
-        StartRace();
-    }
-
-    private void StartRace()
-    {
-        currentState = RaceState.Race;
-        GameEvents.RaiseRaceStarted();
-
-        foreach (var racer in racers)
-            racer.EnableControl();
-    }
-
     // ---------------- FINISH ----------------
 
     public void RegisterFinish(IPlayerController racer)
     {
-        if (currentState != RaceState.Race)
-            return;
+        if (!IsServer) return;
+        if (!raceStarted.Value) return;
 
         if (finishOrder.Contains(racer))
             return;
@@ -212,7 +178,9 @@ public sealed class RaceManager : MonoBehaviour
         finishOrder.Add(racer);
 
         if (finishOrder.Count == racers.Count)
+        {
             EndRace();
+        }
     }
 
     public IReadOnlyList<IPlayerController> GetFinishOrder()
@@ -220,28 +188,17 @@ public sealed class RaceManager : MonoBehaviour
         return finishOrder;
     }
 
-
     private void EndRace()
     {
         currentState = RaceState.Finished;
+        raceStarted.Value = false;
 
+        EndRaceClientRpc();
+    }
+
+    [ClientRpc]
+    private void EndRaceClientRpc()
+    {
         GameEvents.RaiseRaceFinished();
-    }
-    // ---------------- POWER-UP SPAWN SUPPORT ----------------
-
-    private void CachePowerUpSpawnPoints()
-    {
-        if (powerUpSpawnPoints == null)
-        {
-            powerUpSpawnPoints = new List<Transform>();
-            return;
-        }
-
-        powerUpSpawnPoints.RemoveAll(point => point == null);
-    }
-
-    public IReadOnlyList<Transform> GetPowerUpSpawnPoints()
-    {
-        return powerUpSpawnPoints;
     }
 }

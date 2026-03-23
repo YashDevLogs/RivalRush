@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Game.Core;
+using UnityEngine;
 using UnityEngine.UI;
 
 public sealed class PowerUpUIController : MonoBehaviour
@@ -8,9 +9,14 @@ public sealed class PowerUpUIController : MonoBehaviour
 
     private PowerUpController boundController;
 
-    private void Start()
+    private void OnEnable()
     {
-        BindToLocalPlayer();
+        GameEvents.OnLocalPlayerSpawned += BindToLocalPlayer;
+    }
+
+    private void OnDisable()
+    {
+        GameEvents.OnLocalPlayerSpawned -= BindToLocalPlayer;
     }
 
     private void BindToLocalPlayer()

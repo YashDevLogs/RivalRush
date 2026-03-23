@@ -8,16 +8,20 @@ public class CurrencyManager : MonoBehaviour
 
     public delegate void OnCurrencyChanged();
     public static event OnCurrencyChanged CurrencyChanged;
-
-    private void Awake()
+private void Awake()
+{
+    if (Instance == null)
     {
-        if (Instance == null)
-            Instance = this;
-        else
-            Destroy(gameObject);
-
-        coins = PlayerPrefs.GetInt("Coins", 500);
+        Instance = this;
+        DontDestroyOnLoad(gameObject); 
     }
+    else
+    {
+        Destroy(gameObject);
+    }
+
+    coins = PlayerPrefs.GetInt("Coins", 500);
+}
 
     public int GetCoins() => coins;
 

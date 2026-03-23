@@ -27,6 +27,9 @@ public class CurrencyUI : MonoBehaviour
 
     void UpdateUI()
     {
+        if (CurrencyManager.Instance == null)
+            return;
+
         coinText.text = "Coins: " + CurrencyManager.Instance.GetCoins();
     }
 }

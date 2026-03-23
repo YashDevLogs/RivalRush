@@ -26,7 +26,7 @@ public sealed class AIPowerUpBrain : MonoBehaviour
     {
         powerUpController = GetComponent<PowerUpController>();
         sensor = GetComponent<AISensor>();
-        raceManager = FindFirstObjectByType<RaceManager>();
+        raceManager = RaceManager.Instance;
     }
 
     // ----------------------------------------------------
@@ -85,16 +85,16 @@ public sealed class AIPowerUpBrain : MonoBehaviour
     // ----------------------------------------------------
 
     private float GetPhaseBias()
-    {
-        if (raceManager == null)
-            return 0.35f;
+{
+    if (raceManager == null || !raceManager.CanMove())
+        return 0.2f;
 
-        float t = Mathf.Clamp01(raceManager.RaceElapsedTime / expectedRaceDuration);
+    float t = Mathf.Clamp01(raceManager.RaceElapsedTime / expectedRaceDuration);
 
-        if (t < 0.3f) return 0.25f; // Early
-        if (t < 0.7f) return 0.45f; // Mid
-        return 0.75f;               // Late
-    }
+    if (t < 0.3f) return 0.25f;
+    if (t < 0.7f) return 0.45f;
+    return 0.75f;
+}
 
     private float GetPersonalityBias()
     {

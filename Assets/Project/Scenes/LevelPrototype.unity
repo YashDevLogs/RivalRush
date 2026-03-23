@@ -16080,6 +16080,83 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &700937884
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 700937887}
+  - component: {fileID: 700937885}
+  - component: {fileID: 700937886}
+  m_Layer: 0
+  m_Name: NetworkSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &700937885
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 700937884}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 1788332139
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &700937886
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 700937884}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1c60c61a9b8cb74fa31a31c56e657aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkPlayerSpawner
+  ShowTopMostFoldoutHeaderGroup: 1
+  spawnPoints:
+  - {fileID: 565740120}
+  - {fileID: 1779768546}
+  - {fileID: 1001308344}
+  - {fileID: 1361613771}
+  playerPrefab: {fileID: 7825518955140388769, guid: 28b66ab2231a76d41bb841acf9306fd6, type: 3}
+--- !u!4 &700937887
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 700937884}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -13.9, y: -9117.701, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &773069557 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2544836272779351746, guid: 93a52cba0b35a954fb650f2d1d7054ae, type: 3}
@@ -16678,64 +16755,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 894312560}
   m_CullTransparentMesh: 1
---- !u!1 &937532596
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 937532597}
-  - component: {fileID: 937532598}
-  m_Layer: 0
-  m_Name: RaceManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &937532597
+--- !u!4 &937532597 stripped
 Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 4275099001646681301, guid: 9505462c392249140971e80e5880d508, type: 3}
+  m_PrefabInstance: {fileID: 3357037269582546023}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 937532596}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 27.269, y: -4.12594, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1611825089}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &937532598
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 937532596}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d806075ab0433443a457c4559a6631f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaceManager
-  countdownText: {fileID: 549590101}
-  spawnPoints:
-  - {fileID: 565740120}
-  - {fileID: 1779768546}
-  - {fileID: 1001308344}
-  - {fileID: 1361613771}
-  playerPrefab: {fileID: 7825518955140388769, guid: 28b66ab2231a76d41bb841acf9306fd6, type: 3}
-  aiPrefab: {fileID: 8296394138938738586, guid: 68f6deadb5f2efe41a19e82baaab43ad, type: 3}
-  powerUpSpawnPoints:
-  - {fileID: 2110564020}
-  - {fileID: 1937897895}
-  - {fileID: 1648449311}
-  - {fileID: 773069557}
-  countdownTime: 3
 --- !u!1 &940469521
 GameObject:
   m_ObjectHideFlags: 0
@@ -79391,6 +79415,75 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1a5e4a817cc32d248a37aa66cb0ce68d, type: 3}
+--- !u!1001 &3357037269582546023
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1611825089}
+    m_Modifications:
+    - target: {fileID: 4275099001646681301, guid: 9505462c392249140971e80e5880d508, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 27.269
+      objectReference: {fileID: 0}
+    - target: {fileID: 4275099001646681301, guid: 9505462c392249140971e80e5880d508, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -4.12594
+      objectReference: {fileID: 0}
+    - target: {fileID: 4275099001646681301, guid: 9505462c392249140971e80e5880d508, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4275099001646681301, guid: 9505462c392249140971e80e5880d508, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4275099001646681301, guid: 9505462c392249140971e80e5880d508, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4275099001646681301, guid: 9505462c392249140971e80e5880d508, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4275099001646681301, guid: 9505462c392249140971e80e5880d508, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4275099001646681301, guid: 9505462c392249140971e80e5880d508, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4275099001646681301, guid: 9505462c392249140971e80e5880d508, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4275099001646681301, guid: 9505462c392249140971e80e5880d508, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7541518405250962284, guid: 9505462c392249140971e80e5880d508, type: 3}
+      propertyPath: countdownText
+      value: 
+      objectReference: {fileID: 549590101}
+    - target: {fileID: 8058191180030306867, guid: 9505462c392249140971e80e5880d508, type: 3}
+      propertyPath: m_Name
+      value: RaceManager
+      objectReference: {fileID: 0}
+    - target: {fileID: 8128509592838147504, guid: 9505462c392249140971e80e5880d508, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 2094990463
+      objectReference: {fileID: 0}
+    - target: {fileID: 8128509592838147504, guid: 9505462c392249140971e80e5880d508, type: 3}
+      propertyPath: InScenePlacedSourceGlobalObjectIdHash
+      value: 2084522168
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 9505462c392249140971e80e5880d508, type: 3}
 --- !u!1001 &7070673729092918248
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -79496,3 +79589,4 @@ SceneRoots:
   - {fileID: 940469522}
   - {fileID: 239110991}
   - {fileID: 847070229}
+  - {fileID: 700937887}

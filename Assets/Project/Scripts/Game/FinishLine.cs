@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Netcode;
 using Game.Core;
 
 [RequireComponent(typeof(Collider2D))]
@@ -15,9 +16,14 @@ public sealed class FinishLine : MonoBehaviour
         if (racer == null)
             return;
 
+        // ✅ Only SERVER handles finish registration
+        if (!NetworkManager.Singleton.IsServer)
+            return;
+
+        // ✅ Register finish (server authoritative)
         RaceManager.Instance.RegisterFinish(racer);
 
-        // Tell controller it has finished (momentum preserved)
+        // ✅ Preserve original logic (momentum / state handling)
         if (other.TryGetComponent<PlayerController>(out var pc))
         {
             pc.OnFinishRace();

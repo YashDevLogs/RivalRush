@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class MultiplayerManager : MonoBehaviour
 {
@@ -9,11 +10,14 @@ public class MultiplayerManager : MonoBehaviour
     private void Awake()
     {
         if (Instance == null)
+        {
             Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
         else
+        {
             Destroy(gameObject);
-
-        DontDestroyOnLoad(gameObject);
+        }
     }
 
     private void Start()
@@ -43,19 +47,24 @@ public class MultiplayerManager : MonoBehaviour
     {
         Debug.Log($"Client Connected: {clientId}");
 
-        // Only host should trigger scene load
         if (NetworkManager.Singleton.IsHost)
         {
-            // Wait until at least 2 players
             if (NetworkManager.Singleton.ConnectedClients.Count >= 2)
             {
-                Debug.Log("Both players connected. Loading Game Scene...");
-
-                NetworkManager.Singleton.SceneManager.LoadScene(
-                    "LevelPrototype",
-                    LoadSceneMode.Single
-                );
+                StartCoroutine(LoadGameDelayed());
             }
         }
+    }
+
+    private IEnumerator LoadGameDelayed()
+    {
+        yield return new WaitForSeconds(1f); // 🔥 CRITICAL FIX
+
+        Debug.Log("Loading Game Scene...");
+
+        NetworkManager.Singleton.SceneManager.LoadScene(
+            "LevelPrototype",
+            LoadSceneMode.Single
+        );
     }
 }

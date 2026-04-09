@@ -1,45 +1,72 @@
-﻿using UnityEngine;
+using Game.Systems;
+using Game.Core;
+using Game.Input;
+using Game.Player;
+using Game.AI;
+using UnityEngine;
 
-[RequireComponent(typeof(AISensor))]
-[RequireComponent(typeof(AIPowerUpBrain))]
-public sealed class AIInputSource : MonoBehaviour, IInputSource
+namespace Game.Input
 {
-    private AISensor sensor;
-    private AIPowerUpBrain powerUpBrain;
-
-    public bool JumpPressed { get; private set; }
-    public bool SlidePressed { get; private set; }
-    public bool PowerUpPressed { get; private set; }
-
-    private void Awake()
+    [RequireComponent(typeof(AISensor))]
+    [RequireComponent(typeof(AIPowerUpBrain))]
+    public sealed class AIInputSource : MonoBehaviour, IInputSource
     {
-        sensor = GetComponent<AISensor>();
-        powerUpBrain = GetComponent<AIPowerUpBrain>();
-    }
+        [SerializeField] private AISensor sensor;
+        [SerializeField] private AIContext context = new();
+        [SerializeField] private AIPowerUpBrain powerUpBrain;
 
-    private void Update()
-    {
-        JumpPressed = false;
-        SlidePressed = false;
-        PowerUpPressed = false;
+        private readonly AIDecisionSystem fallbackDecisionSystem = new();
 
-        bool shouldSlide = sensor.ShouldSlide();
-        bool shouldJump = !shouldSlide && sensor.ShouldJump();
+        public float Horizontal { get; private set; }
+        public bool JumpPressed { get; private set; }
+        public bool SlidePressed { get; private set; }
+        public bool PowerUpPressed { get; private set; }
 
-        if (shouldJump)
+        private void Awake()
         {
-            JumpPressed = true;
+            if (sensor == null)
+                Debug.LogWarning($"[AIInputSource] AISensor is not assigned on {name}.");
+            if (context == null)
+                context = new AIContext();
+            if (powerUpBrain == null)
+                Debug.LogWarning($"[AIInputSource] AIPowerUpBrain is not assigned on {name}.");
         }
 
-        if (shouldSlide)
+        private void Update()
         {
-            SlidePressed = true;
+            Horizontal = 0f;
+            JumpPressed = false;
+            SlidePressed = false;
+            PowerUpPressed = false;
+
+            context.UpdateDetection(sensor);
+            if (powerUpBrain != null)
+                powerUpBrain.UpdateContext(context);
+
+            bool shouldSlide = powerUpBrain != null
+                ? powerUpBrain.DecideSlide(context)
+                : fallbackDecisionSystem.DecideSlide(context);
+
+            bool shouldJump = !shouldSlide && (powerUpBrain != null
+                ? powerUpBrain.DecideJump(context)
+                : fallbackDecisionSystem.DecideJump(context));
+
+            if (shouldJump)
+            {
+                JumpPressed = true;
+            }
+
+            if (shouldSlide)
+            {
+                SlidePressed = true;
+            }
+
+            if (powerUpBrain != null && powerUpBrain.ShouldUsePowerUp(context))
+            {
+                PowerUpPressed = true;
+            }
         }
 
-        if (powerUpBrain.ShouldUsePowerUp())
-        {
-            PowerUpPressed = true;
-        }
     }
 
 }

@@ -1,28 +1,37 @@
+using Game.Systems;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
 
 using Game.Core;
-public abstract class ProjectilePowerUp : PowerUpDefinition
+
+namespace Game.Systems
 {
-    [Header("Projectile")]
-    public GameObject projectilePrefab;
-
-    [Header("Targeting")]
-    public bool targetAheadFirst = true;
-
-    protected IPlayerEntity ResolveTarget(PowerUpContext context)
+    public abstract class ProjectilePowerUp : PowerUpDefinition
     {
-        IPlayerEntity target = null;
+        [Header("Projectile")]
+        public GameObject projectilePrefab;
 
-        if (targetAheadFirst)
+        [Header("Targeting")]
+        public bool targetAheadFirst = true;
+
+        protected IPlayerEntity ResolveTarget(PowerUpContext context)
         {
-            target = RaceUtility.ResolveRocketTarget(context.PlayerTransform);
-        }
+            IPlayerEntity target = null;
 
-        if (target == null)
-        {
-            target = RaceUtility.ResolveNearestOpponent(context.PlayerTransform);
-        }
+            if (targetAheadFirst)
+            {
+                target = RaceUtility.ResolveRocketTarget(context.PlayerTransform);
+            }
 
-        return target;
+            if (target == null)
+            {
+                target = RaceUtility.ResolveNearestOpponent(context.PlayerTransform);
+            }
+
+            return target;
+        }
     }
+
 }

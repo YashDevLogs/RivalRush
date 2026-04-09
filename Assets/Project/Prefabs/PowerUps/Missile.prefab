@@ -148,6 +148,8 @@ MonoBehaviour:
   maxLifetime: 0.5
   explosionRadius: 4
   explosionVfxPrefab: {fileID: 725748389856807714, guid: 4bda94453d2ca7444a0fff05b2d425f5, type: 3}
+  explosionVfxLifetime: 2
+  rb: {fileID: 6012210074918453349}
 --- !u!50 &6012210074918453349
 Rigidbody2D:
   serializedVersion: 5

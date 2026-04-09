@@ -1,153 +1,125 @@
+using Game.Systems;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
-using TMPro;
 using System.Collections.Generic;
-
 using Game.Core;
 
-public sealed class KillFeedManager : MonoBehaviour
+namespace Game.Systems
 {
-    [Header("UI")]
-    [SerializeField] private Transform container;
-    [SerializeField] private TMP_Text entryPrefab;
-
-    [Header("Settings")]
-    [SerializeField] private float entryLifetime = 3f;
-    [SerializeField] private int maxEntries = 5;
-
-    [Header("Colors")]
-    [SerializeField] private Color killerNameColor = Color.yellow;
-    [SerializeField] private Color victimNameColor = Color.red;
-    [SerializeField] private Color actionTextColor = Color.white;
-    [SerializeField] private Color powerUpNameColor = new Color(1f, 0.5f, 0f); // orange
-
-    private readonly Queue<TMP_Text> activeEntries = new();
-
-    private void OnEnable()
+    public sealed class KillFeedManager : MonoBehaviour
     {
-        GameEvents.OnPlayerKilled += HandleKill;
-        GameEvents.OnRaceFinished += ClearAll;
-    }
+        [Header("UI")]
+        [SerializeField] private Transform container;
+        [SerializeField] private KillFeedEntry entryPrefab;
 
-    private void OnDisable()
-    {
-        GameEvents.OnPlayerKilled -= HandleKill;
-        GameEvents.OnRaceFinished -= ClearAll;
-    }
+        [Header("Settings")]
+        [SerializeField] private float entryLifetime = 3f;
+        [SerializeField] private int maxEntries = 5;
 
-    private void HandleKill(KillEventData data)
-    {
-        string killerName = data.KillerIdentity != null
-            ? data.KillerIdentity.DisplayName
-            : "Unknown";
+        [Header("Colors")]
+        [SerializeField] private Color killerNameColor = Color.yellow;
+        [SerializeField] private Color victimNameColor = Color.red;
+        [SerializeField] private Color actionTextColor = Color.white;
+        [SerializeField] private Color powerUpNameColor = new Color(1f, 0.5f, 0f);
 
-        string victimName = data.VictimIdentity != null
-            ? data.VictimIdentity.DisplayName
-            : "Unknown";
+        // -------------------------------------------------------
+        // OBJECT POOL
+        // Instead of Instantiate/Destroy per kill event, we create
+        // all entry objects once at startup and reuse them.
+        // Active entries are shown, inactive ones are hidden and
+        // waiting to be reused. Zero allocations during gameplay.
+        // -------------------------------------------------------
+        private readonly Queue<KillFeedEntry> pool = new();
+        private readonly LinkedList<KillFeedEntry> active = new();
 
-        string powerUpName = data.PowerUpId.ToString();
-
-        string message =
-            $"{Colorize(killerName, killerNameColor)} " +
-            $"{Colorize("killed", actionTextColor)} " +
-            $"{Colorize(victimName, victimNameColor)} " +
-            $"{Colorize("with", actionTextColor)} " +
-            $"{Colorize(powerUpName, powerUpNameColor)}";
-
-        TMP_Text entry = Instantiate(entryPrefab, container);
-        entry.text = message;
-
-        var entryHelper = entry.GetComponent<KillFeedEntry>();
-        if (entryHelper == null)
-            entryHelper = entry.gameObject.AddComponent<KillFeedEntry>();
-
-        entryHelper.Initialize(this, entryLifetime);
-
-        activeEntries.Enqueue(entry);
-        EnforceMaxEntries();
-    }
-
-    private void ClearAll()
-    {
-        while (activeEntries.Count > 0)
+        private void Awake()
         {
-            TMP_Text entry = activeEntries.Dequeue();
-            if (entry == null)
-                continue;
+            // Pre-warm the pool — create all entries upfront, hide them
+            for (int i = 0; i < maxEntries; i++)
+            {
+                KillFeedEntry entry = Instantiate(entryPrefab, container);
+                entry.gameObject.SetActive(false);
 
-            var helper = entry.GetComponent<KillFeedEntry>();
-            if (helper != null)
-                helper.CancelAndDestroy();
-            else
-                Destroy(entry.gameObject);
+                entry.Initialize(this);
+                pool.Enqueue(entry);
+            }
         }
 
-        activeEntries.Clear();
-    }
-
-    private void EnforceMaxEntries()
-    {
-        PruneDestroyedEntries();
-
-        while (activeEntries.Count > maxEntries)
+        private void OnEnable()
         {
-            TMP_Text old = DequeueNextValidEntry();
-            if (old == null)
-                break;
-
-            var helper = old.GetComponent<KillFeedEntry>();
-            if (helper != null)
-                helper.CancelAndDestroy();
-            else
-                Destroy(old.gameObject);
-        }
-    }
-
-    private TMP_Text DequeueNextValidEntry()
-    {
-        while (activeEntries.Count > 0)
-        {
-            TMP_Text entry = activeEntries.Dequeue();
-            if (entry != null)
-                return entry;
+            GameEvents.OnPlayerKilled += HandleKill;
+            GameEvents.OnRaceFinished += ClearAll;
         }
 
-        return null;
-    }
-
-    private void PruneDestroyedEntries()
-    {
-        if (activeEntries.Count == 0)
-            return;
-
-        int count = activeEntries.Count;
-        for (int i = 0; i < count; i++)
+        private void OnDisable()
         {
-            TMP_Text entry = activeEntries.Dequeue();
-            if (entry != null)
-                activeEntries.Enqueue(entry);
+            GameEvents.OnPlayerKilled -= HandleKill;
+            GameEvents.OnRaceFinished -= ClearAll;
+        }
+
+        private void HandleKill(KillEventData data)
+        {
+            string killerName = data.KillerIdentity != null ? data.KillerIdentity.DisplayName : "Unknown";
+            string victimName = data.VictimIdentity != null ? data.VictimIdentity.DisplayName : "Unknown";
+            string powerUpName = data.PowerUpId.ToString();
+
+            string message =
+                $"{Colorize(killerName, killerNameColor)} " +
+                $"{Colorize("killed", actionTextColor)} " +
+                $"{Colorize(victimName, victimNameColor)} " +
+                $"{Colorize("with", actionTextColor)} " +
+                $"{Colorize(powerUpName, powerUpNameColor)}";
+
+            // If we're at max entries, recycle the oldest active one
+            if (active.Count >= maxEntries && active.First != null)
+                ReturnToPool(active.First.Value);
+
+            // Get an entry from the pool (or recycle oldest if pool is empty)
+            KillFeedEntry entry = pool.Count > 0 ? pool.Dequeue() : RecycleOldest();
+
+            if (entry == null) return;
+
+            entry.Show(message, entryLifetime);
+            active.AddLast(entry);
+        }
+
+        private void ClearAll()
+        {
+            // Return all active entries to pool — no Destroy calls
+            var node = active.First;
+            while (node != null)
+            {
+                var next = node.Next;
+                node.Value.Hide();
+                pool.Enqueue(node.Value);
+                active.Remove(node);
+                node = next;
+            }
+        }
+
+        // Called by KillFeedEntry when its lifetime expires
+        public void ReturnToPool(KillFeedEntry entry)
+        {
+            active.Remove(entry);
+            entry.Hide();
+            pool.Enqueue(entry);
+        }
+
+        private KillFeedEntry RecycleOldest()
+        {
+            if (active.First == null) return null;
+            KillFeedEntry oldest = active.First.Value;
+            active.RemoveFirst();
+            oldest.Hide();
+            return oldest;
+        }
+
+        private static string Colorize(string text, Color color)
+        {
+            return $"<color=#{ColorUtility.ToHtmlStringRGB(color)}>{text}</color>";
         }
     }
 
-    public void NotifyEntryDestroyed(GameObject entryObject)
-    {
-        if (entryObject == null || activeEntries.Count == 0)
-            return;
-
-        int count = activeEntries.Count;
-        for (int i = 0; i < count; i++)
-        {
-            TMP_Text entry = activeEntries.Dequeue();
-
-            if (entry != null && entry.gameObject == entryObject)
-                continue;
-
-            if (entry != null)
-                activeEntries.Enqueue(entry);
-        }
-    }
-
-    private static string Colorize(string text, Color color)
-    {
-        return $"<color=#{ColorUtility.ToHtmlStringRGB(color)}>{text}</color>";
-    }
 }

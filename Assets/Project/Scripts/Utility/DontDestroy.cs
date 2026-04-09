@@ -1,9 +1,17 @@
+using Game.Systems;
+using Game.Core;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
 
-public class DontDestroy : MonoBehaviour
+namespace Game.Systems
 {
-    void Awake()
+    public class DontDestroy : MonoBehaviour
     {
-        DontDestroyOnLoad(gameObject);
+        void Awake()
+        {
+            DontDestroyOnLoad(gameObject);
+        }
     }
 }

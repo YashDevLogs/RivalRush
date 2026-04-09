@@ -1,27 +1,38 @@
-﻿using UnityEngine;
+using Game.Systems;
+using Game.Core;
+using Game.Input;
+using Game.Player;
+using Game.AI;
+using UnityEngine;
 
-[RequireComponent(typeof(Collider2D))]
-public sealed class RandomPowerUpPickup : MonoBehaviour
+namespace Game.Systems
 {
-    [SerializeField] private PowerUpDefinition[] availablePowerUps;
-
-    private void Reset()
+    [RequireComponent(typeof(Collider2D))]
+    public sealed class RandomPowerUpPickup : MonoBehaviour
     {
-        GetComponent<Collider2D>().isTrigger = true;
+        [SerializeField] private Collider2D triggerCollider;
+        [SerializeField] private PowerUpDefinition[] availablePowerUps;
+
+        private void Reset()
+        {
+            if (triggerCollider != null)
+                triggerCollider.isTrigger = true;
+        }
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (!other.TryGetComponent(out PowerUpController controller))
+                return;
+
+            if (controller.HasPowerUp)
+                return;
+
+            if (availablePowerUps.Length == 0)
+                return;
+
+            var def = availablePowerUps[Random.Range(0, availablePowerUps.Length)];
+            controller.Pickup(def);
+        }
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (!other.TryGetComponent(out PowerUpController controller))
-            return;
-
-        if (controller.HasPowerUp)
-            return;
-
-        if (availablePowerUps.Length == 0)
-            return;
-
-        var def = availablePowerUps[Random.Range(0, availablePowerUps.Length)];
-        controller.Pickup(def);
-    }
 }

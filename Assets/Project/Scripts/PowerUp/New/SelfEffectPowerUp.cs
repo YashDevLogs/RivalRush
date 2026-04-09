@@ -1,10 +1,19 @@
+using Game.Systems;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using Game.Core;
-public abstract class SelfEffectPowerUp : PowerUpDefinition
+
+namespace Game.Systems
 {
-    public override IPowerUpEffect CreateEffect()
+    public abstract class SelfEffectPowerUp : PowerUpDefinition
     {
-        return CreateRuntimeEffect();
+        public override IPowerUpEffect CreateEffect()
+        {
+            return CreateRuntimeEffect();
+        }
+
+        protected abstract IPowerUpEffect CreateRuntimeEffect();
     }
 
-    protected abstract IPowerUpEffect CreateRuntimeEffect();
 }

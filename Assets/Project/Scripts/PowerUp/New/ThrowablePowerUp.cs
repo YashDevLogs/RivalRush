@@ -1,7 +1,16 @@
+using Game.Systems;
+using Game.Core;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
 
-public abstract class ThrowablePowerUp : PowerUpDefinition
+namespace Game.Systems
 {
-    public GameObject throwablePrefab;
-    public float forwardOffset = 1.2f;
+    public abstract class ThrowablePowerUp : PowerUpDefinition
+    {
+        public GameObject throwablePrefab;
+        public float forwardOffset = 1.2f;
+    }
+
 }

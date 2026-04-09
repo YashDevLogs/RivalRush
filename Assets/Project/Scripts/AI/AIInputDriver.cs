@@ -1,50 +1,62 @@
+using Game.Systems;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
 using Game.Core;
 
-[RequireComponent(typeof(PowerUpController))]
-public sealed class AIInputDriver : MonoBehaviour, IInputDriver
+namespace Game.Input
 {
-    public float Horizontal { get; private set; }
-    public bool JumpPressed { get; private set; }
-    public bool UsePowerUpPressed { get; private set; }
-
-    private PowerUpController powerUpController;
-
-    [Header("Sensing")]
-    [SerializeField] private float obstacleCheckDistance = 1.5f;
-    [SerializeField] private LayerMask obstacleMask;
-
-    private void Awake()
+    [RequireComponent(typeof(PowerUpController))]
+    public sealed class AIInputDriver : MonoBehaviour, IInputDriver
     {
-        powerUpController = GetComponent<PowerUpController>();
+        public float Horizontal { get; private set; }
+        public bool JumpPressed { get; private set; }
+        public bool UsePowerUpPressed { get; private set; }
+
+        [SerializeField] private PowerUpController powerUpController;
+        [SerializeField] private AIContext context = new();
+
+        [Header("Sensing")]
+        [SerializeField] private float obstacleCheckDistance = 1.5f;
+        [SerializeField] private LayerMask obstacleMask;
+
+        // ✅ Cached result — written in FixedUpdate, read in Update (or wherever needed)
+        private void Awake()
+        {
+            if (context == null)
+                context = new AIContext();
+            if (powerUpController == null)
+                Debug.LogWarning($"[AIInputDriver] PowerUpController is not assigned on {name}.");
+        }
+
+        // ✅ Raycast moved to FixedUpdate — runs in sync with physics, not every render frame
+        private void FixedUpdate()
+        {
+            bool obstacleAhead = Physics2D.Raycast(
+                transform.position,
+                Vector2.right,
+                obstacleCheckDistance,
+                obstacleMask
+            ).collider != null;
+
+            context.UpdateObstacle(obstacleAhead);
+        }
+
+        private void Update()
+        {
+            context.UpdatePowerUp(powerUpController);
+
+            Horizontal = 1f;
+            JumpPressed = context.ObstacleAhead; // reads cached result, no raycast here
+            UsePowerUpPressed = ShouldUsePowerUp(context);
+        }
+
+        private bool ShouldUsePowerUp(AIContext aiContext)
+        {
+            if (aiContext == null || !aiContext.HasPowerUp) return false;
+            return Random.value > 0.97f;
+        }
     }
 
-    private void Update()
-    {
-        Horizontal = 1f; // Always move forward in race
-
-        JumpPressed = ShouldJump();
-        UsePowerUpPressed = ShouldUsePowerUp();
-    }
-
-    private bool ShouldJump()
-    {
-        RaycastHit2D hit = Physics2D.Raycast(
-            transform.position,
-            Vector2.right,
-            obstacleCheckDistance,
-            obstacleMask
-        );
-
-        return hit.collider != null;
-    }
-
-    private bool ShouldUsePowerUp()
-    {
-        if (!powerUpController.HasPowerUp)
-            return false;
-
-        // Simple heuristic (expand later)
-        return Random.value > 0.97f;
-    }
 }

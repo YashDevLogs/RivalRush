@@ -48,11 +48,14 @@ GameObject:
   - component: {fileID: 2563727532454615659}
   - component: {fileID: 5648618459781708128}
   - component: {fileID: 4436704186500225256}
+  - component: {fileID: 4520252268966319026}
   - component: {fileID: 2306693795434095376}
   - component: {fileID: 4486409919620301181}
   - component: {fileID: 7265477492017224474}
   - component: {fileID: 4967246958461666671}
   - component: {fileID: 5027515369214241357}
+  - component: {fileID: 3982729525979460587}
+  - component: {fileID: 2487813791618394173}
   m_Layer: 9
   m_Name: AI_Player
   m_TagString: AI_Player
@@ -176,6 +179,13 @@ MonoBehaviour:
   respawnDelay: 1
   respawnInvincibilityTime: 1
   respawnOffset: {x: 1, y: 0.5}
+  blinkInterval: 0.1
+  controller: {fileID: 2306693795434095376}
+  powerUpController: {fileID: 3706095692324910717}
+  view: {fileID: 4967246958461666671}
+  rb: {fileID: 182107558573801670}
+  col: {fileID: 4486409919620301181}
+  spriteRenderer: {fileID: 7567159818122729006}
   vfxLibrary: {fileID: 11400000, guid: 2c3eef65aba1a8041937c388ea5a31e1, type: 2}
 --- !u!95 &7797538079168336331
 Animator:
@@ -212,6 +222,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpController
   sharedAssets: {fileID: 11400000, guid: 036bc4c6c569fcd4189b02552d9091a6, type: 2}
+  playerControllerComponent: {fileID: 4706878075686042359}
+  healthComponent: {fileID: 4706878075686042359}
+  playerEntityComponent: {fileID: 4706878075686042359}
 --- !u!114 &2563727532454615659
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -253,6 +266,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AIPowerUpBrain
   personality: 3
+  powerUpController: {fileID: 3706095692324910717}
+  sensor: {fileID: 2563727532454615659}
   expectedRaceDuration: 30
   minDecisionDelay: 0.4
   maxDecisionDelay: 1.2
@@ -269,6 +284,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8001ff20ec98972489210e3aa7222c82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AIInputSource
+  sensor: {fileID: 2563727532454615659}
+  powerUpBrain: {fileID: 5648618459781708128}
+--- !u!114 &4520252268966319026
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8296394138938738586}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 2140213353
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &2306693795434095376
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -281,6 +323,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2ee728be14efdf4db1de0408e8e69ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  ShowTopMostFoldoutHeaderGroup: 1
+  rb: {fileID: 182107558573801670}
+  model: {fileID: 7265477492017224474}
+  view: {fileID: 4967246958461666671}
+  powerUpController: {fileID: 3706095692324910717}
+  health: {fileID: 4706878075686042359}
+  playerMarker: {fileID: 0}
+  playerIdentity: {fileID: 5027515369214241357}
+  inputSourceComponent: {fileID: 4436704186500225256}
+  boxCollider: {fileID: 0}
+  capsuleCollider: {fileID: 4486409919620301181}
 --- !u!70 &4486409919620301181
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -364,3 +417,66 @@ MonoBehaviour:
   isHuman: 0
   humanDisplayName: 
   displayName: 
+--- !u!114 &3982729525979460587
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8296394138938738586}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 0
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 0
+  SyncRotAngleX: 0
+  SyncRotAngleY: 0
+  SyncRotAngleZ: 0
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
+  PositionThreshold: 0.02
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
+--- !u!114 &2487813791618394173
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8296394138938738586}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80d7c879794dfda4687da0e400131852, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkRigidbody2D
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkRigidbodyBaseExpanded: 0
+  UseRigidBodyForMotion: 0
+  AutoUpdateKinematicState: 1
+  AutoSetKinematicOnDespawn: 1

@@ -1,11 +1,21 @@
-public enum PowerUpId
+using Game.Systems;
+using Game.Core;
+using Game.Input;
+using Game.Player;
+using Game.AI;
+
+namespace Game.Core
 {
-    None = 0,
-    SpeedBoost,
-    Shield,
-    Trap,
-    Sawblade,
-    Rocket,
-    Revolver,
-    Shocker
+    public enum PowerUpId
+    {
+        None = 0,
+        SpeedBoost,
+        Shield,
+        Trap,
+        Sawblade,
+        Rocket,
+        Revolver,
+        Shocker
+    }
+
 }

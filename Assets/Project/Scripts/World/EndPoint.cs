@@ -4,6 +4,7 @@ using Game.Player;
 using Game.AI;
 using Game.Core;
 using UnityEngine;
+using Unity.Netcode;
 
 namespace Game.Systems
 {
@@ -23,20 +24,13 @@ namespace Game.Systems
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (other.TryGetComponent<IPlayerController>(out var player))
-            {
-                RaceManager.Instance?.RegisterFinish(player);
+            if (!other.TryGetComponent<IPlayerController>(out var player))
+                return;
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
+                return;
 
-                if (disablePlayerOnFinish)
-                {
-                    if (other.TryGetComponent<PlayerController>(out var pc))
-                        pc.OnFinishRace();
-                    else
-                        player.DisableControl();
-                }
-
-                TriggerEnd();
-            }
+            RaceManager.Instance?.RegisterFinish(player);
+            TriggerEnd();
         }
 
         public void TriggerEnd()

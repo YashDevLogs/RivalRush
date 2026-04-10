@@ -15,6 +15,7 @@ namespace Game.Player
         [SerializeField] private Rigidbody2D rb;
         [SerializeField] private PowerUpController powerUpController;
 
+        public bool IsLocal { get; private set; }
         public Rigidbody2D Rigidbody => rb;
         public PowerUpController PowerUpController => powerUpController;
 
@@ -25,7 +26,9 @@ namespace Game.Player
             if (powerUpController == null)
                 Debug.LogWarning($"[PlayerMarker] PowerUpController is not assigned on {name}.");
 
-            if (IsOwner)
+            IsLocal = IsOwner;
+
+            if (IsLocal)
             {
                 if (Local != null && Local != this)
                 {
@@ -39,19 +42,16 @@ namespace Game.Player
 
                 GameEvents.RaiseLocalPlayerSpawned();
             }
-            else
-            {
-                // Disable marker logic on non-local players
-                enabled = false;
-            }
         }
 
         public override void OnNetworkDespawn()
         {
-            if (IsOwner && Local == this)
+            if (IsLocal && Local == this)
             {
                 Local = null;
             }
+
+            IsLocal = false;
         }
     }
 

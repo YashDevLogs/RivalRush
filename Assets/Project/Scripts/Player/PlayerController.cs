@@ -32,8 +32,6 @@ namespace Game.Player
         private float originalGravityScale;
         private int climbableWallLayer;
 
-        private IInputSource inputSource;
-
         public event Action OnJump;
         public event Action OnLand;
         public event Action<PlayerState> OnStateChanged;
@@ -42,17 +40,19 @@ namespace Game.Player
         public Rigidbody2D Rigidbody => rb;
         public PlayerMarker PlayerMarker => playerMarker;
         public PlayerIdentity PlayerIdentity => playerIdentity;
+        public bool IsLocal => PlayerMarker != null && PlayerMarker.IsLocal;
+        public MonoBehaviour InputSourceComponent => inputSourceComponent;
 
         private void Awake()
         {
-            inputSource = inputSourceComponent as IInputSource;
-
             CacheCollider();
             if (rb != null)
                 originalGravityScale = rb.gravityScale;
             climbableWallLayer = LayerMask.NameToLayer("ClimbableWall");
 
-            if (inputSource == null)
+            EnsureInputHandlerConfigured();
+
+            if (!TryGetInputSource(out _))
                 Debug.LogError($"[PlayerController] No IInputSource assigned on {name}");
             if (rb == null)
                 Debug.LogError($"[PlayerController] No Rigidbody2D assigned on {name}");
@@ -96,20 +96,22 @@ namespace Game.Player
 
         public override void OnNetworkSpawn()
         {
-            Debug.Log($"Player Spawned | Owner: {IsOwner} | ClientId: {OwnerClientId}");
+            string contextPrefix = IsServer ? "[SERVER]" : "[CLIENT]";
+            Debug.Log(
+                $"{contextPrefix}[PLAYER] Spawned '{name}' | IsOwner: {IsOwner} | IsLocal: {IsLocal} | NetworkObjectId: {NetworkObjectId}"
+            );
 
             if (IsServer)
             {
                 RaceManager.Instance?.RegisterPlayer(this, this);
             }
-            
+
         }
 
         private void Update()
         {
             UpdateAnimator();
 
-            if (!IsOwner) return;
             if (RaceManager.Instance == null) return;
 
             if (!RaceManager.Instance.CanMove())
@@ -117,47 +119,24 @@ namespace Game.Player
                 rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
                 return;
             }
-
-            if (inputSource != null)
-            {
-                int currentTick = GetCurrentTick();
-
-                // MODIFIED: jump timing is tick-based, but jump remains instant on owner.
-                if (inputSource.JumpPressed)
-                {
-                    if (model.IsWallClinging)
-                    {
-                        TryPerformWallJump(currentTick);
-                    }
-                    else
-                    {
-                        model.LastJumpPressedTick = currentTick;
-                        TryConsumeBufferedJump(currentTick);
-                    }
-                }
-
-                if (inputSource.SlidePressed)
-                {
-                    if (model.IsGrounded)
-                        TryStartSlide(currentTick);
-                    else
-                        TryPerformAirDive();
-                }
-
-                if (inputSource.PowerUpPressed)
-                    powerUpController?.Activate();
-            }
         }
 
         private void FixedUpdate()
         {
             // REMOVED: client prediction / reconciliation / rollback / validation.
-            if (!IsOwner) return;
-
             int currentTick = GetCurrentTick();
 
             HandleGround(currentTick);
-            TryConsumeBufferedJump(currentTick);
+
+            if (!IsLocal)
+            {
+                // Remote players should never process local input here.
+                // They only simulate movement/state updates.
+            }
+            else
+            {
+                TryConsumeBufferedJump(currentTick);
+            }
 
             if (model.HasFinishedRace)
             {
@@ -294,11 +273,16 @@ namespace Game.Player
             view?.UpdateMovement(model.CurrentRunSpeed / model.MaxRunSpeed, false);
             view?.TriggerJump();
 
-            // MODIFIED: keep jump animation sync via ServerRpc -> ClientRpc.
-            if (!IsServer)
+            // ✅ ONLY OWNER calls ServerRpc
+            if (IsOwner)
+            {
                 NotifyJumpServerRpc();
-            else
+            }
+            else if (IsServer)
+            {
+                // AI or server-controlled players
                 PlayJumpClientRpc();
+            }
 
             OnJump?.Invoke();
             UpdateState(PlayerState.Jumping);
@@ -313,7 +297,7 @@ namespace Game.Player
         [ClientRpc]
         private void PlayJumpClientRpc()
         {
-            if (IsOwner) return;
+            if (IsLocal) return;
             view?.TriggerJump();
         }
 
@@ -323,7 +307,7 @@ namespace Game.Player
         {
             float normalizedSpeed;
 
-            if (IsOwner)
+            if (IsLocal)
             {
                 normalizedSpeed = model.CurrentRunSpeed / model.MaxRunSpeed;
                 view?.UpdateMovement(normalizedSpeed, model.IsGrounded);
@@ -345,6 +329,46 @@ namespace Game.Player
             if (model.State == newState) return;
             model.State = newState;
             OnStateChanged?.Invoke(newState);
+        }
+
+        public bool TryGetInputSource(out IInputSource inputSource)
+        {
+            inputSource = inputSourceComponent as IInputSource;
+            return inputSource != null;
+        }
+
+        public void HandleJump()
+        {
+            if (!CanProcessLocalInput()) return;
+
+            int currentTick = GetCurrentTick();
+
+            if (model.IsWallClinging)
+            {
+                TryPerformWallJump(currentTick);
+                return;
+            }
+
+            model.LastJumpPressedTick = currentTick;
+            TryConsumeBufferedJump(currentTick);
+        }
+
+        public void HandleSlide()
+        {
+            if (!CanProcessLocalInput()) return;
+
+            int currentTick = GetCurrentTick();
+
+            if (model.IsGrounded)
+                TryStartSlide(currentTick);
+            else
+                TryPerformAirDive();
+        }
+
+        public void HandlePowerUp()
+        {
+            if (!CanProcessLocalInput()) return;
+            powerUpController?.Activate();
         }
 
         public void Kill() => gameObject.SetActive(false);
@@ -376,6 +400,9 @@ namespace Game.Player
 
         public void OnFinishRace()
         {
+            if (model == null || model.HasFinishedRace)
+                return;
+
             model.HasFinishedRace = true;
             model.ControlEnabled = false;
             model.CurrentRunSpeed = 0f;
@@ -566,7 +593,32 @@ namespace Game.Player
             }
         }
 
-    #if UNITY_EDITOR
+        private void EnsureInputHandlerConfigured()
+        {
+            var inputHandler = GetComponent<PlayerInputHandler>();
+            if (inputHandler == null)
+                inputHandler = gameObject.AddComponent<PlayerInputHandler>();
+
+            inputHandler.Configure(this, playerMarker, inputSourceComponent);
+        }
+
+        private bool CanProcessLocalInput()
+        {
+            if (RaceManager.Instance == null)
+                return false;
+
+            if (!RaceManager.Instance.CanMove())
+                return false;
+
+            // ✅ HUMAN PLAYER
+            if (PlayerMarker != null)
+                return PlayerMarker.IsLocal;
+
+            // ✅ AI PLAYER (no PlayerMarker)
+            return true;
+        }
+
+#if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
             var currentModel = model;
@@ -578,7 +630,7 @@ namespace Game.Player
                 new Vector3(currentModel.GroundCheckSize.x, currentModel.GroundCheckSize.y, 0.1f)
             );
         }
-    #endif
+#endif
     }
 
 }

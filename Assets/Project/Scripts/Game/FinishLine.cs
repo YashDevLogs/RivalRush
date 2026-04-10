@@ -23,24 +23,10 @@ namespace Game.Systems
         {
             if (!other.TryGetComponent<IPlayerController>(out var racer))
                 return;
-
-            // ✅ Only SERVER handles finish registration
-            if (!NetworkManager.Singleton.IsServer)
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
                 return;
 
-            // ✅ Register finish (server authoritative)
-            RaceManager.Instance.RegisterFinish(racer);
-
-            // ✅ Preserve original logic (momentum / state handling)
-            if (other.TryGetComponent<PlayerController>(out var pc))
-            {
-                pc.OnFinishRace();
-            }
-            else
-            {
-                racer.DisableControl();
-            }
+            RaceManager.Instance?.RegisterFinish(racer);
         }
     }
-
 }

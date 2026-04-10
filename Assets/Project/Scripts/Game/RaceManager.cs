@@ -1,4 +1,4 @@
-using Game.Systems;
+ï»¿using Game.Systems;
 using Game.Input;
 using Game.Player;
 using Game.AI;
@@ -7,7 +7,6 @@ using UnityEngine;
 using Unity.Netcode;
 using TMPro;
 using Game.Core;
-using System.Collections;
 
 namespace Game.Systems
 {
@@ -26,6 +25,7 @@ namespace Game.Systems
         private readonly List<IPlayerController> racers = new();
         private readonly List<IPlayerController> finishOrder = new();
         private readonly List<IPlayerEntity> playerEntities = new();
+        private readonly HashSet<ulong> processedFinishedPlayerIds = new();
 
         public float RaceElapsedTime { get; private set; }
 
@@ -43,7 +43,7 @@ namespace Game.Systems
             // this scene has finished loading. LobbyManager waits for ALL
             // clients before calling StartCountdown() on everyone.
             // This replaces the old WaitForPlayersAndStart coroutine which
-            // had a race condition — it used a timer rather than waiting for
+            // had a race condition â€” it used a timer rather than waiting for
             // actual client confirmation.
             LobbyManager.Instance.ReportSceneReadyServerRpc();
         }
@@ -53,25 +53,36 @@ namespace Game.Systems
             // Nothing to auto-start here anymore.
             // Countdown is driven by LobbyManager.StartCountdownClientRpc
             // which calls StartCountdown() once ALL clients are ready.
+            processedFinishedPlayerIds.Clear();
+
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
+                return;
+
+            var spawnedObjects = NetworkManager.Singleton.SpawnManager?.SpawnedObjects;
+            if (spawnedObjects == null)
+                return;
+
+            foreach (var spawnedObject in spawnedObjects.Values)
+                RegisterPlayerServer(spawnedObject);
         }
 
         // -------------------------------------------------------
         // Called by LobbyManager.StartCountdownClientRpc on ALL clients
         // simultaneously, guaranteeing everyone starts at the same time.
-        // Only the server sets raceStartTime — clients read it via
+        // Only the server sets raceStartTime â€” clients read it via
         // NetworkVariable which keeps everyone in sync.
         // -------------------------------------------------------
         public void StartCountdown()
         {
-            Debug.Log($"[RaceManager] StartCountdown called | IsServer: {IsServer}");
+            Debug.Log($"{GetContextPrefix()}[RACE] StartCountdown called.");
 
-            if (IsServer)
-            {
-                double delay = 3.0; // 3 second countdown
-                raceStartTime.Value = NetworkManager.Singleton.LocalTime.Time + delay;
-                Debug.Log($"[SERVER] Race start time set to: {raceStartTime.Value}");
-            }
-            // Clients don't need to do anything here — they read raceStartTime
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
+                return;
+
+            double delay = 3.0; // 3 second countdown
+            raceStartTime.Value = NetworkManager.Singleton.LocalTime.Time + delay;
+            Debug.Log($"[SERVER][RACE] Race start time set to {raceStartTime.Value}.");
+            // Clients don't need to do anything here - they read raceStartTime
             // via NetworkVariable in Update() and display the countdown locally
         }
 
@@ -128,6 +139,7 @@ namespace Game.Systems
                 Invoke(nameof(HideCountdown), 0.5f);
             }
 
+            Debug.Log($"{GetContextPrefix()}[RACE] Race started.");
             GameEvents.RaiseRaceStarted();
         }
 
@@ -141,24 +153,61 @@ namespace Game.Systems
 
         // ---- Player Registration ----
 
+        public void RegisterPlayerServer(NetworkObject playerObject)
+        {
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
+                return;
+            if (playerObject == null)
+                return;
+            if (!playerObject.TryGetComponent<IPlayerController>(out var controller))
+                return;
+
+            if (TrackPlayer(controller, controller as IPlayerEntity))
+            {
+                Debug.Log($"[SERVER][RACE] Registered player '{GetPlayerDebugName(controller)}' | NetworkObjectId: {playerObject.NetworkObjectId}");
+            }
+        }
+
         public void RegisterPlayer(IPlayerController controller, IPlayerEntity entity)
         {
-            if (!IsServer) return;
-            if (!racers.Contains(controller)) racers.Add(controller);
-            if (!playerEntities.Contains(entity)) playerEntities.Add(entity);
+            if (!IsServer)
+            {
+                Debug.LogWarning("[CLIENT][RACE] Non-server attempted to call RegisterPlayer.");
+                return;
+            }
+
+            if (TrackPlayer(controller, entity))
+            {
+                Debug.Log($"[SERVER][RACE] Registered player '{GetPlayerDebugName(controller)}'.");
+            }
         }
 
         public IReadOnlyList<IPlayerEntity> GetPlayerEntities() => playerEntities;
 
         // ---- Finish ----
 
-        public void RegisterFinish(IPlayerController racer)
+        public void RegisterFinish(IPlayerController player)
         {
-            if (!IsServer) return;
-            if (!raceStarted.Value) return;
-            if (finishOrder.Contains(racer)) return;
+            if (!IsServer)
+            {
+                Debug.LogWarning("[CLIENT][RACE] Non-server attempted to call RegisterFinish.");
+                return;
+            }
 
-            finishOrder.Add(racer);
+            if (player == null) return;
+            if (!raceStarted.Value) return;
+
+            TrackPlayer(player, player as IPlayerEntity);
+
+            if (finishOrder.Contains(player)) return;
+
+            finishOrder.Add(player);
+            ApplyPlayerFinishStateOnce(player);
+            Debug.Log($"[SERVER][RACE] Finish registered for '{GetPlayerDebugName(player)}'.");
+            Debug.Log($"[SERVER][RACE] Finish order: {GetFinishOrderDebugString()}");
+
+            if (TryGetNetworkObjectId(player, out ulong playerObjectId))
+                SyncPlayerFinishedClientRpc(playerObjectId);
 
             if (finishOrder.Count == racers.Count)
                 EndRace();
@@ -168,15 +217,154 @@ namespace Game.Systems
 
         private void EndRace()
         {
+            if (!IsServer)
+            {
+                Debug.LogWarning("[CLIENT][RACE] Non-server attempted to call EndRace.");
+                return;
+            }
+
             currentState = RaceState.Finished;
             raceStarted.Value = false;
-            EndRaceClientRpc();
+            Debug.Log($"[SERVER][RACE] Race ended. Final order: {GetFinishOrderDebugString()}");
+            EndRaceClientRpc(BuildFinishOrderObjectIds());
         }
 
         [ClientRpc]
-        private void EndRaceClientRpc()
+        private void EndRaceClientRpc(ulong[] finishOrderObjectIds)
         {
+            ApplyFinishOrder(finishOrderObjectIds);
             GameEvents.RaiseRaceFinished();
+        }
+
+        [ClientRpc]
+        private void SyncPlayerFinishedClientRpc(ulong playerObjectId)
+        {
+            if (NetworkManager.Singleton == null)
+                return;
+
+            var spawnedObjects = NetworkManager.Singleton.SpawnManager?.SpawnedObjects;
+            if (spawnedObjects == null)
+                return;
+            if (!spawnedObjects.TryGetValue(playerObjectId, out var networkObject))
+                return;
+            if (!networkObject.TryGetComponent<IPlayerController>(out var player))
+                return;
+
+            ApplyPlayerFinishStateOnce(player);
+        }
+
+        private bool TrackPlayer(IPlayerController controller, IPlayerEntity entity)
+        {
+            bool added = false;
+
+            if (controller != null && !racers.Contains(controller))
+            {
+                racers.Add(controller);
+                added = true;
+            }
+
+            if (entity != null && !playerEntities.Contains(entity))
+            {
+                playerEntities.Add(entity);
+                added = true;
+            }
+
+            return added;
+        }
+
+        private ulong[] BuildFinishOrderObjectIds()
+        {
+            var objectIds = new List<ulong>(finishOrder.Count);
+
+            foreach (var player in finishOrder)
+            {
+                if (TryGetNetworkObjectId(player, out ulong objectId))
+                    objectIds.Add(objectId);
+            }
+
+            return objectIds.ToArray();
+        }
+
+        private void ApplyFinishOrder(ulong[] finishOrderObjectIds)
+        {
+            finishOrder.Clear();
+
+            if (NetworkManager.Singleton == null)
+                return;
+
+            var spawnedObjects = NetworkManager.Singleton.SpawnManager?.SpawnedObjects;
+            if (spawnedObjects == null)
+                return;
+
+            foreach (ulong objectId in finishOrderObjectIds)
+            {
+                if (!spawnedObjects.TryGetValue(objectId, out var networkObject))
+                    continue;
+                if (!networkObject.TryGetComponent<IPlayerController>(out var player))
+                    continue;
+
+                ApplyPlayerFinishStateOnce(player);
+                finishOrder.Add(player);
+            }
+        }
+
+        private void ApplyPlayerFinishStateOnce(IPlayerController player)
+        {
+            if (player == null)
+                return;
+
+            if (TryGetNetworkObjectId(player, out ulong objectId) && !processedFinishedPlayerIds.Add(objectId))
+                return;
+
+            ApplyPlayerFinishState(player);
+        }
+
+        private static void ApplyPlayerFinishState(IPlayerController player)
+        {
+            if (player == null)
+                return;
+
+            if (player is PlayerController playerController)
+                playerController.OnFinishRace();
+            else
+                player.DisableControl();
+        }
+
+        private static bool TryGetNetworkObjectId(IPlayerController player, out ulong objectId)
+        {
+            objectId = 0;
+
+            if (player is not NetworkBehaviour behaviour || behaviour.NetworkObject == null)
+                return false;
+
+            objectId = behaviour.NetworkObjectId;
+            return true;
+        }
+
+        private string GetFinishOrderDebugString()
+        {
+            if (finishOrder.Count == 0)
+                return "<empty>";
+
+            var names = new List<string>(finishOrder.Count);
+
+            for (int i = 0; i < finishOrder.Count; i++)
+                names.Add($"{i + 1}:{GetPlayerDebugName(finishOrder[i])}");
+
+            return string.Join(", ", names);
+        }
+
+        private static string GetPlayerDebugName(IPlayerController controller)
+        {
+            if (controller is MonoBehaviour behaviour)
+                return behaviour.name;
+
+            return controller != null ? controller.GetType().Name : "null";
+        }
+
+        private string GetContextPrefix()
+        {
+            return IsServer ? "[SERVER]" : "[CLIENT]";
         }
     }
 }

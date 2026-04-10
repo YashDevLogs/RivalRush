@@ -30,7 +30,7 @@ namespace Game.Systems
                 particles = new ParticleSystem[0];
 
             if (particles.Length == 0)
-                Debug.LogWarning($"[ShockerEffectController] Particle systems are not assigned on {name}.");
+               Debug.LogWarning($"[ShockerEffectController] Particle systems are not assigned on {name}.");
 
             foreach (var ps in particles)
             {

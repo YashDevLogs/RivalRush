@@ -1,22 +1,40 @@
+using Game.Systems;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using Game.Core;
 
-public readonly struct KillEventData
+namespace Game.Core
 {
-    public readonly IPlayerEntity Killer;
-    public readonly IPlayerEntity Victim;
-    public readonly PlayerIdentity KillerIdentity;
-    public readonly PlayerIdentity VictimIdentity;
-    public readonly PowerUpId PowerUpId;
-
-    public KillEventData(
-        IPlayerEntity killer,
-        IPlayerEntity victim,
-        PowerUpId powerUpId)
+    public readonly struct KillEventData
     {
-        Killer = killer;
-        Victim = victim;
-        KillerIdentity = killer != null ? killer.Transform.GetComponent<PlayerIdentity>() : null;
-        VictimIdentity = victim != null ? victim.Transform.GetComponent<PlayerIdentity>() : null;
-        PowerUpId = powerUpId;
+        public readonly IPlayerEntity Killer;
+        public readonly IPlayerEntity Victim;
+        public readonly PlayerIdentity KillerIdentity;
+        public readonly PlayerIdentity VictimIdentity;
+        public readonly PowerUpId PowerUpId;
+
+        public KillEventData(
+            IPlayerEntity killer,
+            IPlayerEntity victim,
+            PowerUpId powerUpId)
+        {
+            Killer = killer;
+            Victim = victim;
+            KillerIdentity = ResolveIdentity(killer);
+            VictimIdentity = ResolveIdentity(victim);
+            PowerUpId = powerUpId;
+        }
+
+        private static PlayerIdentity ResolveIdentity(IPlayerEntity player)
+        {
+            return player switch
+            {
+                PlayerController playerController => playerController.PlayerIdentity,
+                AIPlayerEntity aiPlayerEntity => aiPlayerEntity.PlayerIdentity,
+                _ => null
+            };
+        }
     }
+
 }

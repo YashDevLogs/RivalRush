@@ -1,21 +1,58 @@
-﻿using UnityEngine;
+using Game.Systems;
+using Game.Input;
+using Game.Player;
+using Game.AI;
+using UnityEngine;
+using Unity.Netcode;
 using Game.Core;
 
-public sealed class PlayerMarker : MonoBehaviour
+namespace Game.Player
 {
-    public static PlayerMarker Local { get; private set; }
-
-    private void Awake()
+    public sealed class PlayerMarker : NetworkBehaviour
     {
-        if (Local != null)
+        public static PlayerMarker Local { get; private set; }
+
+        [SerializeField] private Rigidbody2D rb;
+        [SerializeField] private PowerUpController powerUpController;
+
+        public bool IsLocal { get; private set; }
+        public Rigidbody2D Rigidbody => rb;
+        public PowerUpController PowerUpController => powerUpController;
+
+        public override void OnNetworkSpawn()
         {
-            Debug.LogError("Multiple PlayerMarker detected! Only one local player is allowed.");
-            Destroy(this);
-            return;
+            if (rb == null)
+                Debug.LogWarning($"[PlayerMarker] Rigidbody2D is not assigned on {name}.");
+            if (powerUpController == null)
+                Debug.LogWarning($"[PlayerMarker] PowerUpController is not assigned on {name}.");
+
+            IsLocal = IsOwner;
+
+            if (IsLocal)
+            {
+                if (Local != null && Local != this)
+                {
+                    Debug.LogWarning("Duplicate local PlayerMarker destroyed.");
+                    Destroy(gameObject);
+                    return;
+                }
+
+                Local = this;
+                Debug.Log("Local Player Assigned");
+
+                GameEvents.RaiseLocalPlayerSpawned();
+            }
         }
 
-        Local = this;
+        public override void OnNetworkDespawn()
+        {
+            if (IsLocal && Local == this)
+            {
+                Local = null;
+            }
 
-        GameEvents.RaiseLocalPlayerSpawned(); 
+            IsLocal = false;
+        }
     }
+
 }

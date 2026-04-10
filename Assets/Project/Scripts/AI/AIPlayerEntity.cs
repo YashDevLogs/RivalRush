@@ -1,36 +1,52 @@
+using Game.Systems;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
 
 using Game.Core;
-[RequireComponent(typeof(Rigidbody2D))]
-public sealed class AIPlayerEntity : MonoBehaviour, IPlayerEntity
+
+namespace Game.AI
 {
-    private Rigidbody2D rb;
-
-    public Transform Transform => transform;
-    public Rigidbody2D Rigidbody => rb;
-
-    private void Awake()
+    [RequireComponent(typeof(Rigidbody2D))]
+    public sealed class AIPlayerEntity : MonoBehaviour, IPlayerEntity
     {
-        rb = GetComponent<Rigidbody2D>();
-    }
+        [SerializeField] private Rigidbody2D rb;
+        [SerializeField] private PlayerHealth health;
+        [SerializeField] private PlayerIdentity playerIdentity;
 
-    public bool IsTargetable
-    {
-        get
+        public Transform Transform => transform;
+        public Rigidbody2D Rigidbody => rb;
+        public PlayerIdentity PlayerIdentity => playerIdentity;
+
+        private void Awake()
         {
-            if (!gameObject.activeInHierarchy)
-                return false;
-
-            var health = GetComponent<PlayerHealth>();
+            if (rb == null)
+                Debug.LogWarning($"[AIPlayerEntity] Rigidbody2D is not assigned on {name}.");
             if (health == null)
-                return false;
+                Debug.LogWarning($"[AIPlayerEntity] PlayerHealth is not assigned on {name}.");
+            if (playerIdentity == null)
+                Debug.LogWarning($"[AIPlayerEntity] PlayerIdentity is not assigned on {name}.");
+        }
 
-            return !health.IsInvincible && rb.simulated;
+        public bool IsTargetable
+        {
+            get
+            {
+                if (!gameObject.activeInHierarchy)
+                    return false;
+
+                if (health == null)
+                    return false;
+
+                return !health.IsInvincible && rb.simulated;
+            }
+        }
+
+        public void Kill()
+        {
+            gameObject.SetActive(false);
         }
     }
 
-    public void Kill()
-    {
-        gameObject.SetActive(false);
-    }
 }

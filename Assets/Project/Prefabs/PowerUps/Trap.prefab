@@ -169,6 +169,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb961ec18bea71841b9a19c4a7bd1a32, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hazard
+  triggerCollider: {fileID: 0}
   damage: 1
   disableOnHit: 0
 --- !u!1 &4842330695178494300
@@ -309,3 +310,6 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
+  rb: {fileID: 3391791457476321464}
+  groundCollider: {fileID: 8023588956228989355}
+  damageTrigger: {fileID: 613130007662809108}

@@ -1,40 +1,42 @@
+using Game.Systems;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using Game.Core;
 using UnityEngine;
+using Unity.Netcode;
 
-[RequireComponent(typeof(Collider2D))]
-public class EndPoint : MonoBehaviour, IEndPoint
+namespace Game.Systems
 {
-    [Tooltip("Optional: disable player input on finish")]
-    public bool disablePlayerOnFinish = true;
-
-    private void Reset()
+    [RequireComponent(typeof(Collider2D))]
+    public class EndPoint : MonoBehaviour, IEndPoint
     {
-        var c = GetComponent<Collider2D>();
-        if (c) c.isTrigger = true;
-    }
+        [SerializeField] private Collider2D triggerCollider;
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        var player = other.GetComponent<IPlayerController>();
-        if (player != null)
+        [Tooltip("Optional: disable player input on finish")]
+        public bool disablePlayerOnFinish = true;
+
+        private void Reset()
         {
+            if (triggerCollider != null)
+                triggerCollider.isTrigger = true;
+        }
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (!other.TryGetComponent<IPlayerController>(out var player))
+                return;
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
+                return;
+
             RaceManager.Instance?.RegisterFinish(player);
-
-            if (disablePlayerOnFinish)
-            {
-                var pc = other.GetComponent<PlayerController>();
-                if (pc != null)
-                    pc.OnFinishRace();
-                else
-                    player.DisableControl();
-            }
-
             TriggerEnd();
+        }
+
+        public void TriggerEnd()
+        {
+            Debug.Log("EndPoint reached - finish forwarded to RaceManager.");
         }
     }
 
-    public void TriggerEnd()
-    {
-        Debug.Log("EndPoint reached - finish forwarded to RaceManager.");
-    }
 }

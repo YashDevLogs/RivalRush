@@ -104,6 +104,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b1b0c2cf409d104fbd7e945c48eca5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpPickup
+  triggerCollider: {fileID: 3095246860888800805}
   availablePowerUps: []
 --- !u!61 &3095246860888800805
 BoxCollider2D:

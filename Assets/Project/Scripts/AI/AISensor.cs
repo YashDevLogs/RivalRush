@@ -1,181 +1,100 @@
-ï»¿using UnityEngine;
+using Game.Systems;
+using Game.Core;
+using Game.Input;
+using Game.Player;
+using Game.AI;
+using UnityEngine;
 
-public sealed class AISensor : MonoBehaviour
+namespace Game.AI
 {
-    [Header("Hazard Detection")]
-    [SerializeField] private LayerMask hazardLayer;
-    [SerializeField] private float hazardLookDistance = 1.5f;
-    [SerializeField] private Vector2 hazardRayOffset = new Vector2(0f, -0.2f);
-
-    [Header("Wall Detection")]
-    [SerializeField] private LayerMask wallDetectionMask = ~0;
-    [SerializeField] private float wallLookDistance = 1.2f;
-    [SerializeField] private Vector2 wallRayOffset = new Vector2(0f, 0.2f);
-    [SerializeField] private float wallJumpDecisionCooldown = 0.15f;
-
-    [Header("Slide Detection")]
-    [SerializeField] private float slideLookDistance = 1.2f;
-    [SerializeField] private Vector2 slideRayOffset = new Vector2(0f, -0.6f);
-    [SerializeField] private float slideDecisionCooldown = 0.35f;
-
-    [Header("Timing")]
-    [SerializeField] private float jumpDecisionCooldown = 0.25f;
-
-    private float lastJumpDecisionTime;
-    private float lastWallJumpDecisionTime;
-    private float lastSlideDecisionTime;
-
-    private bool hazardAhead;
-    private bool wallAhead;
-
-    public bool IsHazardAhead => hazardAhead;
-    public bool IsWallAhead => wallAhead;
-
-    [SerializeField] private AIPersonality personality = AIPersonality.Balanced;
-    private int climbableWallLayer;
-
-    private void Awake()
+    // ? All raycasts moved from Update to FixedUpdate.
+    // Previously 3 raycasts fired every frame at 60fps per AI.
+    // Now they fire at 50fps AND in sync with the physics step,
+    // which is when collision data is actually valid.
+    public sealed class AISensor : MonoBehaviour
     {
-        climbableWallLayer = LayerMask.NameToLayer("ClimbableWall");
-    }
+        [Header("Hazard Detection")]
+        [SerializeField] private LayerMask hazardLayer;
+        [SerializeField] private float hazardLookDistance = 1.5f;
+        [SerializeField] private Vector2 hazardRayOffset = new Vector2(0f, -0.2f);
 
+        [Header("Wall Detection")]
+        [SerializeField] private LayerMask wallDetectionMask = ~0;
+        [SerializeField] private float wallLookDistance = 1.2f;
+        [SerializeField] private Vector2 wallRayOffset = new Vector2(0f, 0.2f);
 
-    public bool ShouldJump()
-    {
-        float personalityDelay = GetJumpDelay();
+        [Header("Slide Detection")]
+        [SerializeField] private float slideLookDistance = 1.2f;
+        [SerializeField] private Vector2 slideRayOffset = new Vector2(0f, -0.6f);
 
-        wallAhead = DetectClimbableWallAhead();
-        if (wallAhead)
+        // ? Cached results — read by AIInputSource in Update, written in FixedUpdate
+        private bool hazardAhead;
+        private bool wallAhead;
+        private bool lowHazardAhead;
+
+        public bool HazardAhead => hazardAhead;
+        public bool WallAhead => wallAhead;
+        public bool LowHazardAhead => lowHazardAhead;
+
+        private int climbableWallLayer;
+
+        private void Awake()
         {
-            if (Time.time < lastWallJumpDecisionTime + wallJumpDecisionCooldown)
-                return false;
-
-            lastWallJumpDecisionTime = Time.time;
-            return true;
+            climbableWallLayer = LayerMask.NameToLayer("ClimbableWall");
         }
 
-        if (Time.time < lastJumpDecisionTime + personalityDelay)
-            return false;
-
-        hazardAhead = DetectHazardAhead();
-
-        if (hazardAhead)
+        // ? Run all raycasts once per physics step and cache results
+        private void FixedUpdate()
         {
-            lastJumpDecisionTime = Time.time;
-            return true;
+            hazardAhead = DetectHazard(hazardRayOffset, hazardLookDistance, Color.red);
+            wallAhead = DetectWall();
+            lowHazardAhead = DetectHazard(slideRayOffset, slideLookDistance, Color.cyan);
         }
 
-        return false;
-    }
+        // ---- Private raycast helpers ----
 
-    private float GetJumpDelay()
-    {
-        return personality switch
+        private bool DetectHazard(Vector2 offset, float distance, Color debugColor)
         {
-            AIPersonality.Aggressive => jumpDecisionCooldown * 1.3f,
-            AIPersonality.Defensive => jumpDecisionCooldown * 0.7f,
-            AIPersonality.Risky => jumpDecisionCooldown * 1.6f,
-            _ => jumpDecisionCooldown,
-        };
-    }
+            Vector2 origin = (Vector2)transform.position + offset;
+            Debug.DrawRay(origin, Vector2.right * distance, debugColor);
 
-
-    public bool ShouldSlide()
-    {
-        if (Time.time < lastSlideDecisionTime + slideDecisionCooldown)
-            return false;
-
-        bool lowHazardAhead = DetectHazardAhead(slideRayOffset, slideLookDistance, Color.cyan);
-
-        if (lowHazardAhead)
-        {
-            lastSlideDecisionTime = Time.time;
-            return true;
+            RaycastHit2D hit = Physics2D.Raycast(origin, Vector2.right, distance, hazardLayer);
+            return hit.collider != null;
         }
 
-        return false;
-    }
+        private bool DetectWall()
+        {
+            Vector2 origin = (Vector2)transform.position + wallRayOffset;
+            Debug.DrawRay(origin, Vector2.right * wallLookDistance, Color.magenta);
 
-    private bool DetectHazardAhead()
-    {
-        hazardAhead = DetectHazardAhead(hazardRayOffset, hazardLookDistance, Color.red);
-        return hazardAhead;
-    }
+            RaycastHit2D hit = Physics2D.Raycast(origin, Vector2.right, wallLookDistance, wallDetectionMask);
 
-    private bool DetectHazardAhead(Vector2 offset, float distance, Color color)
-    {
-        Vector2 origin = (Vector2)transform.position + offset;
-        Vector2 direction = Vector2.right;
+            if (hit.collider == null) return false;
+            if (hit.collider.CompareTag("Wall")) return true;
+            if (climbableWallLayer != -1 && hit.collider.gameObject.layer == climbableWallLayer) return true;
 
-        Debug.DrawRay(origin, direction * distance, color);
-
-        RaycastHit2D hit = Physics2D.Raycast(
-            origin,
-            direction,
-            distance,
-            hazardLayer
-        );
-
-        bool hitHazard = hit.collider != null;
-
-        return hitHazard;
-    }
-
-    private bool DetectClimbableWallAhead()
-    {
-        Vector2 origin = (Vector2)transform.position + wallRayOffset;
-        Vector2 direction = Vector2.right;
-
-        Debug.DrawRay(origin, direction * wallLookDistance, Color.magenta);
-
-        RaycastHit2D hit = Physics2D.Raycast(
-            origin,
-            direction,
-            wallLookDistance,
-            wallDetectionMask
-        );
-
-        if (hit.collider == null)
             return false;
+        }
 
-        if (hit.collider.CompareTag("Wall"))
-            return true;
+    #if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = Color.red;
+            Vector2 origin = (Vector2)transform.position + hazardRayOffset;
+            Gizmos.DrawSphere(origin, 0.05f);
+            Gizmos.DrawLine(origin, origin + Vector2.right * hazardLookDistance);
 
-        if (climbableWallLayer != -1 && hit.collider.gameObject.layer == climbableWallLayer)
-            return true;
+            Gizmos.color = Color.cyan;
+            Vector2 slideOrigin = (Vector2)transform.position + slideRayOffset;
+            Gizmos.DrawSphere(slideOrigin, 0.05f);
+            Gizmos.DrawLine(slideOrigin, slideOrigin + Vector2.right * slideLookDistance);
 
-        return false;
+            Gizmos.color = Color.magenta;
+            Vector2 wallOrigin = (Vector2)transform.position + wallRayOffset;
+            Gizmos.DrawSphere(wallOrigin, 0.05f);
+            Gizmos.DrawLine(wallOrigin, wallOrigin + Vector2.right * wallLookDistance);
+        }
+    #endif
     }
 
-    public bool IsInDanger()
-    {
-        return hazardAhead;
-    }
-
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.red;
-        Vector2 origin = (Vector2)transform.position + hazardRayOffset;
-        Vector2 end = origin + Vector2.right * hazardLookDistance;
-
-        Gizmos.DrawSphere(origin, 0.05f);   // Ray origin
-        Gizmos.DrawLine(origin, end);        // Ray direction
-        Gizmos.DrawSphere(end, 0.05f);       // Ray end
-
-        Gizmos.color = Color.cyan;
-        Vector2 slideOrigin = (Vector2)transform.position + slideRayOffset;
-        Vector2 slideEnd = slideOrigin + Vector2.right * slideLookDistance;
-
-        Gizmos.DrawSphere(slideOrigin, 0.05f);
-        Gizmos.DrawLine(slideOrigin, slideEnd);
-        Gizmos.DrawSphere(slideEnd, 0.05f);
-
-        Gizmos.color = Color.magenta;
-        Vector2 wallOrigin = (Vector2)transform.position + wallRayOffset;
-        Vector2 wallEnd = wallOrigin + Vector2.right * wallLookDistance;
-
-        Gizmos.DrawSphere(wallOrigin, 0.05f);
-        Gizmos.DrawLine(wallOrigin, wallEnd);
-        Gizmos.DrawSphere(wallEnd, 0.05f);
-    }
 }

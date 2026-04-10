@@ -1,62 +1,63 @@
+using Game.Systems;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
-
 using Game.Core;
-public sealed class RevolverBulletController : MonoBehaviour
+
+namespace Game.Systems
 {
-    [Header("Movement")]
-    [SerializeField] private float speed = 60f;
-
-    [Header("Lifetime")]
-    [SerializeField] private float maxLifetime = 1.5f;
-
-    private IPlayerEntity ownerPlayerEntity;
-    private bool hit;
-
-    // ---------------- INIT ----------------
-
-    public void Initialize(IPlayerEntity owner)
+    public sealed class RevolverBulletController : MonoBehaviour
     {
-        ownerPlayerEntity = owner;
-        Destroy(gameObject, maxLifetime);
-    }
+        [Header("Movement")]
+        [SerializeField] private float speed = 60f;
 
-    // ---------------- UPDATE ----------------
+        [Header("Lifetime")]
+        [SerializeField] private float maxLifetime = 1.5f;
 
-    private void Update()
-    {
-        if (hit)
-            return;
+        private IPlayerEntity ownerPlayerEntity;
+        private bool hit;
+        private float lifeTimer;
 
-        transform.position += Vector3.down * speed * Time.deltaTime;
-    }
-
-    // ---------------- HIT ----------------
-
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (hit)
-            return;
-
-        if (!other.TryGetComponent<IPlayerEntity>(out var victim))
-            return;
-
-        if (!victim.IsTargetable)
-            return;
-
-        if (other.TryGetComponent<IHealth>(out var health))
+        public void Initialize(IPlayerEntity owner)
         {
-            health.TakeDamage(1);
-
-            GameEvents.RaisePlayerKilled(
-                new KillEventData(
-                    ownerPlayerEntity,
-                    victim,
-                    PowerUpId.Revolver
-                )
-            );
+            ownerPlayerEntity = owner;
+            hit = false;
+            lifeTimer = 0f;
         }
 
-        hit = true;
-        Destroy(gameObject);
+        private void Update()
+        {
+            if (hit) return;
+
+            transform.position += Vector3.down * speed * Time.deltaTime;
+
+            lifeTimer += Time.deltaTime;
+            if (lifeTimer >= maxLifetime)
+                ReturnToPool();
+        }
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (hit) return;
+            if (!other.TryGetComponent<IPlayerEntity>(out var victim)) return;
+            if (!victim.IsTargetable) return;
+
+            if (other.TryGetComponent<IHealth>(out var health))
+            {
+                health.TakeDamage(1);
+                GameEvents.RaisePlayerKilled(
+                    new KillEventData(ownerPlayerEntity, victim, PowerUpId.Revolver));
+            }
+
+            hit = true;
+            ReturnToPool();
+        }
+
+        private void ReturnToPool()
+        {
+            ProjectilePool.Instance?.ReturnBullet(this);
+        }
     }
+
 }

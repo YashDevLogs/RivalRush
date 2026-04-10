@@ -1,41 +1,50 @@
+using Game.Systems;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
 
 using Game.Core;
-[RequireComponent(typeof(Collider2D))]
-public class Hazard : MonoBehaviour, IHazard
+
+namespace Game.Systems
 {
-    [SerializeField] private int damage = 1;
-    [SerializeField] private bool disableOnHit = false;
-
-    private System.Func<Collider2D, bool> canAffect;
-
-    private void Reset()
+    [RequireComponent(typeof(Collider2D))]
+    public class Hazard : MonoBehaviour, IHazard
     {
-        var c = GetComponent<Collider2D>();
-        if (c) c.isTrigger = true;
-    }
+        [SerializeField] private Collider2D triggerCollider;
+        [SerializeField] private int damage = 1;
+        [SerializeField] private bool disableOnHit = false;
 
-    public void SetFilter(System.Func<Collider2D, bool> filter)
-    {
-        canAffect = filter;
-    }
+        private System.Func<Collider2D, bool> canAffect;
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (canAffect != null && !canAffect(other))
-            return;
-
-        var health = other.GetComponent<IHealth>();
-        if (health != null && !health.IsInvincible)
+        private void Reset()
         {
-            ApplyDamage(health);
-            if (disableOnHit) gameObject.SetActive(false);
+            if (triggerCollider != null)
+                triggerCollider.isTrigger = true;
+        }
+
+        public void SetFilter(System.Func<Collider2D, bool> filter)
+        {
+            canAffect = filter;
+        }
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (canAffect != null && !canAffect(other))
+                return;
+
+            if (other.TryGetComponent<IHealth>(out var health) && !health.IsInvincible)
+            {
+                ApplyDamage(health);
+                if (disableOnHit) gameObject.SetActive(false);
+            }
+        }
+
+        public void ApplyDamage(IHealth health)
+        {
+            if (!health.IsInvincible)
+                health.TakeDamage(damage);
         }
     }
 
-    public void ApplyDamage(IHealth health)
-    {
-        if (!health.IsInvincible)
-            health.TakeDamage(damage);
-    }
 }

@@ -1,57 +1,79 @@
+using Game.Systems;
+using Game.Core;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
-using System.Collections;
+using TMPro;
 
-namespace Game.Core
+namespace Game.Systems
 {
+    // -------------------------------------------------------
+    // KillFeedEntry — pooled, no coroutines, no Destroy calls.
+    //
+    // Old approach: WaitForSeconds coroutine + Destroy()
+    //   → every kill spawned a coroutine on the main thread,
+    //     registered it with Unity's coroutine system,
+    //     allocated a state machine object, then called Destroy
+    //     which triggered GC. All of this showed up as
+    //     CoroutinesDelayedCalls + Destroy in the profiler.
+    //
+    // New approach: simple float countdown in Update(),
+    //   active only while the entry is visible. When time
+    //   runs out, the entry returns itself to the pool.
+    //   Zero allocations per kill event.
+    // -------------------------------------------------------
     public sealed class KillFeedEntry : MonoBehaviour
     {
         private KillFeedManager owner;
-        private Coroutine autoDestroyCoroutine;
-        private bool isDestroyed;
+        [SerializeField] private TMP_Text label;
 
-        public void Initialize(KillFeedManager owner, float lifetime)
+        private float timeRemaining;
+        private bool isActive;
+
+        // Called once at pool creation time — not per kill
+        public void Initialize(KillFeedManager manager)
         {
-            this.owner = owner;
-            BeginAutoDestroy(lifetime);
+            owner = manager;
+            if (label == null)
+                Debug.LogWarning($"[KillFeedEntry] TMP_Text is not assigned on {name}.");
+            gameObject.SetActive(false);
+            isActive = false;
         }
 
-        public void CancelAndDestroy()
+        // Called when pulled from pool for a new kill event
+        public void Show(string message, float lifetime)
         {
-            if (isDestroyed)
-                return;
+            if (label != null)
+                label.text = message;
 
-            if (autoDestroyCoroutine != null)
+            timeRemaining = lifetime;
+            isActive = true;
+            gameObject.SetActive(true);
+
+            // Move to bottom of container so newest entry appears last
+            transform.SetAsLastSibling();
+        }
+
+        // Called when returned to pool
+        public void Hide()
+        {
+            isActive = false;
+            timeRemaining = 0f;
+            gameObject.SetActive(false);
+        }
+
+        private void Update()
+        {
+            if (!isActive) return;
+
+            timeRemaining -= Time.deltaTime;
+
+            if (timeRemaining <= 0f)
             {
-                StopCoroutine(autoDestroyCoroutine);
-                autoDestroyCoroutine = null;
+                // Return to pool — no Destroy, no coroutine
+                owner?.ReturnToPool(this);
             }
-
-            isDestroyed = true;
-            Destroy(gameObject);
-        }
-
-        private void BeginAutoDestroy(float lifetime)
-        {
-            if (autoDestroyCoroutine != null)
-                StopCoroutine(autoDestroyCoroutine);
-
-            autoDestroyCoroutine = StartCoroutine(AutoDestroyAfter(lifetime));
-        }
-
-        private IEnumerator AutoDestroyAfter(float lifetime)
-        {
-            yield return new WaitForSeconds(lifetime);
-
-            if (isDestroyed)
-                yield break;
-
-            isDestroyed = true;
-            Destroy(gameObject);
-        }
-
-        private void OnDestroy()
-        {
-            owner?.NotifyEntryDestroyed(gameObject);
         }
     }
 }

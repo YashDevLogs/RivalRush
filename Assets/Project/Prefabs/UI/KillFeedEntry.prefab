@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8847656765596759521}
   - component: {fileID: 8082344014733402138}
   - component: {fileID: 2147517283463539506}
+  - component: {fileID: 1467853206814891789}
   m_Layer: 5
   m_Name: KillFeedEntry
   m_TagString: Untagged
@@ -74,7 +75,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4278190335
+    rgba: 4278485759
   m_fontColor: {r: 1, g: 0.50980395, b: 0.015686275, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -136,3 +137,16 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &1467853206814891789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6477523269642560363}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb08f16ad5c5af549a864e110be66563, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Core.KillFeedEntry
+  label: {fileID: 2147517283463539506}

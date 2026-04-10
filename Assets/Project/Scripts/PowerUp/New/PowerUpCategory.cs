@@ -1,8 +1,18 @@
-public enum PowerUpCategory
+using Game.Systems;
+using Game.Core;
+using Game.Input;
+using Game.Player;
+using Game.AI;
+
+namespace Game.Core
 {
-    Projectile,
-    Trap,
-    Throwable,
-    SelfBuff,
-    Aura
+    public enum PowerUpCategory
+    {
+        Projectile,
+        Trap,
+        Throwable,
+        SelfBuff,
+        Aura
+    }
+
 }

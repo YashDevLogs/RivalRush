@@ -1,42 +1,54 @@
+using Game.Systems;
+using Game.Core;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
 
-public class CurrencyManager : MonoBehaviour
+namespace Game.Systems
 {
-    public static CurrencyManager Instance;
+    public class CurrencyManager : MonoBehaviour
+    {
+        public static CurrencyManager Instance;
 
-    private int coins;
+        private int coins;
 
-    public delegate void OnCurrencyChanged();
-    public static event OnCurrencyChanged CurrencyChanged;
-
+        public delegate void OnCurrencyChanged();
+        public static event OnCurrencyChanged CurrencyChanged;
     private void Awake()
     {
         if (Instance == null)
+        {
             Instance = this;
+            DontDestroyOnLoad(gameObject); 
+        }
         else
+        {
             Destroy(gameObject);
+        }
 
         coins = PlayerPrefs.GetInt("Coins", 500);
     }
 
-    public int GetCoins() => coins;
+        public int GetCoins() => coins;
 
-    public bool SpendCoins(int amount)
-    {
-        if (coins >= amount)
+        public bool SpendCoins(int amount)
         {
-            coins -= amount;
+            if (coins >= amount)
+            {
+                coins -= amount;
+                PlayerPrefs.SetInt("Coins", coins);
+                CurrencyChanged?.Invoke();
+                return true;
+            }
+            return false;
+        }
+
+        public void AddCoins(int amount)
+        {
+            coins += amount;
             PlayerPrefs.SetInt("Coins", coins);
             CurrencyChanged?.Invoke();
-            return true;
         }
-        return false;
-    }
-
-    public void AddCoins(int amount)
-    {
-        coins += amount;
-        PlayerPrefs.SetInt("Coins", coins);
-        CurrencyChanged?.Invoke();
     }
 }

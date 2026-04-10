@@ -1,8 +1,17 @@
+using Game.Systems;
+using Game.Core;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Game/VFX Library")]
-public sealed class VFXLibrary : ScriptableObject
+namespace Game.Systems
 {
-    [Header("Player")]
-    public GameObject deathSmokePrefab;
+    [CreateAssetMenu(menuName = "Game/VFX Library")]
+    public sealed class VFXLibrary : ScriptableObject
+    {
+        [Header("Player")]
+        public GameObject deathSmokePrefab;
+    }
+
 }

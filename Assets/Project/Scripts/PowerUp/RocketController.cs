@@ -1,163 +1,133 @@
+using Game.Systems;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
 using Game.Core;
 
-[RequireComponent(typeof(Rigidbody2D))]
-public sealed class RocketController : MonoBehaviour
+namespace Game.Systems
 {
-    [Header("Movement")]
-    [SerializeField] private float maxSpeed = 25f;
-    [SerializeField] private float steeringForce = 60f;
-    [SerializeField] private float turnResponsiveness = 8f;
-
-    [Header("Lifetime")]
-    [SerializeField] private float maxLifetime = 6f;
-
-    [Header("Explosion")]
-    [SerializeField] private float explosionRadius = 2.5f;
-    [SerializeField] private GameObject explosionVfxPrefab;
-
-    private Transform target;
-    private IPlayerEntity owner;
-    private Rigidbody2D rb;
-    private bool exploded;
-    private float lifeTimer;
-
-    public void Initialize(Transform target, IPlayerEntity owner)
+    [RequireComponent(typeof(Rigidbody2D))]
+    public sealed class RocketController : MonoBehaviour
     {
-        this.target = target;
-        this.owner = owner;
-    }
+        [Header("Movement")]
+        [SerializeField] private float maxSpeed = 25f;
+        [SerializeField] private float steeringForce = 60f;
+        [SerializeField] private float turnResponsiveness = 8f;
 
-private void Awake()
-{
-    rb = GetComponent<Rigidbody2D>();
+        [Header("Lifetime")]
+        [SerializeField] private float maxLifetime = 6f;
 
-    rb.gravityScale = 0f;
-    rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-    rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+        [Header("Explosion")]
+        [SerializeField] private float explosionRadius = 2.5f;
+        [SerializeField] private GameObject explosionVfxPrefab;
+        [SerializeField] private float explosionVfxLifetime = 2f;
 
-    rb.linearVelocity = Vector2.down * maxSpeed * 0.6f;
+        [Header("Dependencies")]
+        [SerializeField] private Rigidbody2D rb;
 
-    // 🔒 HARD GUARANTEE: missile can NEVER survive longer than this
-    Destroy(gameObject, maxLifetime + 0.5f);
-}
+        private Transform target;
+        private IPlayerEntity owner;
+        private bool exploded;
+        private float lifeTimer;
 
-
-   private void FixedUpdate()
-{
-    if (exploded)
-        return;
-
-    lifeTimer += Time.fixedDeltaTime;
-    if (lifeTimer >= maxLifetime)
-    {
-        Explode();
-        return;
-    }
-
-    // If target is gone, just keep current velocity (or fall)
-    if (target == null)
-        return;
-
-    // --- Steering toward target ---
-    Vector2 toTarget = ((Vector2)target.position - rb.position).normalized;
-    Vector2 desiredVelocity = toTarget * maxSpeed;
-    Vector2 steering = desiredVelocity - rb.linearVelocity;
-
-    steering = Vector2.ClampMagnitude(steering, steeringForce);
-    rb.AddForce(steering * turnResponsiveness);
-
-    // Clamp speed
-    if (rb.linearVelocity.magnitude > maxSpeed)
-        rb.linearVelocity = rb.linearVelocity.normalized * maxSpeed;
-
-    // --- Rotate missile to face movement ---
-    if (rb.linearVelocity.sqrMagnitude > 0.01f)
-    {
-        Vector2 v = rb.linearVelocity.normalized;
-        float angle = Mathf.Atan2(v.y, v.x) * Mathf.Rad2Deg;
-        rb.rotation = angle + 90f; // down-facing sprite
-    }
-}
-
-
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (exploded)
-            return;
-
-        // Explode on ANY solid collision
-        Explode();
-    }
-
-    private void Explode()
-    {
-        if (exploded)
-            return;
-
-        exploded = true;
-
-         CancelInvoke();
-
-        Vector2 explosionPos = rb.position;
-
-        // 🔒 HARD STOP PHYSICS (prevents floating missiles)
-        rb.linearVelocity = Vector2.zero;
-        rb.angularVelocity = 0f;
-        rb.simulated = false;
-
-        // Explosion VFX
-        if (explosionVfxPrefab != null)
+        private void Awake()
         {
-            var vfx = Instantiate(
-                explosionVfxPrefab,
-                explosionPos,
-                Quaternion.identity
-            );
-
-            var ps = vfx.GetComponentInChildren<ParticleSystem>();
-            float lifetime = 2f;
-
-            if (ps != null)
+            if (rb == null)
             {
-                var main = ps.main;
-                lifetime = main.duration + main.startLifetime.constantMax;
-                ps.Play(true);
+                Debug.LogWarning($"[RocketController] Rigidbody2D is not assigned on {name}.");
+                return;
             }
 
-            Destroy(vfx, lifetime);
+            rb.gravityScale = 0f;
+            rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            rb.interpolation = RigidbodyInterpolation2D.Interpolate;
         }
 
-        // Blast damage
-        Collider2D[] hits =
-            Physics2D.OverlapCircleAll(explosionPos, explosionRadius);
-
-        foreach (var hit in hits)
+        public void Initialize(Transform rocketTarget, IPlayerEntity rocketOwner)
         {
-            if (!hit.TryGetComponent<IPlayerEntity>(out var victim))
-                continue;
+            target = rocketTarget;
+            owner = rocketOwner;
+            exploded = false;
+            lifeTimer = 0f;
+            rb.linearVelocity = Vector2.down * maxSpeed * 0.6f;
+            rb.simulated = true;
+        }
 
-            if (!victim.IsTargetable)
-                continue;
+        private void FixedUpdate()
+        {
+            if (exploded) return;
 
-            if (hit.TryGetComponent<IHealth>(out var health))
+            lifeTimer += Time.fixedDeltaTime;
+            if (lifeTimer >= maxLifetime) { Explode(); return; }
+
+            if (target == null) return;
+
+            Vector2 toTarget = ((Vector2)target.position - rb.position).normalized;
+            Vector2 steering = Vector2.ClampMagnitude(toTarget * maxSpeed - rb.linearVelocity, steeringForce);
+            rb.AddForce(steering * turnResponsiveness);
+
+            if (rb.linearVelocity.magnitude > maxSpeed)
+                rb.linearVelocity = rb.linearVelocity.normalized * maxSpeed;
+
+            if (rb.linearVelocity.sqrMagnitude > 0.01f)
             {
-                health.TakeDamage(1);
-
-                GameEvents.RaisePlayerKilled(
-                    new KillEventData(owner, victim, PowerUpId.Rocket)
-                );
+                Vector2 v = rb.linearVelocity.normalized;
+                rb.rotation = Mathf.Atan2(v.y, v.x) * Mathf.Rad2Deg + 90f;
             }
         }
 
-        Destroy(gameObject);
+        private void OnCollisionEnter2D(Collision2D collision)
+        {
+            if (!exploded) Explode();
+        }
+
+        private void Explode()
+        {
+            if (exploded) return;
+            exploded = true;
+
+            Vector2 pos = rb.position;
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+            rb.simulated = false;
+
+            // ✅ VFXPool instead of Instantiate/Destroy
+            // Destroy(vfx, lifetime) was showing up as CoroutinesDelayedCalls
+            // in the profiler — Unity implements timed Destroy as a delayed call
+            if (explosionVfxPrefab != null)
+            {
+                if (VFXPool.Instance != null)
+                    VFXPool.Instance.GetExplosion(pos);
+                else
+                {
+                    // Fallback if pool not available
+                    var vfx = Instantiate(explosionVfxPrefab, pos, Quaternion.identity);
+                    Destroy(vfx, explosionVfxLifetime);
+                }
+            }
+
+            foreach (var hit in Physics2D.OverlapCircleAll(pos, explosionRadius))
+            {
+                if (!hit.TryGetComponent<IPlayerEntity>(out var victim)) continue;
+                if (!victim.IsTargetable) continue;
+                if (hit.TryGetComponent<IHealth>(out var health))
+                {
+                    health.TakeDamage(1);
+                    GameEvents.RaisePlayerKilled(new KillEventData(owner, victim, PowerUpId.Rocket));
+                }
+            }
+
+            ProjectilePool.Instance?.ReturnRocket(this);
+        }
+
+    #if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(transform.position, explosionRadius);
+        }
+    #endif
     }
 
-#if UNITY_EDITOR
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, explosionRadius);
-    }
-#endif
 }

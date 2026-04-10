@@ -1,30 +1,32 @@
+using Game.Systems;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
+using Unity.Netcode;
 using Game.Core;
 
-[RequireComponent(typeof(Collider2D))]
-public sealed class FinishLine : MonoBehaviour
+namespace Game.Systems
 {
-    private void Reset()
+    [RequireComponent(typeof(Collider2D))]
+    public sealed class FinishLine : MonoBehaviour
     {
-        GetComponent<Collider2D>().isTrigger = true;
-    }
+        [SerializeField] private Collider2D triggerCollider;
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        var racer = other.GetComponent<IPlayerController>();
-        if (racer == null)
-            return;
-
-        RaceManager.Instance.RegisterFinish(racer);
-
-        // Tell controller it has finished (momentum preserved)
-        if (other.TryGetComponent<PlayerController>(out var pc))
+        private void Reset()
         {
-            pc.OnFinishRace();
+            if (triggerCollider != null)
+                triggerCollider.isTrigger = true;
         }
-        else
+
+        private void OnTriggerEnter2D(Collider2D other)
         {
-            racer.DisableControl();
+            if (!other.TryGetComponent<IPlayerController>(out var racer))
+                return;
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
+                return;
+
+            RaceManager.Instance?.RegisterFinish(racer);
         }
     }
 }

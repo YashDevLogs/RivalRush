@@ -1,6 +1,11 @@
+using Game.Systems;
+using Game.Core;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
 
-namespace Game.Core
+namespace Game.Player
 {
 public sealed class PlayerView : MonoBehaviour
 {

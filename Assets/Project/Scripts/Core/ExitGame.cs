@@ -1,9 +1,17 @@
+using Game.Systems;
+using Game.Core;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
 
-public class ExitGame
+namespace Game.Systems
 {
-    public void Exit()
+    public class ExitGame
     {
-        Application.Quit();
+        public void Exit()
+        {
+            Application.Quit();
+        }
     }
 }

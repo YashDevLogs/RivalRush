@@ -1,8 +1,17 @@
-﻿using UnityEngine;
+using Game.Systems;
+using Game.Core;
+using Game.Input;
+using Game.Player;
+using Game.AI;
+using UnityEngine;
 
-[CreateAssetMenu(menuName = "Game/PowerUp Assets")]
-public sealed class PowerUpAssets : ScriptableObject
+namespace Game.Core
 {
-    [Header("Shared PowerUp VFX")]
-    public GameObject rocketExplosionPrefab;
+    [CreateAssetMenu(menuName = "Game/PowerUp Assets")]
+    public sealed class PowerUpAssets : ScriptableObject
+    {
+        [Header("Shared PowerUp VFX")]
+        public GameObject rocketExplosionPrefab;
+    }
+
 }

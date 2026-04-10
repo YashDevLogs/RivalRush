@@ -1,36 +1,45 @@
+using Game.Systems;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
 
 using Game.Core;
-public class GameManager : MonoBehaviour
-{
-    public static GameManager Instance { get; private set; }
 
-    private void Awake()
+namespace Game.Systems
+{
+    public class GameManager : MonoBehaviour
     {
-        if (Instance != null && Instance != this)
+        public static GameManager Instance { get; private set; }
+
+        private void Awake()
         {
-            Destroy(gameObject);
-            return;
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            Instance = this;
         }
 
-        Instance = this;
+        private void OnEnable()
+        {
+            GameEvents.OnRaceFinished += HandleRaceFinished;
+        }
+
+        private void OnDisable()
+        {
+            GameEvents.OnRaceFinished -= HandleRaceFinished;
+        }
+
+        private void HandleRaceFinished()
+        {
+            Debug.Log("[GameManager] Race finished. Waiting for results UI.");
+
+            // UI / analytics / progression hooks go here
+            // DO NOT control race logic here
+        }
     }
 
-    private void OnEnable()
-    {
-        GameEvents.OnRaceFinished += HandleRaceFinished;
-    }
-
-    private void OnDisable()
-    {
-        GameEvents.OnRaceFinished -= HandleRaceFinished;
-    }
-
-    private void HandleRaceFinished()
-    {
-        Debug.Log("[GameManager] Race finished. Waiting for results UI.");
-
-        // UI / analytics / progression hooks go here
-        // DO NOT control race logic here
-    }
 }

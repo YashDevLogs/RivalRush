@@ -1,37 +1,40 @@
+using Game.Systems;
+using Game.Input;
+using Game.Player;
+using Game.AI;
 using UnityEngine;
-
 using Game.Core;
-[CreateAssetMenu(menuName = "PowerUps/Sawblade")]
-public sealed class SawbladePowerUpDefinition : PowerUpDefinition
+
+namespace Game.Systems
 {
-    public SawbladeController sawbladePrefab;
-
-    public override IPowerUpEffect CreateEffect()
+    [CreateAssetMenu(menuName = "PowerUps/Sawblade")]
+    public sealed class SawbladePowerUpDefinition : PowerUpDefinition
     {
-        return new Effect(this);
+        public SawbladeController sawbladePrefab;
+
+        public override IPowerUpEffect CreateEffect() => new Effect(this);
+
+        private sealed class Effect : IPowerUpEffect
+        {
+            private readonly SawbladePowerUpDefinition def;
+            public Effect(SawbladePowerUpDefinition def) { this.def = def; }
+
+            public void Activate(PowerUpContext context)
+            {
+                Vector3 spawnPos =
+                    context.PlayerTransform.position +
+                    context.PlayerTransform.right * 1.2f;
+
+                // ✅ Pool instead of Instantiate
+                SawbladeController blade = ProjectilePool.Instance != null
+                    ? ProjectilePool.Instance.GetSawblade(spawnPos, Quaternion.identity)
+                    : Object.Instantiate(def.sawbladePrefab, spawnPos, Quaternion.identity);
+
+                blade.Initialize(context.PlayerTransform.gameObject, context.PlayerEntity);
+            }
+
+            public void Deactivate() { }
+        }
     }
 
-    private sealed class Effect : IPowerUpEffect
-    {
-        private readonly SawbladePowerUpDefinition def;
-
-        public Effect(SawbladePowerUpDefinition def)
-        {
-            this.def = def;
-        }
-
-        public void Activate(PowerUpContext context)
-        {
-            Vector3 spawnPos =
-                context.PlayerTransform.position +
-                context.PlayerTransform.right * 1.2f;
-
-            SawbladeController blade =
-                Object.Instantiate(def.sawbladePrefab, spawnPos, Quaternion.identity);
-
-            blade.Initialize(context.PlayerTransform.gameObject);
-        }
-
-        public void Deactivate() { }
-    }
 }

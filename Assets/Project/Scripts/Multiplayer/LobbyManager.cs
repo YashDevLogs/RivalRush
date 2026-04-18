@@ -209,6 +209,7 @@ namespace Game.Systems
                 return;
             }
             spawner.SpawnAIPlayers(pendingAISpawnCount, aiPlayerPrefab);
+            spawner.SpawnAllPlayers();
         }
 
         private int CountHumanPlayers()

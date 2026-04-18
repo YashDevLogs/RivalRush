@@ -4,6 +4,7 @@ using Game.Input;
 using Game.Player;
 using Game.AI;
 using UnityEngine;
+using Unity.Netcode;
 
 namespace Game.Systems
 {
@@ -21,6 +22,7 @@ namespace Game.Systems
 
         private void OnTriggerEnter2D(Collider2D other)
         {
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
             if (!other.TryGetComponent(out PowerUpController controller))
                 return;
 

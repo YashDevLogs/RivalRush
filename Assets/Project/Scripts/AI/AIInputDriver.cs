@@ -8,11 +8,12 @@ using Game.Core;
 namespace Game.Input
 {
     [RequireComponent(typeof(PowerUpController))]
-    public sealed class AIInputDriver : MonoBehaviour, IInputDriver
+    public sealed class AIInputDriver : MonoBehaviour, IInputSource
     {
         public float Horizontal { get; private set; }
         public bool JumpPressed { get; private set; }
-        public bool UsePowerUpPressed { get; private set; }
+        public bool SlidePressed => false;
+        public bool PowerUpPressed { get; private set; }
 
         [SerializeField] private PowerUpController powerUpController;
         [SerializeField] private AIContext context = new();
@@ -49,7 +50,7 @@ namespace Game.Input
 
             Horizontal = 1f;
             JumpPressed = context.ObstacleAhead; // reads cached result, no raycast here
-            UsePowerUpPressed = ShouldUsePowerUp(context);
+            PowerUpPressed = ShouldUsePowerUp(context);
         }
 
         private bool ShouldUsePowerUp(AIContext aiContext)

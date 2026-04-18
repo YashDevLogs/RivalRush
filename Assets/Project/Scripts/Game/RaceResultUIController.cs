@@ -38,6 +38,7 @@ namespace Game.Systems
         private void ShowResults()
         {
             var raceManager = RaceManager.Instance;
+            if (raceManager == null) { Debug.LogWarning("[RaceResultUI] RaceManager not found."); return; }
             var results = raceManager.GetFinishOrder();
 
             panel.SetActive(true);

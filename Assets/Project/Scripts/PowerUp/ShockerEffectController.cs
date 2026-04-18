@@ -3,6 +3,7 @@ using Game.Input;
 using Game.Player;
 using Game.AI;
 using UnityEngine;
+using Unity.Netcode;
 using Game.Core;
 
 namespace Game.Systems
@@ -56,6 +57,7 @@ namespace Game.Systems
 
         private void ApplyDamage()
         {
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
             if (damageApplied) return;
             damageApplied = true;
 
@@ -68,8 +70,7 @@ namespace Game.Systems
                 if (hit.TryGetComponent<IHealth>(out var health))
                 {
                     health.TakeDamage(1);
-                    GameEvents.RaisePlayerKilled(
-                        new KillEventData(ownerEntity, victim, PowerUpId.Shocker));
+                    RaceManager.Instance?.ReportKill(ownerEntity, victim, PowerUpId.Shocker);
                 }
             }
         }

@@ -6,6 +6,7 @@ using Game.AI;
 
 namespace Game.Input
 {
+    [System.Obsolete("Use IInputSource instead. IInputDriver is kept for backwards compatibility only.")]
     public interface IInputDriver
     {
         float Horizontal { get; }

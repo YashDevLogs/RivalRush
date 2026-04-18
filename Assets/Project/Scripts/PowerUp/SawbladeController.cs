@@ -3,6 +3,7 @@ using Game.Input;
 using Game.Player;
 using Game.AI;
 using UnityEngine;
+using Unity.Netcode;
 using Game.Core;
 
 namespace Game.Systems
@@ -69,6 +70,7 @@ namespace Game.Systems
 
         private void OnTriggerEnter2D(Collider2D other)
         {
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
             if (other.gameObject == owner) return;
             if (!other.TryGetComponent<IPlayerEntity>(out var victim)) return;
             if (!victim.IsTargetable) return;
@@ -76,8 +78,7 @@ namespace Game.Systems
             if (other.TryGetComponent<IHealth>(out var health))
             {
                 health.TakeDamage(1);
-                GameEvents.RaisePlayerKilled(new KillEventData(
-                    ownerEntity, victim, PowerUpId.Sawblade));
+                RaceManager.Instance?.ReportKill(ownerEntity, victim, PowerUpId.Sawblade);
             }
         }
     }

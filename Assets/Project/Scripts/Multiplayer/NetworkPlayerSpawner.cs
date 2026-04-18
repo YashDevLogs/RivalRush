@@ -20,11 +20,9 @@ namespace Game.Systems
         public override void OnNetworkSpawn()
         {
             if (!IsServer) return;
-
-            Invoke(nameof(SpawnAllPlayers), 0.5f);
         }
 
-        private void SpawnAllPlayers()
+        public void SpawnAllPlayers()
         {
             foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
             {

@@ -268,6 +268,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 89707e9cb60745b4487ea9c4ddcb2de4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpController
+  ShowTopMostFoldoutHeaderGroup: 1
   sharedAssets: {fileID: 11400000, guid: 036bc4c6c569fcd4189b02552d9091a6, type: 2}
   playerControllerComponent: {fileID: 9117741221224330395}
   healthComponent: {fileID: 9117741221224330395}
@@ -309,7 +310,7 @@ CapsuleCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: ef5ef4239824241419b5634d78094515, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0

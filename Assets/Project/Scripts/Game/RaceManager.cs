@@ -14,6 +14,13 @@ namespace Game.Systems
     {
         public static RaceManager Instance;
 
+        public static RaceManager Get()
+        {
+            if (Instance == null)
+                Debug.LogWarning("[RaceManager] RaceManager.Instance is null. Is the race scene loaded?");
+            return Instance;
+        }
+
         [Header("UI")]
         [SerializeField] private TMP_Text countdownText;
 
@@ -165,6 +172,7 @@ namespace Game.Systems
             if (TrackPlayer(controller, controller as IPlayerEntity))
             {
                 Debug.Log($"[SERVER][RACE] Registered player '{GetPlayerDebugName(controller)}' | NetworkObjectId: {playerObject.NetworkObjectId}");
+                SyncPlayerRegisteredClientRpc(playerObject.NetworkObjectId);
             }
         }
 
@@ -179,10 +187,22 @@ namespace Game.Systems
             if (TrackPlayer(controller, entity))
             {
                 Debug.Log($"[SERVER][RACE] Registered player '{GetPlayerDebugName(controller)}'.");
+
+                if (TryGetNetworkObjectId(controller, out ulong playerObjectId))
+                    SyncPlayerRegisteredClientRpc(playerObjectId);
             }
         }
 
         public IReadOnlyList<IPlayerEntity> GetPlayerEntities() => playerEntities;
+
+        public void ReportKill(IPlayerEntity killer, IPlayerEntity victim, PowerUpId powerUpId)
+        {
+            if (!IsServer) return;
+            bool killerOk = TryGetNetworkObjectId(killer, out ulong killerId);
+            bool victimOk = TryGetNetworkObjectId(victim, out ulong victimId);
+            if (!victimOk) return;
+            BroadcastKillClientRpc(killerOk ? killerId : ulong.MaxValue, victimId, powerUpId);
+        }
 
         // ---- Finish ----
 
@@ -234,6 +254,40 @@ namespace Game.Systems
         {
             ApplyFinishOrder(finishOrderObjectIds);
             GameEvents.RaiseRaceFinished();
+        }
+
+        [ClientRpc]
+        private void BroadcastKillClientRpc(ulong killerObjectId, ulong victimObjectId, PowerUpId powerUpId)
+        {
+            var spawnedObjects = NetworkManager.Singleton?.SpawnManager?.SpawnedObjects;
+            if (spawnedObjects == null) return;
+
+            spawnedObjects.TryGetValue(killerObjectId, out var killerObj);
+            spawnedObjects.TryGetValue(victimObjectId, out var victimObj);
+
+            IPlayerEntity killer = killerObj != null ? killerObj.GetComponent<IPlayerEntity>() : null;
+            IPlayerEntity victim = victimObj != null ? victimObj.GetComponent<IPlayerEntity>() : null;
+            if (victim == null) return;
+
+            GameEvents.RaisePlayerKilled(new KillEventData(killer, victim, powerUpId));
+        }
+
+        [ClientRpc]
+        private void SyncPlayerRegisteredClientRpc(ulong playerObjectId)
+        {
+            if (NetworkManager.Singleton == null)
+                return;
+
+            var spawnedObjects = NetworkManager.Singleton.SpawnManager?.SpawnedObjects;
+            if (spawnedObjects == null)
+                return;
+            if (!spawnedObjects.TryGetValue(playerObjectId, out var networkObject))
+                return;
+            if (!networkObject.TryGetComponent<IPlayerController>(out var player))
+                return;
+
+            networkObject.TryGetComponent<IPlayerEntity>(out var entity);
+            TrackPlayer(player, entity);
         }
 
         [ClientRpc]
@@ -330,7 +384,7 @@ namespace Game.Systems
                 player.DisableControl();
         }
 
-        private static bool TryGetNetworkObjectId(IPlayerController player, out ulong objectId)
+        private static bool TryGetNetworkObjectId(object player, out ulong objectId)
         {
             objectId = 0;
 

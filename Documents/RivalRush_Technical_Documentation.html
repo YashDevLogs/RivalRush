@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unity Codebase Architecture Analysis</title>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161e;
+    --bg3: #1a1e28;
+    --border: #2a2f3e;
+    --accent: #4f8ef7;
+    --accent2: #7c5af7;
+    --accent3: #f75a8e;
+    --green: #3dd68c;
+    --amber: #f7b955;
+    --red: #f75a5a;
+    --text: #e2e6f0;
+    --muted: #7a8099;
+    --code-bg: #0a0c12;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  .header {
+    background: linear-gradient(135deg, #0d0f14 0%, #1a1e28 50%, #0d0f14 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 40px 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 30% 50%, rgba(79,142,247,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 30%, rgba(124,90,247,0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .header h1 {
+    font-size: 28px; font-weight: 700; letter-spacing: -0.5px;
+    background: linear-gradient(90deg, #e2e6f0, #4f8ef7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .header .meta {
+    color: var(--muted); font-size: 13px; display: flex; gap: 20px; flex-wrap: wrap;
+  }
+  .header .meta span { display: flex; align-items: center; gap: 6px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px;
+    font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .badge-blue { background: rgba(79,142,247,0.15); color: #4f8ef7; border: 1px solid rgba(79,142,247,0.3); }
+  .badge-purple { background: rgba(124,90,247,0.15); color: #9b7af7; border: 1px solid rgba(124,90,247,0.3); }
+  .badge-green { background: rgba(61,214,140,0.12); color: #3dd68c; border: 1px solid rgba(61,214,140,0.25); }
+  .badge-amber { background: rgba(247,185,85,0.12); color: #f7b955; border: 1px solid rgba(247,185,85,0.25); }
+  .badge-red { background: rgba(247,90,90,0.12); color: #f75a5a; border: 1px solid rgba(247,90,90,0.25); }
+  .badge-pink { background: rgba(247,90,142,0.12); color: #f75a8e; border: 1px solid rgba(247,90,142,0.3); }
+  nav {
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 0 40px; position: sticky; top: 0; z-index: 100;
+    display: flex; gap: 0; overflow-x: auto;
+  }
+  nav a {
+    color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 500;
+    padding: 14px 16px; white-space: nowrap; border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  nav a:hover { color: var(--text); border-bottom-color: var(--accent); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 40px 80px; }
+  .section {
+    margin-top: 56px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .section:first-child { border-top: none; }
+  h2 {
+    font-size: 22px; font-weight: 700; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  h2 .icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  h3 { font-size: 16px; font-weight: 600; margin: 24px 0 10px; color: #c4cadd; }
+  h4 { font-size: 14px; font-weight: 600; margin: 16px 0 6px; color: #a0a8c0; text-transform: uppercase; letter-spacing: 0.5px; }
+  p { margin-bottom: 12px; color: #c0c8dc; }
+  ul { margin: 8px 0 12px 20px; }
+  li { margin-bottom: 5px; color: #b8c0d8; }
+  strong { color: var(--text); }
+  code {
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    background: var(--code-bg); color: #7ec8e3;
+    padding: 1px 5px; border-radius: 3px; font-size: 13px;
+    border: 1px solid var(--border);
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 20px; overflow-x: auto;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 13px; line-height: 1.6; margin: 12px 0 16px;
+  }
+  pre .c { color: var(--muted); }
+  pre .k { color: #c792ea; }
+  pre .t { color: #82aaff; }
+  pre .s { color: #c3e88d; }
+  pre .n { color: #f78c6c; }
+  pre .b { color: var(--accent); }
+  pre .arrow { color: var(--accent3); }
+  pre .lbl { color: var(--amber); }
+  .card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px 24px; margin: 12px 0;
+  }
+  .card-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--accent); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media(max-width: 700px) { .grid2, .grid3 { grid-template-columns: 1fr; } .container { padding: 0 20px 60px; } nav { padding: 0 20px; } .header { padding: 32px 20px 24px; } }
+  .system-card {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 20px; margin: 14px 0;
+  }
+  .system-card .sys-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  }
+  .system-card .sys-icon {
+    width: 28px; height: 28px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+    flex-shrink: 0;
+  }
+  .system-card .sys-name { font-weight: 600; font-size: 15px; }
+  .system-card .sys-purpose { color: var(--muted); font-size: 12px; margin-top: 1px; }
+  .system-card ul { margin: 8px 0 0 18px; }
+  .system-card li { font-size: 13px; color: #a8b4cc; margin-bottom: 4px; }
+  .flow-step {
+    display: flex; gap: 14px; padding: 12px 0;
+    border-bottom: 1px solid rgba(42,47,62,0.6);
+  }
+  .flow-step:last-child { border-bottom: none; }
+  .step-num {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    background: rgba(79,142,247,0.15); color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    margin-top: 1px;
+  }
+  .step-content .step-title { font-weight: 600; font-size: 14px; margin-bottom: 3px; }
+  .step-content .step-desc { font-size: 13px; color: var(--muted); }
+  .pattern-card {
+    background: var(--bg3); border-left: 3px solid var(--accent2);
+    padding: 14px 16px; margin: 10px 0; border-radius: 0 8px 8px 0;
+  }
+  .pattern-card.good { border-left-color: var(--green); }
+  .pattern-card.warn { border-left-color: var(--amber); }
+  .pattern-card.danger { border-left-color: var(--red); }
+  .pattern-card .pt { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .pattern-card.good .pt { color: var(--green); }
+  .pattern-card.warn .pt { color: var(--amber); }
+  .pattern-card.danger .pt { color: var(--red); }
+  .pattern-card p { font-size: 13px; color: #a8b4cc; margin: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+  th { background: var(--bg3); color: var(--muted); font-weight: 600;
+       text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px;
+       padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+  td { padding: 10px 14px; border: 1px solid var(--border); color: #b0bcd0; vertical-align: top; }
+  tr:hover td { background: rgba(26,30,40,0.5); }
+  .rating { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-green { background: var(--green); }
+  .dot-amber { background: var(--amber); }
+  .dot-red { background: var(--red); }
+  .callout {
+    background: rgba(79,142,247,0.06); border: 1px solid rgba(79,142,247,0.2);
+    border-radius: 8px; padding: 14px 18px; margin: 16px 0;
+  }
+  .callout.warn { background: rgba(247,185,85,0.06); border-color: rgba(247,185,85,0.2); }
+  .callout.danger { background: rgba(247,90,90,0.06); border-color: rgba(247,90,90,0.2); }
+  .callout p { color: #b8c4d8; font-size: 13px; margin: 0; }
+  .toc { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 20px 0; }
+  .toc a { color: var(--muted); text-decoration: none; font-size: 13px; padding: 8px 12px;
+           background: var(--bg3); border-radius: 6px; border: 1px solid var(--border);
+           transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+  .toc a:hover { color: var(--text); border-color: var(--accent); background: var(--bg2); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎮 Unity Codebase — Architecture Analysis</h1>
+  <div class="meta">
+    <span><span class="badge badge-blue">Multiplayer Race Game</span></span>
+    <span><span class="badge badge-purple">Unity Netcode for GameObjects</span></span>
+    <span><span class="badge badge-green">~6,500 lines · 60+ scripts</span></span>
+    <span><span class="badge badge-amber">2D Platformer Racing</span></span>
+  </div>
+</div>
+
+<nav>
+  <a href="#arch">Architecture</a>
+  <a href="#systems">Systems</a>
+  <a href="#relationships">Relationships</a>
+  <a href="#flows">Flows</a>
+  <a href="#callchains">Call Chains</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#dataflow">Data &amp; State</a>
+  <a href="#quality">Code Quality</a>
+  <a href="#diagram">Full Diagram</a>
+  <a href="#mental">Mental Model</a>
+</nav>
+
+<div class="container">
+
+<!-- ======================================================= -->
+<!-- 1. HIGH-LEVEL ARCHITECTURE -->
+<!-- ======================================================= -->
+<div class="section" id="arch">
+  <h2><span class="icon" style="background:rgba(79,142,247,0.15)">🧠</span> 1. High-Level Architecture Overview</h2>
+
+  <p>This is a <strong>2D side-scrolling multiplayer race game</strong> built with Unity + Netcode for GameObjects (NGO). The architecture is a <strong>hybrid of four patterns</strong>: Event-Driven core (GameEvents), Component-Based player entity decomposition (Model/View/Controller), Strategy Pattern AI, and a light Singleton layer for manager access.</p>
+
+  <p>The key architectural insight is the strict <strong>interface contract layer</strong>: <code>IPlayerController</code>, <code>IPlayerEntity</code>, <code>IHealth</code>, <code>IInputSource</code>, <code>IPowerUpEffect</code>. This layer is what allows human players, AI players, and network-replicated objects to share the same systems without coupling.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Architecture Style</div>
+      <ul>
+        <li><strong>Event-Driven</strong> — GameEvents static hub decouples all cross-system communication</li>
+        <li><strong>Component-Based</strong> — PlayerController, PlayerModel, PlayerView, PlayerHealth are separate components</li>
+        <li><strong>Strategy Pattern AI</strong> — IAIDecisionStrategy with 4 concrete personalities</li>
+        <li><strong>Singleton Managers</strong> — GameManager, RaceManager, LobbyManager, MultiplayerManager, ProjectilePool, VFXPool</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">Core Systems</div>
+      <ul>
+        <li><strong>Game Loop</strong> — RaceManager (NetworkBehaviour), TickManager</li>
+        <li><strong>Player</strong> — PlayerController, PlayerModel, PlayerView, PlayerHealth</li>
+        <li><strong>Input</strong> — IInputSource, HumanInputSource, AIInputSource</li>
+        <li><strong>Networking</strong> — LobbyManager, MultiplayerManager, NetworkPlayerSpawner</li>
+        <li><strong>AI</strong> — AISensor, AIContext, AIDecisionSystem, Strategy classes</li>
+        <li><strong>Power-Ups</strong> — PowerUpController, PowerUpDefinition, ProjectilePool, VFXPool</li>
+        <li><strong>UI</strong> — LobbyUI, RaceResultUIController, KillFeedManager, CameraFollow2D</li>
+        <li><strong>World</strong> — FinishLine, Checkpoint, Hazard</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>How the systems layer together</h3>
+  <p>There are three conceptual layers:</p>
+  <ol style="margin: 8px 0 12px 22px; color: #b0bcd0; font-size: 14px;">
+    <li style="margin-bottom: 6px;"><strong>Infrastructure Layer</strong> — GameEvents (static event bus), TickManager (deterministic timing), CharacterConfig (ScriptableObject data), object pools (ProjectilePool, VFXPool). These are stateless or near-stateless utilities that the rest depends on.</li>
+    <li style="margin-bottom: 6px;"><strong>Session Layer</strong> — LobbyManager (NetworkBehaviour, DontDestroyOnLoad), MultiplayerManager (MonoBehaviour, DontDestroyOnLoad), NetworkPlayerSpawner. These manage the lifecycle of a networked session from lobby to race end.</li>
+    <li style="margin-bottom: 6px;"><strong>Gameplay Layer</strong> — RaceManager, GameManager, PlayerController, PowerUpController, AI system, World objects. These exist only within a race scene and are destroyed/reset between sessions.</li>
+  </ol>
+</div>
+
+<!-- ======================================================= -->
+<!-- 2. SYSTEM BREAKDOWN -->
+<!-- ======================================================= -->
+<div class="section" id="systems">
+  <h2><span class="icon" style="background:rgba(124,90,247,0.15)">🧩</span> 2. System Breakdown</h2>
+
+  <!-- GAME LOOP SYSTEM -->
+  <div class="system-card">
+    <div class="sys-header">
+      <div class="sys-icon" style="background:rgba(79,142,247,0.15)">🏁</div>
+      <div>
+        <div class="sys-name">Race / Game Loop System</div>
+        <div class="sys-purpose">Owns race state machine and coordinates all players</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <span class="badge badge-blue">NetworkBehaviour</span>
+        <span class="badge badge-purple">Singleton</span>
+      </div>
+    </div>
+    <p style="font-size:13px;color:#a0a8c0;margin-bottom:8px"><strong>Key Classes:</strong> <code>RaceManager</code>, <code>GameManager</code>, <code>TickManager</code></p>
+    <ul>
+      <li><code>RaceManager</code> is a <code>NetworkBehaviour</code> singleton. It owns the race state machine: <code>Waiting → Countdown → Race → Finished</code>. Uses two <code>NetworkVariable</code>s: <code>raceStartTime</code> (double, for synchronized countdown) and <code>raceStarted</code> (bool). The countdown is timestamp-based — server sets <code>raceStartTime = NetworkTime + 3s</code>, all clients read it in <code>Update()</code> and display the same countdown independently.</li>
+      <li><code>GameManager</code> is a thin scene-level singleton that listens to <code>GameEvents.OnRaceFinished</code> — a hook for future analytics/progression systems. Currently it does nothing but log.</li>
+      <li><code>TickManager</code> sets <code>Time.fixedDeltaTime = 1f / tickRate</code> (default 60). All gameplay timing — jump buffers, coyote time, wall cling duration, slide duration — is expressed in ticks, not seconds. This makes gameplay deterministic and frame-rate independent.</li>
+    </ul>
+  </div>
+
+  <!-- PLAYER SYSTEM -->
+  <div class="system-card">
+    <div class="sys-header">
+      <div class="sys-icon" style="background:rgba(61,214,140,0.12)">🧑</div>
+      <div>
+        <div class="sys-name">Player System</div>
+        <div class="sys-purpose">MVC decomposition of human player entity</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <span class="badge badge-green">MVC</span>
+        <span class="badge badge-blue">NetworkBehaviour</span>
+      </div>
+    </div>
+    <p style="font-size:13px;color:#a0a8c0;margin-bottom:8px"><strong>Key Classes:</strong> <code>PlayerController</code>, <code>PlayerModel</code>, <code>PlayerView</code>, <code>PlayerHealth</code>, <code>PlayerMarker</code>, <code>PlayerIdentity</code>, <code>PlayerInputHandler</code></p>
+    <ul>
+      <li><code>PlayerController</code> is the heart — a sealed <code>NetworkBehaviour</code> that implements both <code>IPlayerController</code> and <code>IPlayerEntity</code>. It handles physics (Rigidbody2D), all player states, wall cling, jumping, sliding, air diving, and finish-race state. All timing uses ticks via <code>TickManager</code>.</li>
+      <li><code>PlayerModel</code> is a pure data container — holds all mutable runtime state (CurrentRunSpeed, IsGrounded, JumpsLeft, State, tick counters) and proxies read-only config from <code>CharacterConfig</code> ScriptableObject. No logic, just data.</li>
+      <li><code>PlayerView</code> is a thin Animator wrapper — exposes <code>UpdateMovement()</code>, <code>TriggerJump()</code>, <code>TriggerDie()</code>. No logic, just Animator param calls.</li>
+      <li><code>PlayerHealth</code> drives the <code>Dead → Respawning → Invincible → Alive</code> lifecycle using a state enum + float timers (no coroutines — deliberate perf decision noted in comments). Handles VFX via <code>VFXPool</code>.</li>
+      <li><code>PlayerMarker</code> is a <code>NetworkBehaviour</code> that sets <code>IsLocal = IsOwner</code> on spawn. It is the authority on "is this the local player?". Fires <code>GameEvents.RaiseLocalPlayerSpawned()</code> once on spawn. <code>PlayerMarker.Local</code> is a static reference used by camera and UI.</li>
+      <li><code>PlayerInputHandler</code> polls its <code>IInputSource</code> in <code>LateUpdate()</code> and routes to controller methods. Gating: checks <code>RaceManager.CanMove()</code> and <code>PlayerMarker.IsLocal</code> before allowing any input through.</li>
+    </ul>
+  </div>
+
+  <!-- INPUT SYSTEM -->
+  <div class="system-card">
+    <div class="sys-header">
+      <div class="sys-icon" style="background:rgba(247,185,85,0.12)">🎮</div>
+      <div>
+        <div class="sys-name">Input System</div>
+        <div class="sys-purpose">Abstracts human vs AI input behind a common interface</div>
+      </div>
+      <div style="margin-left:auto"><span class="badge badge-amber">Interface Pattern</span></div>
+    </div>
+    <p style="font-size:13px;color:#a0a8c0;margin-bottom:8px"><strong>Key Classes/Interfaces:</strong> <code>IInputSource</code>, <code>HumanInputSource</code>, <code>AIInputSource</code>, <code>IInputDriver</code>, <code>AIInputDriver</code></p>
+    <ul>
+      <li><code>IInputSource</code> exposes four bool/float properties: <code>Horizontal</code>, <code>JumpPressed</code>, <code>SlidePressed</code>, <code>PowerUpPressed</code>. Both <code>HumanInputSource</code> and <code>AIInputSource</code> implement it, allowing <code>PlayerInputHandler</code> to be completely blind to whether input is human or AI.</li>
+      <li><code>HumanInputSource</code> uses Unity's new Input System (<code>Keyboard.current</code>): WASD/Arrows for horizontal, Space=jump, LCtrl=slide, E=powerup.</li>
+      <li><code>AIInputSource</code> polls <code>AISensor</code> (cached physics results), updates <code>AIContext</code>, then asks <code>AIPowerUpBrain</code> (which delegates to <code>AIDecisionSystem</code>) for jump/slide/powerup decisions.</li>
+      <li><code>IInputDriver</code> is a legacy/alternative interface (slightly different shape — no <code>SlidePressed</code>). <code>AIInputDriver</code> implements it but appears to be an older path compared to <code>AIInputSource</code>. Both exist in the codebase — worth cleaning up.</li>
+    </ul>
+  </div>
+
+  <!-- NETWORKING SYSTEM -->
+  <div class="system-card">
+    <div class="sys-header">
+      <div class="sys-icon" style="background:rgba(247,90,142,0.12)">🌐</div>
+      <div>
+        <div class="sys-name">Networking / Multiplayer System</div>
+        <div class="sys-purpose">Session management, lobby, and player spawning over NGO</div>
+      </div>
+      <div style="margin-left:auto"><span class="badge badge-pink">Unity NGO</span></div>
+    </div>
+    <p style="font-size:13px;color:#a0a8c0;margin-bottom:8px"><strong>Key Classes:</strong> <code>LobbyManager</code>, <code>MultiplayerManager</code>, <code>NetworkPlayerSpawner</code>, <code>LobbyPlayerData</code>, <code>PlayerInputData</code>, <code>TickManager</code></p>
+    <ul>
+      <li><code>LobbyManager</code> is the session brain. It's a <code>NetworkBehaviour</code> with <code>DontDestroyOnLoad</code>. It owns a <code>NetworkList&lt;LobbyPlayerData&gt;</code> (replicated lobby state), manages player ready status, fills missing slots with AI, and orchestrates the scene transition. It also implements the scene-ready handshake: each client calls <code>ReportSceneReadyServerRpc()</code> after loading; only when ALL clients report does the server fire <code>StartCountdownClientRpc()</code>.</li>
+      <li><code>MultiplayerManager</code> is a thin NGO wrapper — <code>StartHost()</code>, <code>StartClient()</code>, and <code>StartGame()</code> (loads the level scene). It lives as a <code>DontDestroyOnLoad</code> singleton so it persists from menu into the race.</li>
+      <li><code>NetworkPlayerSpawner</code> spawns human players on <code>OnNetworkSpawn</code> (0.5s delayed) and AI players when called by <code>LobbyManager</code> after scene load. Uses a sequential spawn point array.</li>
+      <li><code>LobbyPlayerData</code> is a blittable <code>INetworkSerializable</code> struct — ClientId, PlayerName (FixedString32Bytes), IsReady, IsAI. This is the source of truth for lobby state on all clients.</li>
+      <li><code>PlayerInputData</code> is a tick-stamped <code>INetworkSerializable</code> struct (horizontal, jump, tick) — appears designed for client-side prediction/replay, though the current implementation comment says prediction/reconciliation was removed.</li>
+    </ul>
+  </div>
+
+  <!-- AI SYSTEM -->
+  <div class="system-card">
+    <div class="sys-header">
+      <div class="sys-icon" style="background:rgba(124,90,247,0.15)">🤖</div>
+      <div>
+        <div class="sys-name">AI System</div>
+        <div class="sys-purpose">Perception → Context → Strategy → Decision pipeline</div>
+      </div>
+      <div style="margin-left:auto"><span class="badge badge-purple">Strategy Pattern</span></div>
+    </div>
+    <p style="font-size:13px;color:#a0a8c0;margin-bottom:8px"><strong>Key Classes:</strong> <code>AISensor</code>, <code>AIContext</code>, <code>AIDecisionSystem</code>, <code>AIDecisionStrategyBase</code>, <code>AIPowerUpBrain</code>, <code>AIInputSource</code>, <code>AIPersonality</code></p>
+    <ul>
+      <li><code>AISensor</code> fires 3 raycasts per physics step (in <code>FixedUpdate</code>): hazard-ahead, wall-ahead, low-hazard-ahead. Results are cached as booleans; <code>AIInputSource</code> reads them in <code>Update()</code>. The comment explicitly notes this is an optimization over per-frame raycasting.</li>
+      <li><code>AIContext</code> is a pure data DTO — aggregates sensor results, power-up state, race state, and distance to target. Updated each frame by <code>AIInputSource</code> and <code>AIPowerUpBrain</code>.</li>
+      <li><code>AIDecisionSystem</code> holds a <code>[SerializeReference] IAIDecisionStrategy</code> — this allows the strategy to be set in the Inspector as a polymorphic type. Exposes <code>DecideJump()</code>, <code>DecideSlide()</code>, <code>DecideUsePowerUp()</code>.</li>
+      <li><code>AIDecisionStrategyBase</code> is the abstract base implementing cooldown logic, phase-based power-up scoring, and personality bias. Concrete strategies <code>AggressiveStrategy</code>, <code>DefensiveStrategy</code>, <code>BalancedStrategy</code>, <code>RiskyStrategy</code> only override three floats each: <code>JumpDelayMultiplier</code>, <code>PowerUpPersonalityBias</code>, <code>DangerBias</code>.</li>
+      <li><code>AIPowerUpBrain</code> is a MonoBehaviour bridge — it updates context with power-up and race state, then delegates to <code>AIDecisionSystem</code>. It gives AI the same <code>HandleJump/Slide/PowerUp</code> API surface as human players.</li>
+    </ul>
+  </div>
+
+  <!-- POWER-UP SYSTEM -->
+  <div class="system-card">
+    <div class="sys-header">
+      <div class="sys-icon" style="background:rgba(61,214,140,0.12)">⚡</div>
+      <div>
+        <div class="sys-name">Power-Up System</div>
+        <div class="sys-purpose">ScriptableObject-defined abilities with pooled projectiles/VFX</div>
+      </div>
+      <div style="margin-left:auto"><span class="badge badge-green">ScriptableObject</span></div>
+    </div>
+    <p style="font-size:13px;color:#a0a8c0;margin-bottom:8px"><strong>Key Classes:</strong> <code>PowerUpController</code>, <code>PowerUpDefinition</code>, <code>IPowerUpEffect</code>, <code>ProjectilePool</code>, <code>VFXPool</code>, <code>PowerUpContext</code></p>
+    <ul>
+      <li><code>PowerUpController</code> manages hold/activate/expire lifecycle. Uses a float timer (no coroutines) for expiry — zero allocation. The <code>PowerUpContext</code> it builds on <code>Awake</code> bundles references to <code>IPlayerController</code>, <code>IHealth</code>, <code>IPlayerEntity</code>, <code>Transform</code>, and <code>PowerUpAssets</code>.</li>
+      <li><code>PowerUpDefinition</code> is an abstract ScriptableObject. Subclasses use nested <code>private sealed class Effect : IPowerUpEffect</code> — a clean factory pattern where the definition creates its own effect. Available power-ups: Revolver, Rocket, Sawblade, Shocker, GroundTrap, Shield, SpeedBoost, Trap.</li>
+      <li><code>ProjectilePool</code> and <code>VFXPool</code> are pre-warmed Queue-based object pools for all combat effects. Pool sizes are Inspector-configurable. All projectiles use <code>ReturnXxx()</code> instead of <code>Destroy()</code>.</li>
+      <li><code>RaceUtility</code> provides stateless targeting helpers: <code>ResolveRocketTarget</code> (furthest-ahead player), <code>ResolveRandomAheadTarget</code>, <code>ResolveNearestOpponent</code>. Uses <code>RaceManager.GetPlayerEntities()</code> as the authoritative player list.</li>
+    </ul>
+  </div>
+
+  <!-- UI SYSTEM -->
+  <div class="system-card">
+    <div class="sys-header">
+      <div class="sys-icon" style="background:rgba(247,185,85,0.12)">📺</div>
+      <div>
+        <div class="sys-name">UI System</div>
+        <div class="sys-purpose">Event-driven UI: lobby, race results, kill feed, camera</div>
+      </div>
+      <div style="margin-left:auto"><span class="badge badge-amber">Observer</span></div>
+    </div>
+    <p style="font-size:13px;color:#a0a8c0;margin-bottom:8px"><strong>Key Classes:</strong> <code>LobbyUI</code>, <code>RaceResultUIController</code>, <code>KillFeedManager</code>, <code>CameraFollow2D</code>, <code>PowerUpUIController</code>, <code>CurrencyUI</code></p>
+    <ul>
+      <li><code>LobbyUI</code> pools <code>PlayerSlotUI</code> objects (MaxPlayers = 4) — no Instantiate/Destroy on lobby changes. Subscribes to <code>LobbyManager.Players.OnListChanged</code> (NGO NetworkList event). Buttons call <code>MultiplayerManager.StartHost/Client</code> and <code>LobbyManager.SetReadyServerRpc</code>.</li>
+      <li><code>RaceResultUIController</code> subscribes to <code>GameEvents.OnRaceFinished</code>, reads <code>RaceManager.GetFinishOrder()</code>, and builds the results panel. Differentiates local player row with color.</li>
+      <li><code>KillFeedManager</code> uses a pool + LinkedList of <code>KillFeedEntry</code> items — subscribes to <code>GameEvents.OnPlayerKilled</code> for entries, <code>OnRaceFinished</code> to clear all. Zero alloc at runtime.</li>
+      <li><code>CameraFollow2D</code> subscribes to <code>GameEvents.OnLocalPlayerSpawned</code> to bind its target (reads <code>PlayerMarker.Local</code>). Implements smooth follow with velocity look-ahead using <code>SmoothDamp</code>. On <code>OnRaceFinished</code>, it damps follow speed and triggers finish zoom.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- 3. CLASS RELATIONSHIP MAP -->
+<!-- ======================================================= -->
+<div class="section" id="relationships">
+  <h2><span class="icon" style="background:rgba(61,214,140,0.12)">🔗</span> 3. Class Relationship Map</h2>
+
+  <h3>A. Text-Based Diagram</h3>
+  <pre>
+<span class="lbl">[GameEvents]</span>  <span class="c">← static event bus, no dependencies</span>
+   ├── <span class="arrow">←</span> raised by: <span class="t">RaceManager</span>, <span class="t">PlayerMarker</span>, <span class="t">PlayerHealth</span>, <span class="t">PowerUpController</span>, <span class="t">Checkpoint</span>
+   └── <span class="arrow">→</span> listened by: <span class="t">GameManager</span>, <span class="t">CameraFollow2D</span>, <span class="t">RaceResultUIController</span>, <span class="t">KillFeedManager</span>
+
+<span class="lbl">[LobbyManager]</span>  <span class="c">← NetworkBehaviour, DontDestroyOnLoad</span>
+   ├── owns     <span class="arrow">→</span> <span class="t">NetworkList&lt;LobbyPlayerData&gt;</span>
+   ├── listens  <span class="arrow">→</span> NGO: OnClientConnected, OnClientDisconnected, OnLoadEventCompleted
+   ├── calls    <span class="arrow">→</span> <span class="t">MultiplayerManager.StartGame()</span>
+   ├── calls    <span class="arrow">→</span> <span class="t">NetworkPlayerSpawner.SpawnAIPlayers()</span>
+   └── receives <span class="arrow">→</span> <span class="t">RaceManager.ReportSceneReadyServerRpc()</span> confirmations
+
+<span class="lbl">[RaceManager]</span>  <span class="c">← NetworkBehaviour singleton</span>
+   ├── owns     <span class="arrow">→</span> NetworkVariable&lt;bool&gt; raceStarted
+   ├── owns     <span class="arrow">→</span> NetworkVariable&lt;double&gt; raceStartTime
+   ├── tracks   <span class="arrow">→</span> List&lt;IPlayerController&gt; racers, List&lt;IPlayerEntity&gt; playerEntities
+   ├── raises   <span class="arrow">→</span> <span class="t">GameEvents.RaiseRaceStarted()</span>, <span class="t">RaiseRaceFinished()</span>
+   └── called by<span class="arrow">→</span> <span class="t">FinishLine.OnTriggerEnter2D</span>, <span class="t">PlayerController.OnNetworkSpawn</span>
+
+<span class="lbl">[PlayerController]</span>  <span class="c">← NetworkBehaviour, implements IPlayerController + IPlayerEntity</span>
+   ├── composes  <span class="arrow">→</span> <span class="t">PlayerModel</span>  (data/config)
+   ├── composes  <span class="arrow">→</span> <span class="t">PlayerView</span>   (Animator)
+   ├── composes  <span class="arrow">→</span> <span class="t">PlayerHealth</span> (death/respawn)
+   ├── composes  <span class="arrow">→</span> <span class="t">PowerUpController</span> (holds/activates powerups)
+   ├── composes  <span class="arrow">→</span> <span class="t">PlayerMarker</span>  (ownership/locality)
+   ├── composes  <span class="arrow">→</span> <span class="t">PlayerIdentity</span> (display name)
+   ├── depends   <span class="arrow">→</span> IInputSource (human or AI)
+   ├── depends   <span class="arrow">→</span> <span class="t">RaceManager.CanMove()</span> (movement gate)
+   ├── depends   <span class="arrow">→</span> <span class="t">TickManager.CurrentTick</span> (all timing)
+   └── registers <span class="arrow">→</span> <span class="t">RaceManager.RegisterPlayer()</span>
+
+<span class="lbl">[AIInputSource]</span>  <span class="c">← IInputSource, feeds into PlayerInputHandler</span>
+   ├── reads     <span class="arrow">→</span> <span class="t">AISensor</span>  (cached raycast booleans)
+   ├── updates   <span class="arrow">→</span> <span class="t">AIContext</span> (DTO)
+   └── delegates <span class="arrow">→</span> <span class="t">AIPowerUpBrain → AIDecisionSystem → IAIDecisionStrategy</span>
+
+<span class="lbl">[PowerUpController]</span>  <span class="c">← MonoBehaviour, driven by PlayerInputHandler</span>
+   ├── holds     <span class="arrow">→</span> <span class="t">PowerUpDefinition</span> (ScriptableObject)
+   ├── creates   <span class="arrow">→</span> <span class="t">IPowerUpEffect</span>  (via def.CreateEffect())
+   ├── builds    <span class="arrow">→</span> <span class="t">PowerUpContext</span> with IPlayerController, IHealth, IPlayerEntity refs
+   └── raises    <span class="arrow">→</span> <span class="t">GameEvents.RaisePowerUpPicked/Activated/Expired()</span>
+
+<span class="lbl">[PowerUpDefinition subclasses]</span>  <span class="c">← nested Effect uses:</span>
+   ├── <span class="t">RevolverPowerUpDefinition.Effect</span>  → <span class="t">ProjectilePool.GetBullet()</span>, <span class="t">RaceUtility.ResolveRocketTarget()</span>
+   ├── <span class="t">RocketPowerUpDefinition.Effect</span>    → <span class="t">ProjectilePool.GetRocket()</span>
+   ├── <span class="t">ShieldPowerUpDefinition.Effect</span>    → <span class="t">IHealth.SetInvincible()</span>, <span class="t">VFXPool.GetShieldVisual()</span>
+   └── <span class="t">SpeedBoostPowerUpDefinition.Effect</span> → <span class="t">IPlayerController.ModifyMaxRunSpeed()</span>
+</pre>
+
+  <h3>B. Mermaid Diagram (Logical)</h3>
+  <pre>
+graph TD
+    GameEvents[GameEvents<br/>static event bus]
+    LobbyManager --> MultiplayerManager
+    LobbyManager --> NetworkPlayerSpawner
+    LobbyManager -.->|StartCountdownClientRpc| RaceManager
+    RaceManager -->|RaiseRaceStarted/Finished| GameEvents
+    PlayerMarker -->|RaiseLocalPlayerSpawned| GameEvents
+    PlayerController -->|implements| IPlayerController
+    PlayerController -->|implements| IPlayerEntity
+    PlayerController --> PlayerModel
+    PlayerController --> PlayerView
+    PlayerController --> PlayerHealth
+    PlayerController --> PowerUpController
+    PlayerController --> PlayerMarker
+    PlayerInputHandler -->|polls| IInputSource
+    HumanInputSource -->|implements| IInputSource
+    AIInputSource -->|implements| IInputSource
+    AIInputSource --> AISensor
+    AIInputSource --> AIPowerUpBrain
+    AIPowerUpBrain --> AIDecisionSystem
+    AIDecisionSystem --> IAIDecisionStrategy
+    AggressiveStrategy -->|implements| IAIDecisionStrategy
+    DefensiveStrategy -->|implements| IAIDecisionStrategy
+    BalancedStrategy -->|implements| IAIDecisionStrategy
+    RiskyStrategy -->|implements| IAIDecisionStrategy
+    PowerUpController --> PowerUpDefinition
+    PowerUpDefinition -->|creates| IPowerUpEffect
+    IPowerUpEffect --> ProjectilePool
+    IPowerUpEffect --> VFXPool
+    GameEvents --> CameraFollow2D
+    GameEvents --> RaceResultUIController
+    GameEvents --> KillFeedManager
+    FinishLine -->|RegisterFinish| RaceManager
+</pre>
+</div>
+
+<!-- ======================================================= -->
+<!-- 4. EXECUTION FLOWS -->
+<!-- ======================================================= -->
+<div class="section" id="flows">
+  <h2><span class="icon" style="background:rgba(247,90,142,0.12)">🔄</span> 4. Execution Flows</h2>
+
+  <h3>A. Game Start Flow (Lobby → Race)</h3>
+  <div class="card">
+    <div class="flow-step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Menu — Host/Join</div>
+        <div class="step-desc"><code>LobbyUI.OnCreateLobby()</code> → <code>MultiplayerManager.StartHost()</code> → <code>NetworkManager.StartHost()</code>. LobbyManager spawns as a NetworkBehaviour and calls <code>AddPlayer()</code> for connected clients.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Lobby Ready Up</div>
+        <div class="step-desc"><code>LobbyUI.OnReadyClicked()</code> → <code>LobbyManager.SetReadyServerRpc(true)</code>. Server marks player ready in <code>NetworkList&lt;LobbyPlayerData&gt;</code>. All clients receive <code>OnListChanged</code> and refresh <code>LobbyUI</code>.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">All Ready → Scene Load</div>
+        <div class="step-desc">When <code>AreAllPlayersReady()</code>: server calls <code>PrepareAIPlayers()</code> (adds fake LobbyPlayerData entries), sets <code>gameStarting = true</code>, calls <code>MultiplayerManager.Instance.StartGame()</code> → <code>NetworkManager.SceneManager.LoadScene("LevelPrototype")</code>.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">Scene Loaded → AI Spawn</div>
+        <div class="step-desc"><code>LobbyManager.HandleSceneLoaded()</code> fires (server only). It calls <code>NetworkPlayerSpawner.SpawnAIPlayers()</code>. Human players are spawned by <code>NetworkPlayerSpawner.SpawnAllPlayers()</code> with a 0.5s invoke delay on <code>OnNetworkSpawn</code>.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <div class="step-title">Scene Ready Handshake</div>
+        <div class="step-desc"><code>RaceManager.Start()</code> on each client calls <code>LobbyManager.ReportSceneReadyServerRpc()</code>. Server accumulates reports. When all N clients report: fires <code>StartCountdownClientRpc()</code> to all.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <div class="step-title">Countdown → Race Start</div>
+        <div class="step-desc"><code>StartCountdownClientRpc()</code> → <code>RaceManager.StartCountdown()</code>. Server sets <code>raceStartTime = NetworkTime + 3s</code>. All clients read <code>raceStartTime</code> in <code>Update()</code>, display countdown, then transition <code>Countdown → Race</code> when time expires. Fires <code>GameEvents.RaiseRaceStarted()</code>.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>B. Player Lifecycle Flow</h3>
+  <div class="card">
+    <div class="flow-step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Spawn</div>
+        <div class="step-desc"><code>NetworkPlayerSpawner.SpawnPlayer(clientId)</code> → <code>NetworkObject.SpawnAsPlayerObject(clientId)</code>. <code>PlayerController.OnNetworkSpawn</code> registers with <code>RaceManager</code>. <code>PlayerMarker.OnNetworkSpawn</code> sets <code>IsLocal = IsOwner</code>, fires <code>RaiseLocalPlayerSpawned()</code>.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Input → Movement</div>
+        <div class="step-desc"><code>PlayerInputHandler.LateUpdate()</code> polls <code>IInputSource</code>. For jump: calls <code>PlayerController.HandleJump()</code> → buffers tick in <code>PlayerModel.LastJumpPressedTick</code>. <code>FixedUpdate()</code> calls <code>TryConsumeBufferedJump()</code> → <code>TryPerformJump()</code> → <code>NotifyJumpServerRpc()</code> → <code>PlayJumpClientRpc()</code> on all non-local clients.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Death</div>
+        <div class="step-desc">Hazard/projectile collision → <code>IHealth.TakeDamage()</code> → <code>PlayerHealth.Die()</code> → disables physics, calls <code>PlayerController.DisableControl()</code>, plays VFX from pool, starts <code>respawnTimer</code>. Sets state = Dead.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">Respawn</div>
+        <div class="step-desc"><code>PlayerHealth.Update()</code> counts down <code>respawnTimer</code> → <code>RespawnAt(lastDeathPosition + offset)</code>. Re-enables physics, calls <code>EnableControl()</code>, starts invincibility blink cycle (float timer, not coroutine).</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <div class="step-title">Finish</div>
+        <div class="step-desc"><code>FinishLine.OnTriggerEnter2D()</code> (server only) → <code>RaceManager.RegisterFinish()</code> → <code>SyncPlayerFinishedClientRpc(playerObjectId)</code> → <code>PlayerController.OnFinishRace()</code> on all clients. Sets <code>HasFinishedRace = true</code>, <code>ControlEnabled = false</code>.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>C. Networking Flow</h3>
+  <div class="card">
+    <ul style="color:#b0bcd0;font-size:13px;margin-left:18px;">
+      <li style="margin-bottom:8px"><strong>Authority model:</strong> Server is authoritative for race state, finish order, and player registration. Clients own their input and locally predict movement. Jump events are server-confirmed via RPC.</li>
+      <li style="margin-bottom:8px"><strong>NetworkVariables:</strong> <code>raceStartTime</code> (double) and <code>raceStarted</code> (bool) on RaceManager. <code>LobbyPlayerData</code> in a NetworkList on LobbyManager. All replicated automatically.</li>
+      <li style="margin-bottom:8px"><strong>RPCs:</strong> <code>NotifyJumpServerRpc</code> (owner → server) → <code>PlayJumpClientRpc</code> (server → all non-local). <code>ReportSceneReadyServerRpc</code> (all clients → server). <code>StartCountdownClientRpc</code> (server → all). <code>EndRaceClientRpc(ulong[] finishOrder)</code> (server → all). <code>SetReadyServerRpc</code> (client → server).</li>
+      <li style="margin-bottom:8px"><strong>Comment note:</strong> Client prediction / reconciliation / rollback was intentionally removed. The code references <code>PlayerInputData</code> (tick-stamped struct) which suggests this was designed for prediction but currently unused for that purpose.</li>
+    </ul>
+  </div>
+
+  <h3>D. UI Flow</h3>
+  <div class="card">
+    <ul style="color:#b0bcd0;font-size:13px;margin-left:18px;">
+      <li style="margin-bottom:6px"><strong>Lobby UI:</strong> <code>LobbyUI.OnEnable</code> → wait for <code>LobbyManager.IsSpawned</code> via coroutine → subscribe to <code>Players.OnListChanged</code>. Button clicks → ServerRpcs on LobbyManager.</li>
+      <li style="margin-bottom:6px"><strong>Race countdown:</strong> <code>RaceManager.Update()</code> directly writes <code>countdownText.text</code> — no event, pure polling of <code>raceStartTime</code> NetworkVariable.</li>
+      <li style="margin-bottom:6px"><strong>Race results:</strong> <code>GameEvents.OnRaceFinished</code> → <code>RaceResultUIController.ShowResults()</code> → reads <code>RaceManager.GetFinishOrder()</code>, populates panel.</li>
+      <li style="margin-bottom:6px"><strong>Kill feed:</strong> <code>GameEvents.OnPlayerKilled</code> → <code>KillFeedManager.HandleKill(KillEventData)</code> → pops pooled entry, formats rich text, shows with lifetime timer.</li>
+      <li style="margin-bottom:6px"><strong>Camera:</strong> <code>GameEvents.OnLocalPlayerSpawned</code> → <code>CameraFollow2D.BindToLocalPlayer()</code> → snaps to player then smooth-follows in <code>LateUpdate</code>.</li>
+    </ul>
+  </div>
+
+  <h3>E. AI Perception → Decision → Action Flow (per frame)</h3>
+  <div class="card">
+    <div style="font-family:monospace;font-size:12px;color:#b0bcd0;line-height:1.8">
+      <span style="color:var(--amber)">FixedUpdate:</span><br/>
+      &nbsp;&nbsp;<code>AISensor.FixedUpdate()</code> → fires 3 Physics2D.Raycast → caches hazardAhead, wallAhead, lowHazardAhead<br/><br/>
+      <span style="color:var(--amber)">Update:</span><br/>
+      &nbsp;&nbsp;<code>AIInputSource.Update()</code><br/>
+      &nbsp;&nbsp;→ <code>AIContext.UpdateDetection(sensor)</code> — read cached booleans<br/>
+      &nbsp;&nbsp;→ <code>AIPowerUpBrain.UpdateContext(context)</code> — add powerup + race state<br/>
+      &nbsp;&nbsp;→ <code>powerUpBrain.DecideSlide(context)</code> → <code>AIDecisionSystem.DecideSlide()</code> → <code>IAIDecisionStrategy.ShouldSlide()</code><br/>
+      &nbsp;&nbsp;→ if !slide: <code>powerUpBrain.DecideJump(context)</code> → same chain<br/>
+      &nbsp;&nbsp;→ <code>powerUpBrain.ShouldUsePowerUp(context)</code> — phase-bias + personality-bias score<br/>
+      &nbsp;&nbsp;→ sets JumpPressed, SlidePressed, PowerUpPressed<br/><br/>
+      <span style="color:var(--amber)">LateUpdate:</span><br/>
+      &nbsp;&nbsp;<code>PlayerInputHandler.LateUpdate()</code> → reads IInputSource flags → calls PlayerController methods
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- 5. FUNCTION CALL CHAINS -->
+<!-- ======================================================= -->
+<div class="section" id="callchains">
+  <h2><span class="icon" style="background:rgba(247,185,85,0.12)">📞</span> 5. Function Call Chains</h2>
+
+  <h3>Chain 1: Human Jump Input → Physics → Network Sync</h3>
+  <pre>
+<span class="c">// LateUpdate</span>
+<span class="t">PlayerInputHandler</span>.LateUpdate()
+  → <span class="b">CanProcessInput()</span>                          <span class="c">// checks RaceManager.CanMove() AND PlayerMarker.IsLocal</span>
+  → inputSource.JumpPressed == true
+  → <span class="t">PlayerController</span>.<span class="b">HandleJump()</span>
+      → <span class="b">CanProcessLocalInput()</span>                   <span class="c">// same gate again</span>
+      → if IsWallClinging: <span class="b">TryPerformWallJump()</span>  <span class="c">// branch A</span>
+      → else: model.LastJumpPressedTick = currentTick   <span class="c">// buffer jump</span>
+            → <span class="b">TryConsumeBufferedJump(currentTick)</span>
+
+<span class="c">// FixedUpdate</span>
+<span class="t">PlayerController</span>.FixedUpdate()
+  → <span class="b">TryConsumeBufferedJump(currentTick)</span>
+      → checks: grounded OR coyote time OR jumpsLeft > 0
+      → <span class="b">TryPerformJump(currentTick)</span>
+          → rb.linearVelocity = new Vector2(currentRunSpeed * mult, jumpVelocity)
+          → model.JumpsLeft--
+          → model.NextAllowedGroundCheckTick = currentTick + grace
+          → view.TriggerJump()   <span class="c">// local animation</span>
+          → if IsOwner: <span class="b">NotifyJumpServerRpc()</span>    <span class="c">// owner → server</span>
+          → OnJump?.Invoke()
+          → <span class="b">UpdateState(PlayerState.Jumping)</span>
+
+<span class="c">// ServerRpc handler (on server)</span>
+<span class="t">PlayerController</span>.<span class="b">NotifyJumpServerRpc()</span>
+  → <span class="b">PlayJumpClientRpc()</span>                         <span class="c">// server → all clients</span>
+
+<span class="c">// ClientRpc handler (on all non-local clients)</span>
+<span class="t">PlayerController</span>.<span class="b">PlayJumpClientRpc()</span>
+  → if IsLocal: return                              <span class="c">// skip on owner (already animated)</span>
+  → view.TriggerJump()                             <span class="c">// show jump on remote copies</span>
+</pre>
+
+  <h3>Chain 2: Player Crosses Finish Line → Race End → UI Results</h3>
+  <pre>
+<span class="c">// Physics trigger (server only checks)</span>
+<span class="t">FinishLine</span>.OnTriggerEnter2D(collider)
+  → if !NetworkManager.Singleton.IsServer: return
+  → collider.TryGetComponent&lt;<span class="t">IPlayerController</span>&gt;(out racer)
+  → <span class="t">RaceManager</span>.<span class="b">RegisterFinish(racer)</span>
+
+<span class="t">RaceManager</span>.<span class="b">RegisterFinish(player)</span>
+  → if !raceStarted.Value: return
+  → finishOrder.Add(player)
+  → <span class="b">ApplyPlayerFinishStateOnce(player)</span>
+      → if not yet processed: <span class="b">ApplyPlayerFinishState(player)</span>
+          → playerController.<span class="b">OnFinishRace()</span>
+              → model.HasFinishedRace = true
+              → model.ControlEnabled = false
+  → <span class="b">SyncPlayerFinishedClientRpc(playerObjectId)</span>    <span class="c">// replicate on clients</span>
+  → if finishOrder.Count == racers.Count: <span class="b">EndRace()</span>
+
+<span class="t">RaceManager</span>.<span class="b">EndRace()</span>
+  → currentState = Finished
+  → raceStarted.Value = false
+  → <span class="b">EndRaceClientRpc(BuildFinishOrderObjectIds())</span>   <span class="c">// array of ulong NetworkObjectIds</span>
+
+<span class="c">// ClientRpc (all clients)</span>
+<span class="t">RaceManager</span>.<span class="b">EndRaceClientRpc(ulong[] ids)</span>
+  → <span class="b">ApplyFinishOrder(ids)</span>    <span class="c">// resolves NetworkObjects, calls OnFinishRace on each</span>
+  → <span class="t">GameEvents</span>.<span class="b">RaiseRaceFinished()</span>
+      → <span class="t">GameManager</span>.<span class="b">HandleRaceFinished()</span>        <span class="c">// logs</span>
+      → <span class="t">RaceResultUIController</span>.<span class="b">ShowResults()</span>    <span class="c">// shows panel</span>
+      → <span class="t">KillFeedManager</span>.<span class="b">ClearAll()</span>             <span class="c">// clear kill feed</span>
+      → <span class="t">CameraFollow2D</span>.<span class="b">OnRaceFinished()</span>        <span class="c">// damp + zoom</span>
+</pre>
+
+  <h3>Chain 3: Pickup → Activation → Power-Up Effect</h3>
+  <pre>
+<span class="c">// Player walks over pickup</span>
+<span class="t">RandomPowerUpPickup</span>.OnTriggerEnter2D(collider)
+  → collider.TryGetComponent&lt;<span class="t">PowerUpController</span>&gt;(out ctrl)
+  → ctrl.<span class="b">Pickup(definition)</span>
+      → heldDefinition = definition
+      → <span class="t">GameEvents</span>.<span class="b">RaisePowerUpPicked(definition.id)</span>
+      → OnPowerUpChanged?.Invoke(id)    <span class="c">// → PowerUpUIController updates icon</span>
+
+<span class="c">// Player presses E (or AI decides to use)</span>
+<span class="t">PlayerInputHandler</span>.LateUpdate() → inputSource.PowerUpPressed
+  → <span class="t">PlayerController</span>.<span class="b">HandlePowerUp()</span>
+      → powerUpController.<span class="b">Activate()</span>
+          → DeactivateCurrentEffect()  <span class="c">// clear any lingering effect</span>
+          → activeEffect = heldDefinition.<span class="b">CreateEffect()</span>   <span class="c">// factory</span>
+          → activeEffect.<span class="b">Activate(context)</span>
+          → if duration > 0: effectTimeRemaining = duration  <span class="c">// float timer, no coroutine</span>
+          → <span class="t">GameEvents</span>.<span class="b">RaisePowerUpActivated(id)</span>
+
+<span class="c">// Example: SpeedBoost</span>
+<span class="t">SpeedBoostPowerUpDefinition.SpeedBoostEffect</span>.<span class="b">Activate(ctx)</span>
+  → ctx.PlayerController.<span class="b">ModifyMaxRunSpeed(speedMultiplier)</span>   <span class="c">// e.g. 2×</span>
+
+<span class="c">// Timer expires (PowerUpController.Update)</span>
+effectTimeRemaining -= Time.deltaTime
+→ if &lt;= 0: <span class="b">DeactivateCurrentEffect()</span>
+    → activeEffect.<span class="b">Deactivate()</span>
+        → ctx.PlayerController.<span class="b">ResetMaxRunSpeed()</span>
+    → <span class="t">GameEvents</span>.<span class="b">RaisePowerUpExpired(id)</span>
+</pre>
+
+  <h3>Chain 4: Player Death from Projectile</h3>
+  <pre>
+<span class="c">// e.g. RocketController hits player</span>
+<span class="t">RocketController</span>.OnTriggerEnter2D(other)
+  → other.TryGetComponent&lt;<span class="t">IPlayerEntity</span>&gt;(out target)
+  → if !target.IsTargetable: return
+  → target.IsTargetable: checks !HasFinishedRace, activeHierarchy, !IsInvincible, rb.simulated
+  → other.TryGetComponent&lt;<span class="t">IHealth</span>&gt;(out health)
+  → health.<span class="b">TakeDamage(1)</span>
+  → <span class="t">GameEvents</span>.<span class="b">RaisePlayerKilled(new KillEventData(killer, victim, PowerUpId.Rocket))</span>
+      → <span class="t">KillFeedManager</span>.<span class="b">HandleKill(data)</span>   <span class="c">// shows "X killed Y with Rocket"</span>
+
+<span class="t">PlayerHealth</span>.<span class="b">TakeDamage()</span>
+  → if IsInvincible: return
+  → <span class="b">Die()</span>
+      → IsInvincible = true           <span class="c">// prevent double-kill</span>
+      → state = Dead, respawnTimer = delay
+      → powerUpController.ClearActiveEffects()
+      → VFXPool.Instance.GetDeathSmoke(pos)  <span class="c">// pooled VFX</span>
+      → rb.simulated = false          <span class="c">// kill physics</span>
+      → controller.DisableControl()
+      → view.TriggerDie()             <span class="c">// death animation</span>
+
+<span class="c">// respawnTimer counts down in Update → RespawnAt(lastDeathPos + offset)</span>
+</pre>
+</div>
+
+<!-- ======================================================= -->
+<!-- 6. DESIGN PATTERNS -->
+<!-- ======================================================= -->
+<div class="section" id="patterns">
+  <h2><span class="icon" style="background:rgba(124,90,247,0.15)">⚙️</span> 6. Design Patterns Identification</h2>
+
+  <table>
+    <tr>
+      <th>Pattern</th>
+      <th>Where Used</th>
+      <th>Implementation Quality</th>
+    </tr>
+    <tr>
+      <td><strong>Observer / Event Bus</strong></td>
+      <td><code>GameEvents</code> static class</td>
+      <td><span class="dot dot-green"></span> <strong>Excellent.</strong> Custom Add/Remove with duplicate-subscription guard. Individual invocation loop catches and logs exceptions per-subscriber without killing others. <code>[RuntimeInitializeOnLoadMethod]</code> clears statics on domain reload — critical for domain-reload safety in tests. <code>OnAnyEventRaised</code> hook for global debug tracking.</td>
+    </tr>
+    <tr>
+      <td><strong>Strategy</strong></td>
+      <td>AI: <code>IAIDecisionStrategy</code> → 4 concrete strategies</td>
+      <td><span class="dot dot-green"></span> <strong>Good.</strong> <code>[SerializeReference]</code> allows Inspector selection. Abstract base holds all timing logic; strategies only override 3 bias floats. Adding new personality = 5 lines of code.</td>
+    </tr>
+    <tr>
+      <td><strong>Factory Method</strong></td>
+      <td><code>PowerUpDefinition.CreateEffect()</code></td>
+      <td><span class="dot dot-green"></span> <strong>Clean.</strong> Each ScriptableObject definition creates its own <code>IPowerUpEffect</code> as a nested private class. Zero coupling between pickup and effect.</td>
+    </tr>
+    <tr>
+      <td><strong>Object Pool</strong></td>
+      <td><code>ProjectilePool</code>, <code>VFXPool</code>, <code>KillFeedManager</code>, <code>LobbyUI</code></td>
+      <td><span class="dot dot-green"></span> <strong>Consistent and thorough.</strong> Pre-warmed Queue pools across projectiles, VFX, kill feed entries, and lobby slots. Pool sizes configurable in Inspector. All return via explicit <code>ReturnXxx()</code> methods. VFXEntry uses self-return pattern.</td>
+    </tr>
+    <tr>
+      <td><strong>Singleton</strong></td>
+      <td><code>RaceManager</code>, <code>GameManager</code>, <code>LobbyManager</code>, <code>MultiplayerManager</code>, <code>TickManager</code>, <code>ProjectilePool</code>, <code>VFXPool</code></td>
+      <td><span class="dot dot-amber"></span> <strong>Acceptable but over-used.</strong> Most implement correct duplicate-destruction guard. <code>LobbyManager</code> and <code>MultiplayerManager</code> use <code>DontDestroyOnLoad</code> correctly. The heavy reliance on static <code>Instance</code> access (especially <code>RaceManager.Instance</code> in PlayerController, AIPowerUpBrain, RaceUtility) creates hidden dependencies.</td>
+    </tr>
+    <tr>
+      <td><strong>MVC / Component Decomposition</strong></td>
+      <td><code>PlayerController</code> + <code>PlayerModel</code> + <code>PlayerView</code></td>
+      <td><span class="dot dot-green"></span> <strong>Well-executed.</strong> Model is pure data, View is pure presentation, Controller owns all logic. <code>CharacterConfig</code> ScriptableObject keeps designer-tunable values separate from runtime state in Model. Clean separation of concerns.</td>
+    </tr>
+    <tr>
+      <td><strong>State Machine</strong></td>
+      <td><code>PlayerState</code> enum + <code>UpdateState()</code>, <code>RaceState</code> enum, <code>HealthState</code> enum</td>
+      <td><span class="dot dot-amber"></span> <strong>Implicit state machines.</strong> Not formal FSM classes — just enums with branching in Update/FixedUpdate. Works fine at this scale but could become hard to maintain if states grow.</td>
+    </tr>
+    <tr>
+      <td><strong>Interface Segregation</strong></td>
+      <td><code>IPlayerController</code>, <code>IPlayerEntity</code>, <code>IHealth</code>, <code>IInputSource</code>, <code>IPowerUpEffect</code>, <code>ICheckpoint</code>, <code>IHazard</code></td>
+      <td><span class="dot dot-green"></span> <strong>Strong.</strong> The interface layer is the architectural backbone. AI and human players are fully interchangeable to RaceManager, RaceUtility, PowerUpController, and Hazard. Adding a new player type means implementing 2 interfaces.</td>
+    </tr>
+    <tr>
+      <td><strong>Template Method</strong></td>
+      <td><code>AIDecisionStrategyBase</code> with abstract bias properties</td>
+      <td><span class="dot dot-green"></span> <strong>Clever use.</strong> All timing and scoring logic in base class; personality just overrides floats. Strategy pattern at the composition level, Template Method at the inheritance level.</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ======================================================= -->
+<!-- 7. DATA FLOW & STATE MANAGEMENT -->
+<!-- ======================================================= -->
+<div class="section" id="dataflow">
+  <h2><span class="icon" style="background:rgba(61,214,140,0.12)">📊</span> 7. Data Flow &amp; State Management</h2>
+
+  <h3>Data Ownership Map</h3>
+  <table>
+    <tr><th>Data</th><th>Owner</th><th>Authority</th><th>How Shared</th></tr>
+    <tr><td>Race state (started, time)</td><td><code>RaceManager</code></td><td>Server</td><td>NetworkVariable — auto-replicated</td></tr>
+    <tr><td>Lobby player list</td><td><code>LobbyManager</code></td><td>Server</td><td>NetworkList&lt;LobbyPlayerData&gt;</td></tr>
+    <tr><td>Player physics (position, velocity)</td><td><code>PlayerController</code> (owner)</td><td>Owner (local prediction)</td><td>NGO NetworkTransform (implicit)</td></tr>
+    <tr><td>Player movement config</td><td><code>CharacterConfig</code> (ScriptableObject)</td><td>Local</td><td>Reference, read-only</td></tr>
+    <tr><td>Player runtime state</td><td><code>PlayerModel</code></td><td>Local per instance</td><td>Direct component access</td></tr>
+    <tr><td>Power-up held/active</td><td><code>PowerUpController</code></td><td>Local (owner)</td><td>Via GameEvents (broadcast)</td></tr>
+    <tr><td>Finish order</td><td><code>RaceManager</code></td><td>Server → clients via RPC</td><td>EndRaceClientRpc(ulong[])</td></tr>
+    <tr><td>Kill feed events</td><td><code>KillEventData</code> (readonly struct)</td><td>Local/Server</td><td>GameEvents.RaisePlayerKilled</td></tr>
+    <tr><td>AI decision state</td><td><code>AIContext</code></td><td>Local (per AI)</td><td>Internal within AI subsystem</td></tr>
+  </table>
+
+  <h3>Tight Coupling / Unsafe Dependencies</h3>
+  <div class="pattern-card warn">
+    <div class="pt">⚠ Singleton Sprawl</div>
+    <p><code>RaceManager.Instance</code> is accessed from: <code>PlayerController</code>, <code>PlayerInputHandler</code>, <code>AIPowerUpBrain</code>, <code>AIContext</code>, <code>RaceResultUIController</code>, <code>RaceUtility</code>, <code>FinishLine</code>. If RaceManager is null (scene not loaded, wrong scene), all of these silently or noisily fail. Defensive null checks are present throughout but it's a hidden dependency.</p>
+  </div>
+  <div class="pattern-card warn">
+    <div class="pt">⚠ PlayerMarker.Local — Static Mutable Reference</div>
+    <p><code>PlayerMarker.Local</code> is a static mutable reference set in <code>OnNetworkSpawn</code>. <code>CameraFollow2D</code> reads it on spawn event. If two PlayerMarker objects claim <code>IsOwner = true</code> (shouldn't happen but edge cases exist), the second one is destroyed but static may be stale. Low risk in practice but architecturally fragile.</p>
+  </div>
+  <div class="pattern-card danger">
+    <div class="pt">🔴 Kill Feed Data — No Network Authority</div>
+    <p><code>GameEvents.RaisePlayerKilled</code> is called locally (presumably on the server or on the killing client). The kill feed on all clients needs to see this event, but there is no <code>[ClientRpc]</code> wrapping it. Unless the projectile logic always runs server-side and the event fires from a ServerRpc flow, clients may miss kill events. This is a potential multiplayer correctness gap.</p>
+  </div>
+  <div class="pattern-card good">
+    <div class="pt">✅ Tick-Based Timing</div>
+    <p>All gameplay timing (jump buffer, coyote time, wall cling, slide, ground grace delay) uses <code>TickManager.CurrentTick</code> integers instead of <code>Time.time</code> floats. This eliminates float precision drift and makes gameplay reproducible regardless of frame rate variation.</p>
+  </div>
+  <div class="pattern-card good">
+    <div class="pt">✅ GameEvents Domain Reset</div>
+    <p><code>[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]</code> clears all static event delegates. This prevents test pollution and stale subscribers across domain reloads in the Editor — a significant operational quality-of-life feature.</p>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- 8. CODE QUALITY EVALUATION -->
+<!-- ======================================================= -->
+<div class="section" id="quality">
+  <h2><span class="icon" style="background:rgba(247,90,90,0.12)">🧱</span> 8. Code Quality &amp; Architecture Evaluation</h2>
+
+  <div class="grid2">
+    <div>
+      <h3>Strengths</h3>
+      <div class="pattern-card good">
+        <div class="pt">✅ Interface Abstraction Layer</div>
+        <p>The <code>IPlayerController / IPlayerEntity / IHealth / IInputSource</code> contracts are thorough and consistently used. This is the strongest architectural decision in the codebase.</p>
+      </div>
+      <div class="pattern-card good">
+        <div class="pt">✅ Zero-Alloc Runtime Paths</div>
+        <p>Comment evidence throughout: coroutines replaced with float timers in PlayerHealth, invincibility blink is timer-driven, PowerUpController expiry is a float countdown, KillFeedManager is pre-warmed. Shows performance discipline.</p>
+      </div>
+      <div class="pattern-card good">
+        <div class="pt">✅ AI Architecture Extensibility</div>
+        <p>Adding a new AI personality is 4 lines: create a class extending <code>AIDecisionStrategyBase</code>, override 3 float properties. The <code>[SerializeReference]</code> approach allows Inspector configuration without code changes.</p>
+      </div>
+      <div class="pattern-card good">
+        <div class="pt">✅ ScriptableObject Config Pattern</div>
+        <p><code>CharacterConfig</code> cleanly separates designer-tunable values from runtime state. <code>PowerUpDefinition</code> as ScriptableObject means new power-ups require no code changes — just a new asset.</p>
+      </div>
+      <div class="pattern-card good">
+        <div class="pt">✅ Scene Ready Handshake</div>
+        <p>The <code>ReportSceneReadyServerRpc</code> pattern is correct and explicitly comment-documented as fixing a previous race condition (timer-based vs confirmed). All clients guaranteed in scene before countdown starts.</p>
+      </div>
+    </div>
+    <div>
+      <h3>Issues &amp; Risks</h3>
+      <div class="pattern-card warn">
+        <div class="pt">⚠ Duplicate Input Interface</div>
+        <p>Both <code>IInputSource</code> and <code>IInputDriver</code> exist with overlapping purposes. <code>AIInputDriver</code> uses the older interface. This dual-path could cause confusion when extending the input system.</p>
+      </div>
+      <div class="pattern-card warn">
+        <div class="pt">⚠ Singleton Reference Network</div>
+        <p>7+ singleton managers with static <code>Instance</code> access. This makes unit testing difficult and creates load-order dependencies. RaceManager in particular is referenced from too many places.</p>
+      </div>
+      <div class="pattern-card warn">
+        <div class="pt">⚠ NetworkPlayerSpawner 0.5s Delay</div>
+        <p><code>Invoke(nameof(SpawnAllPlayers), 0.5f)</code> — hardcoded magic number. If a client loads slowly, they may not be connected when spawning starts. The scene-ready handshake in LobbyManager solves this at the lobby level but NetworkPlayerSpawner bypasses it.</p>
+      </div>
+      <div class="pattern-card danger">
+        <div class="pt">🔴 KillFeed Not Networked</div>
+        <p><code>GameEvents.RaisePlayerKilled</code> is local-only. Kill events from server-side projectile collisions won't reach other clients' kill feeds unless wrapped in a ClientRpc. This is a functional multiplayer gap.</p>
+      </div>
+      <div class="pattern-card warn">
+        <div class="pt">⚠ Removed Client Prediction</div>
+        <p>Comments explicitly state prediction/reconciliation was removed. <code>PlayerInputData</code> struct exists but is unused for prediction. At low latency this is fine; at 100ms+ latency, player movement will feel laggy on the server-authoritative path.</p>
+      </div>
+      <div class="pattern-card warn">
+        <div class="pt">⚠ FinishLine Server-Only Check</div>
+        <p><code>FinishLine</code> correctly gates on <code>NetworkManager.IsServer</code>, but <code>PlayerHealth.Die()</code> and <code>Hazard</code> do not have network authority checks — they run on all clients. This means health/death logic runs locally everywhere, which may cause desyncs in a real multiplayer session.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- 9. FULL SYSTEM DIAGRAM -->
+<!-- ======================================================= -->
+<div class="section" id="diagram">
+  <h2><span class="icon" style="background:rgba(79,142,247,0.15)">🗺️</span> 9. Full System Diagram</h2>
+
+  <h3>A. Text Architecture Diagram</h3>
+  <pre>
+<span class="c">───────────────────────── PERSISTENCE LAYER ──────────────────────────</span>
+                ┌──────────────────┐   ┌────────────────────┐
+                │  MultiplayerMgr  │   │   LobbyManager     │
+                │  (DDOL Singleton)│◄──│ (DDOL NetworkBehav)│
+                └────────┬─────────┘   └────────┬───────────┘
+                         │ LoadScene             │ NetworkList<LobbyPlayerData>
+<span class="c">───────────────────────── RACE SCENE ─────────────────────────────────</span>
+     ┌──────────────────────────────────────────────────────────────┐
+     │                                                              │
+     │  ┌──────────────┐       ┌──────────────────┐               │
+     │  │  TickManager │       │   RaceManager     │               │
+     │  │  (FixedDT)   │       │  NetworkBehaviour │               │
+     │  └──────┬───────┘       └─────────┬────────┘               │
+     │         │ CurrentTick             │ CanMove(), RegisterPlayer│
+     │         ↓                         ↓                         │
+     │  ┌──────────────────────────────────────────────────┐       │
+     │  │             PlayerController                     │       │
+     │  │         (NetworkBehaviour / sealed)               │       │
+     │  │  ┌──────────┐ ┌──────────┐ ┌──────────────────┐ │       │
+     │  │  │PlayerModel│ │PlayerView│ │  PlayerHealth    │ │       │
+     │  │  │ (data)   │ │(animator)│ │  (state machine) │ │       │
+     │  │  └──────────┘ └──────────┘ └──────────────────┘ │       │
+     │  │  ┌──────────┐ ┌──────────┐ ┌──────────────────┐ │       │
+     │  │  │ Power Up │ │  Player  │ │  PlayerIdentity  │ │       │
+     │  │  │Controller│ │  Marker  │ │  (display name)  │ │       │
+     │  │  └────┬─────┘ └─────┬────┘ └──────────────────┘ │       │
+     │  └───────┼─────────────┼────────────────────────────┘       │
+     │          │             │                                     │
+     │  ┌───────▼──────┐  ┌───▼───────────────────────────────┐   │
+     │  │ PowerUpDef   │  │      PlayerInputHandler            │   │
+     │  │ (ScriptObj)  │  │   LateUpdate polls IInputSource    │   │
+     │  └───────┬──────┘  └───┬────────────────────┬──────────┘   │
+     │          │             │                     │              │
+     │  ┌───────▼──────┐ ┌────▼─────────┐  ┌───────▼──────────┐  │
+     │  │ ProjectilPool│ │HumanInput    │  │ AIInputSource    │  │
+     │  │   VFXPool    │ │Source        │  │ + AISensor       │  │
+     │  └──────────────┘ │(Keyboard.cur)│  │ + AIPowerUpBrain │  │
+     │                   └──────────────┘  │ + AIDecisionSys  │  │
+     │                                     │ + IAIDecStrategy │  │
+     │                                     └──────────────────┘  │
+     │                                                              │
+     │  ┌────────────────────────────────────────────────────────┐  │
+     │  │                   GameEvents (static)                  │  │
+     │  │  OnRaceStarted  OnRaceFinished  OnPlayerKilled         │  │
+     │  │  OnLocalPlayerSpawned  OnPowerUpPicked/Activated/Expird│  │
+     │  └────────────────────────────────────────────────────────┘  │
+     │          ↑ raised                    ↓ listened              │
+     │  FinishLine   Checkpoint         CameraFollow2D              │
+     │  PlayerMarker Hazard             RaceResultUIController      │
+     │  PowerUpCtrl  PlayerHealth       KillFeedManager             │
+     │                                  GameManager (thin shell)    │
+     └──────────────────────────────────────────────────────────────┘
+</pre>
+</div>
+
+<!-- ======================================================= -->
+<!-- 10. MENTAL MODEL -->
+<!-- ======================================================= -->
+<div class="section" id="mental">
+  <h2><span class="icon" style="background:rgba(247,90,142,0.12)">🧠</span> 10. Mental Model for New Developers</h2>
+
+  <div class="callout">
+    <p><strong>Core mental model:</strong> This is a 2D platformer race where all players (human or AI) share the same PlayerController + PlayerInputHandler pipeline. The only difference is what implements <code>IInputSource</code>: a keyboard for humans, a raycast-driven decision system for AI. The race lifecycle is controlled by RaceManager (server authority) via NetworkVariables and RPCs. Everything communicates across systems via GameEvents static delegates — if you want to react to something, subscribe to GameEvents; if you want to notify something, raise a GameEvent.</p>
+  </div>
+
+  <h3>Entry Points — Where Execution Begins</h3>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Lobby Scene Entry</div>
+      <ul>
+        <li><code>LobbyUI.OnEnable()</code> — waits for LobbyManager spawn</li>
+        <li><code>LobbyUI.OnCreateLobby/OnJoinLobby()</code> — first player action</li>
+        <li><code>LobbyManager.OnNetworkSpawn()</code> — session setup</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">Race Scene Entry</div>
+      <ul>
+        <li><code>NetworkPlayerSpawner.OnNetworkSpawn()</code> → spawns players</li>
+        <li><code>PlayerMarker.OnNetworkSpawn()</code> → fires <code>LocalPlayerSpawned</code></li>
+        <li><code>RaceManager.Start()</code> → <code>ReportSceneReadyServerRpc()</code></li>
+        <li><code>TickManager.Awake()</code> (ExecutionOrder -1000, runs first)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Core Abstractions to Understand First</h3>
+  <table>
+    <tr><th>Abstraction</th><th>Why It Matters</th></tr>
+    <tr><td><code>IInputSource</code></td><td>The seam between human and AI. Everything that touches player control goes through this. Understand it first.</td></tr>
+    <tr><td><code>GameEvents</code></td><td>The connective tissue. Almost every cross-system interaction goes through here. Trace events to understand data flow.</td></tr>
+    <tr><td><code>IPlayerController / IPlayerEntity</code></td><td>RaceManager, RaceUtility, and all power-ups use these — not concrete types. Any new player type must implement both.</td></tr>
+    <tr><td><code>RaceManager.CanMove()</code></td><td>The central gate for all gameplay. PlayerController, PlayerInputHandler both check this before doing anything.</td></tr>
+    <tr><td><code>TickManager.CurrentTick</code></td><td>All timing is ticks, not Time.time. Don't use Time.time for gameplay logic — use ticks.</td></tr>
+  </table>
+
+  <h3>Safe Extension Points</h3>
+  <div class="pattern-card good">
+    <div class="pt">✅ Safe: New Power-Up</div>
+    <p>Create a <code>PowerUpDefinition</code> ScriptableObject subclass, implement <code>CreateEffect()</code> returning an <code>IPowerUpEffect</code>. Zero changes to existing systems. Add an entry to <code>PowerUpId</code> enum. Done.</p>
+  </div>
+  <div class="pattern-card good">
+    <div class="pt">✅ Safe: New AI Personality</div>
+    <p>Create a class extending <code>AIDecisionStrategyBase</code>, override 3 float properties. Add a <code>AIPersonality</code> enum value. Inspector-assignable via <code>[SerializeReference]</code>.</p>
+  </div>
+  <div class="pattern-card good">
+    <div class="pt">✅ Safe: Reacting to Game Events</div>
+    <p>Subscribe to <code>GameEvents.OnRaceStarted/Finished/PlayerKilled</code> etc. in <code>OnEnable/OnDisable</code>. No coupling to any other system needed.</p>
+  </div>
+  <div class="pattern-card good">
+    <div class="pt">✅ Safe: New World Interaction</div>
+    <p>Implement <code>ICheckpoint</code>, <code>IHazard</code>, or <code>IEndPoint</code>. Access <code>IHealth</code> or <code>IPlayerController</code> via <code>TryGetComponent</code>. Raises GameEvents as appropriate.</p>
+  </div>
+
+  <h3>Risky Areas — Modify With Caution</h3>
+  <div class="pattern-card danger">
+    <div class="pt">🔴 Don't touch: RaceManager state machine transitions</div>
+    <p>The <code>Waiting → Countdown → Race → Finished</code> flow is tightly coupled to the scene-ready handshake, NetworkVariables, and countdown timing. Modifying transition conditions can cause mismatches between server and clients.</p>
+  </div>
+  <div class="pattern-card danger">
+    <div class="pt">🔴 Don't touch: PlayerController FixedUpdate movement</div>
+    <p>The tick-based jump buffer, coyote time, and ground check logic have subtle ordering dependencies. Breaking the tick contract will cause inconsistent gameplay.</p>
+  </div>
+  <div class="pattern-card warn">
+    <div class="pt">⚠ Be careful: Expanding PlayerHealth's death/respawn</div>
+    <p>The <code>Dead → Invincible → Alive</code> state machine uses float timers that must be reset correctly. Adding new states requires updating all transition paths including <code>SetInvincible(false)</code> calls.</p>
+  </div>
+  <div class="pattern-card warn">
+    <div class="pt">⚠ Be careful: LobbyManager AddPlayer / AI fill logic</div>
+    <p>The AI fill logic (<code>PrepareAIPlayers</code>) uses fake ClientIds (<code>ulong.MaxValue - i</code>) that must not collide with real client IDs. The sequence matters: RemoveAI → count humans → add AI. Don't reorder.</p>
+  </div>
+
+  <h3>Reading Order for a New Developer</h3>
+  <div class="card">
+    <ol style="margin-left:20px;color:#b0bcd0;font-size:13px;line-height:2">
+      <li><code>Core/GameEvents.cs</code> — understand the event bus before everything else</li>
+      <li><code>Core/IPlayerController.cs</code>, <code>IPlayerEntity.cs</code>, <code>IHealth.cs</code>, <code>IInputSource.cs</code> — the contract layer</li>
+      <li><code>Game/RaceManager.cs</code> — understand the race state machine and network authority</li>
+      <li><code>Player/PlayerController.cs</code> — the most complex single file; read with PlayerModel beside it</li>
+      <li><code>Multiplayer/LobbyManager.cs</code> — session lifecycle and the scene-ready handshake</li>
+      <li><code>AI/AIInputSource.cs</code> + <code>AIDecisionStrategyBase.cs</code> — how AI plugs into the same input pipeline</li>
+      <li><code>PowerUp/PowerUpController.cs</code> + one Definition — understand the ScriptableObject factory pattern</li>
+    </ol>
+  </div>
+</div>
+
+</div><!-- /container -->
+</body>
+</html>

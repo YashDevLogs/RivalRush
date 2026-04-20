@@ -6,6 +6,7 @@ using UnityEngine;
 using Game.Core;
 using TMPro;
 using UnityEngine.SceneManagement;
+using Unity.Netcode;
 
 namespace Game.Systems
 {
@@ -38,9 +39,13 @@ namespace Game.Systems
         private void ShowResults()
         {
             var raceManager = RaceManager.Instance;
-            if (raceManager == null) { Debug.LogWarning("[RaceResultUI] RaceManager not found."); return; }
-            var results = raceManager.GetFinishOrder();
+            if (raceManager == null)
+            {
+                Debug.LogWarning("[RaceResultUI] RaceManager not found.");
+                return;
+            }
 
+            var results = raceManager.GetFinishOrder();
             panel.SetActive(true);
 
             int localPlayerRank = -1;
@@ -80,22 +85,14 @@ namespace Game.Systems
             UpdateTitle(localPlayerRank);
         }
 
-        // ---------------- TITLE ----------------
-
         private void UpdateTitle(int rank)
         {
             if (rank == 1)
-            {
                 titleText.text = "YOU WON!";
-            }
             else if (rank > 1)
-            {
                 titleText.text = $"YOU FINISHED {GetOrdinal(rank)}";
-            }
             else
-            {
                 titleText.text = "RACE FINISHED";
-            }
         }
 
         private string GetOrdinal(int number)
@@ -113,15 +110,48 @@ namespace Game.Systems
             }
         }
 
-        // ---------------- RESTART ----------------
-
-        public void OnRestartButtonPressed()
+        // -------------------------------------------------------
+        // Called by the "Return to Lobby" button.
+        // Tells server to reset lobby state, then each player
+        // loads MainMenu independently on their own device.
+        // Regular SceneManager (NOT NetworkManager.SceneManager)
+        // so each client returns at their own pace.
+        // -------------------------------------------------------
+        public void OnReturnToLobbyPressed()
         {
-            Debug.Log("[RaceResultUI] Restarting race");
+            Debug.Log("[CLIENT][UI] Return To Lobby Pressed");
 
-            Scene currentScene = SceneManager.GetActiveScene();
-            SceneManager.LoadScene(currentScene.buildIndex);
+            var lm = LobbyManager.Instance;
+
+            if (lm == null)
+            {
+                Debug.LogWarning("[CLIENT] LobbyManager NULL → loading MainMenu locally");
+                SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
+                return;
+            }
+
+            Debug.Log(
+                $"[CLIENT] LM Found | InstanceID: {lm.GetInstanceID()} | " +
+                $"NetID: {(lm.NetworkObject != null ? lm.NetworkObjectId : 0)} | " +
+                $"IsSpawned: {lm.IsSpawned}"
+            );
+
+            if (!lm.IsSpawned)
+            {
+                Debug.LogWarning("[CLIENT] LobbyManager NOT SPAWNED → loading MainMenu locally");
+                SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
+                return;
+            }
+
+            Debug.Log("[CLIENT] Calling ResetForNewMatchServerRpc");
+
+            lm.DebugIdentity("Before ResetForNewMatch RPC");
+
+            lm.ResetForNewMatchServerRpc();
+
+            Debug.Log("[CLIENT] Loading MainMenu locally");
+
+            SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
         }
     }
-
 }

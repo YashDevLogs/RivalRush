@@ -20,31 +20,75 @@ namespace Game.Systems
 
         [SerializeField] private NetworkObject aiPlayerPrefab;
 
+        // MUST be initialized at field declaration.
+        // NGO calls InitializeVariables() BEFORE Awake() runs,
+        // so initializing in Awake is too late and throws a null exception.
         public NetworkList<LobbyPlayerData> Players { get; private set; }
+            = new NetworkList<LobbyPlayerData>();
 
         private bool gameStarting;
         private int pendingAISpawnCount;
-
-        // Tracks which clients have reported scene-ready
         private HashSet<ulong> loadedClients = new HashSet<ulong>();
 
         private void Awake()
         {
-            if (Instance == null)
+            Debug.Log(
+                $"[LobbyManager][Awake] ThisID: {GetInstanceID()} | " +
+                $"Existing Instance: {(Instance != null ? Instance.GetInstanceID() : -1)}"
+            );
+
+            if (Instance != null && Instance != this)
             {
-                Instance = this;
-                DontDestroyOnLoad(gameObject);
-                Players = new NetworkList<LobbyPlayerData>();
+                Debug.LogWarning(
+                    $"[LobbyManager][Awake] DUPLICATE detected EARLY | This: {GetInstanceID()} | Existing: {Instance.GetInstanceID()}"
+                );
+                return;
             }
-            else
-            {
-                Destroy(gameObject);
-            }
+
+            Instance = this;
+
+            Debug.Log(
+                $"[LobbyManager][Awake] SET AS INSTANCE | ThisID: {GetInstanceID()}"
+            );
+
+            DontDestroyOnLoad(gameObject);
         }
 
         public override void OnNetworkSpawn()
         {
-            Debug.Log($"[LobbyManager] Spawned | IsServer: {IsServer} | IsClient: {IsClient}");
+            Debug.Log(
+                $"[LobbyManager][OnNetworkSpawn] ENTER | ThisID: {GetInstanceID()} | " +
+                $"NetID: {NetworkObjectId} | IsServer: {IsServer} | IsClient: {IsClient}"
+            );
+
+            Debug.Log(
+                $"[LobbyManager][OnNetworkSpawn] Current Instance: {(Instance != null ? Instance.GetInstanceID() : -1)}"
+            );
+
+            if (Instance != null && Instance != this)
+            {
+                Debug.LogWarning(
+                    $"[LobbyManager][OnNetworkSpawn] DUPLICATE DETECTED | " +
+                    $"This: {GetInstanceID()} | Instance: {Instance.GetInstanceID()} | NetID: {NetworkObjectId}"
+                );
+
+                if (IsServer)
+                {
+                    Debug.Log($"[LobbyManager] Server despawning duplicate NetID: {NetworkObjectId}");
+                    NetworkObject.Despawn(true);
+                }
+                else
+                {
+                    Debug.Log($"[LobbyManager] Client destroying duplicate object");
+                    Destroy(gameObject);
+                }
+
+                return;
+            }
+
+            Debug.Log(
+                $"[LobbyManager][OnNetworkSpawn] VALID INSTANCE | ThisID: {GetInstanceID()} | NetID: {NetworkObjectId}"
+            );
 
             NetworkManager.Singleton.OnClientConnectedCallback += HandleClientConnected;
             NetworkManager.Singleton.OnClientDisconnectCallback += HandleClientDisconnected;
@@ -52,13 +96,27 @@ namespace Game.Systems
 
             if (IsServer)
             {
+                Debug.Log("[LobbyManager][OnNetworkSpawn] Registering existing clients");
+
                 foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
+                {
+                    Debug.Log($"[LobbyManager] Adding existing client: {client.ClientId}");
                     AddPlayer(client.ClientId);
+                }
             }
         }
 
         public override void OnNetworkDespawn()
         {
+            Debug.Log(
+                $"[LobbyManager][OnNetworkDespawn] ThisID: {GetInstanceID()} | NetID: {NetworkObjectId}"
+            );
+
+            if (Instance == this)
+            {
+                Debug.Log("[LobbyManager] Instance is being despawned!");
+            }
+
             if (NetworkManager.Singleton != null)
             {
                 NetworkManager.Singleton.OnClientConnectedCallback -= HandleClientConnected;
@@ -67,6 +125,15 @@ namespace Game.Systems
                 if (NetworkManager.Singleton.SceneManager != null)
                     NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
             }
+        }
+
+        public void DebugIdentity(string caller)
+        {
+            Debug.Log(
+                $"[LobbyManager][{caller}] InstanceID: {GetInstanceID()} | " +
+                $"NetID: {(NetworkObject != null ? NetworkObjectId : 0)} | " +
+                $"IsSpawned: {IsSpawned}"
+            );
         }
 
         private void HandleClientConnected(ulong clientId)
@@ -79,11 +146,12 @@ namespace Game.Systems
         {
             if (!IsServer) return;
             RemovePlayer(clientId);
-            loadedClients.Remove(clientId); // clean up if client drops mid-load
+            loadedClients.Remove(clientId);
         }
 
         public void AddPlayer(ulong clientId)
         {
+            Debug.Log($"[SERVER] AddPlayer CALLED | ClientId: {clientId}");
             if (!IsServer) return;
             if (FindPlayerIndex(clientId) != -1) return;
             if (CountHumanPlayers() >= MaxPlayers) return;
@@ -100,14 +168,16 @@ namespace Game.Systems
             if (index != -1) Players.RemoveAt(index);
         }
 
-        // Called from LobbyUI ready button
         [ServerRpc(RequireOwnership = false)]
         public void SetReadyServerRpc(bool ready, ServerRpcParams rpcParams = default)
         {
+            Debug.Log(
+                $"[SERVER][RPC] SetReady RECEIVED | From Client: {rpcParams.Receive.SenderClientId} | Ready: {ready}"
+            );
+
             ulong clientId = rpcParams.Receive.SenderClientId;
             SetReady(clientId, ready);
         }
-
         public void SetReady(ulong clientId, bool ready)
         {
             if (!IsServer || gameStarting) return;
@@ -128,15 +198,6 @@ namespace Game.Systems
                 MultiplayerManager.Instance.StartGame();
             }
         }
-
-        // -------------------------------------------------------
-        // SCENE READY HANDSHAKE
-        // Each client calls this once their LevelPrototype has
-        // finished loading. Server waits for ALL clients before
-        // signalling RaceManager to begin the countdown.
-        // This guarantees no one starts racing before everyone
-        // is in the scene.
-        // -------------------------------------------------------
 
         [ServerRpc(RequireOwnership = false)]
         public void ReportSceneReadyServerRpc(ServerRpcParams rpcParams = default)
@@ -162,7 +223,93 @@ namespace Game.Systems
             RaceManager.Instance?.StartCountdown();
         }
 
-        // ---- Helpers ----
+        // -------------------------------------------------------
+        // Called after a match ends. Resets lobby state so a new
+        // match can be started. Idempotent — safe to call twice.
+        // -------------------------------------------------------
+        public void ResetForNewMatch()
+        {
+            if (!IsServer) return;
+
+            // Guard: if gameStarting is already false, we already reset.
+            // This prevents the double-call (one from each player pressing
+            // the return button) from causing issues.
+            if (!gameStarting) return;
+
+            RemoveAIPlayers();
+
+            for (int i = 0; i < Players.Count; i++)
+            {
+                var p = Players[i];
+                p.IsReady = false;
+                Players[i] = p;
+            }
+
+            gameStarting = false;
+            pendingAISpawnCount = 0;
+            loadedClients.Clear();
+
+            Debug.Log("[LobbyManager] Reset for new match.");
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void ResetForNewMatchServerRpc()
+        {
+            ResetForNewMatch();
+        }
+
+        // -------------------------------------------------------
+        // Leave Lobby.
+        // Host: disbands lobby, everyone returns to MainMenu.
+        // Client: removes self from lobby, only they return to MainMenu.
+        // -------------------------------------------------------
+        [ServerRpc(RequireOwnership = false)]
+        public void LeavelobbyServerRpc(ServerRpcParams rpcParams = default)
+        {
+            Debug.Log(
+                $"[SERVER][RPC] LeaveLobby RECEIVED | From Client: {rpcParams.Receive.SenderClientId}"
+            );
+
+            ulong clientId = rpcParams.Receive.SenderClientId;
+            bool callerIsHost = clientId == NetworkManager.Singleton.LocalClientId;
+
+            if (callerIsHost)
+            {
+                // Host disbands — tell everyone to go to MainMenu, then shut down
+                DisbandLobbyClientRpc();
+            }
+            else
+            {
+                // Client leaves — remove from list, notify them to disconnect
+                RemovePlayer(clientId);
+                KickClientRpc(new ClientRpcParams
+                {
+                    Send = new ClientRpcSendParams
+                    {
+                        TargetClientIds = new[] { clientId }
+                    }
+                });
+            }
+        }
+
+        [ClientRpc]
+        private void DisbandLobbyClientRpc()
+        {
+            // Load scene FIRST, then shutdown.
+            // Shutdown cancels pending operations — doing it first leaves host stuck.
+            SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
+            NetworkManager.Singleton.Shutdown();
+        }
+
+        [ClientRpc]
+        private void KickClientRpc(ClientRpcParams rpcParams = default)
+        {
+            // Only the targeted client runs this
+            SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
+            NetworkManager.Singleton.Shutdown();
+        }
+
+        // ---- Private helpers ----
 
         private bool AreAllPlayersReady()
         {
@@ -192,15 +339,16 @@ namespace Game.Systems
                 if (Players[i].IsAI) Players.RemoveAt(i);
         }
 
-        private void HandleSceneLoaded(string sceneName, LoadSceneMode mode, List<ulong> completed, List<ulong> timedOut)
+        private void HandleSceneLoaded(string sceneName, LoadSceneMode mode,
+            List<ulong> completed, List<ulong> timedOut)
         {
             if (!IsServer) return;
             if (!gameStarting) return;
             if (sceneName != "LevelPrototype") return;
-            SpawnAIPlayers();
+            SpawnPlayers();
         }
 
-        private void SpawnAIPlayers()
+        private void SpawnPlayers()
         {
             var spawner = FindFirstObjectByType<NetworkPlayerSpawner>();
             if (spawner == null)
@@ -227,5 +375,4 @@ namespace Game.Systems
             return -1;
         }
     }
-
 }

@@ -4,13 +4,14 @@ using Game.Player;
 using Game.AI;
 using Game.Core;
 using UnityEngine;
+using Unity.Netcode;
 
 namespace Game.Player
 {
     [RequireComponent(typeof(PlayerController))]
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(Collider2D))]
-    public sealed class PlayerHealth : MonoBehaviour, IHealth
+    public sealed class PlayerHealth : NetworkBehaviour, IHealth
     {
         [Header("Respawn")]
         [SerializeField] private float respawnDelay = 1.0f;
@@ -38,12 +39,12 @@ namespace Game.Player
         // Replaced StartCoroutine(RespawnRoutine()) and
         // StartCoroutine(InvincibilityRoutine()) with float timers.
         //
-        // InvincibilityRoutine was the worst offender — it yielded
+        // InvincibilityRoutine was the worst offender â€” it yielded
         // every 0.1s, registering ~10 coroutine continuations per
         // respawn with Unity's scheduler. With frequent deaths this
         // created constant CoroutinesDelayedCalls overhead.
         //
-        // Both are now plain floats updated in Update() — zero alloc.
+        // Both are now plain floats updated in Update() â€” zero alloc.
         // -------------------------------------------------------
 
         private enum HealthState { Alive, Dead, Respawning, Invincible }
@@ -77,29 +78,27 @@ namespace Game.Player
             switch (state)
             {
                 case HealthState.Dead:
+                    if (UsesNetworkAuthority() && !IsServer)
+                        break;
+
                     respawnTimer -= Time.deltaTime;
                     if (respawnTimer <= 0f)
                         RespawnAt(lastDeathPosition + (Vector3)respawnOffset);
                     break;
 
                 case HealthState.Invincible:
-                    // Blink
-                    blinkTimer -= Time.deltaTime;
-                    if (blinkTimer <= 0f)
-                    {
-                        blinkTimer = blinkInterval;
-                        if (spriteRenderer)
-                            spriteRenderer.enabled = !spriteRenderer.enabled;
-                    }
+                    UpdateInvincibilityVisuals();
 
-                    // End invincibility
+                    if (UsesNetworkAuthority() && !IsServer)
+                        break;
+
                     invincibilityTimer -= Time.deltaTime;
                     if (invincibilityTimer <= 0f)
                     {
-                        if (spriteRenderer)
-                            spriteRenderer.enabled = true;
-                        IsInvincible = false;
-                        state = HealthState.Alive;
+                        EndInvincibilityState();
+
+                        if (UsesNetworkAuthority())
+                            EndInvincibilityClientRpc();
                     }
                     break;
             }
@@ -110,21 +109,89 @@ namespace Game.Player
         public void TakeDamage(int amount)
         {
             if (IsInvincible) return;
+            if (UsesNetworkAuthority() && !IsServer) return;
             Die();
         }
 
         public void Die()
         {
             if (IsInvincible) return;
+            if (UsesNetworkAuthority() && !IsServer) return;
 
+            ApplyDeathState(transform.position);
+
+            if (UsesNetworkAuthority())
+                SyncDeathClientRpc(lastDeathPosition);
+        }
+
+        // ---- Respawn ----
+
+        public void RespawnAt(Vector3 position)
+        {
+            if (UsesNetworkAuthority() && !IsServer) return;
+
+            ApplyRespawnState(position);
+
+            if (UsesNetworkAuthority())
+                SyncRespawnClientRpc(position);
+        }
+
+        private void RestorePhysics()
+        {
+            rb.simulated = true;
+            rb.gravityScale = originalGravity;
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+        }
+
+        public void SetInvincible(bool value)
+        {
+            IsInvincible = value;
+            if (!value)
+            {
+                EndInvincibilityState();
+            }
+        }
+
+        public void SetRespawnPoint(Vector3 position) { }
+
+        [ClientRpc]
+        private void SyncDeathClientRpc(Vector3 deathPosition)
+        {
+            if (IsServer) return;
+            ApplyDeathState(deathPosition);
+        }
+
+        [ClientRpc]
+        private void SyncRespawnClientRpc(Vector3 position)
+        {
+            if (IsServer) return;
+            ApplyRespawnState(position);
+        }
+
+        [ClientRpc]
+        private void EndInvincibilityClientRpc()
+        {
+            if (IsServer) return;
+            EndInvincibilityState();
+        }
+
+        private bool UsesNetworkAuthority()
+        {
+            return NetworkManager.Singleton != null && IsSpawned;
+        }
+
+        private void ApplyDeathState(Vector3 deathPosition)
+        {
             IsInvincible = true;
             state = HealthState.Dead;
             respawnTimer = respawnDelay;
+            lastDeathPosition = deathPosition;
+            transform.position = deathPosition;
 
-            powerUpController?.ClearActiveEffects();
-            lastDeathPosition = transform.position;
+            ClearPowerUpEffects();
 
-            // Death VFX — use pool if available, fall back to Instantiate
+            // Death VFX â€” use pool if available, fall back to Instantiate
             if (vfxLibrary != null && vfxLibrary.deathSmokePrefab != null)
             {
                 var vfx = VFXPool.Instance != null
@@ -144,13 +211,11 @@ namespace Game.Player
             view?.TriggerDie();
         }
 
-        // ---- Respawn ----
-
-        public void RespawnAt(Vector3 position)
+        private void ApplyRespawnState(Vector3 position)
         {
             transform.position = position;
 
-            powerUpController?.ClearActiveEffects();
+            ClearPowerUpEffects();
             RestorePhysics();
             view?.ResetAnimatorState();
             controller.ResetRunSpeed();
@@ -161,27 +226,51 @@ namespace Game.Player
             state = HealthState.Invincible;
             invincibilityTimer = respawnInvincibilityTime;
             blinkTimer = blinkInterval;
+
+            if (spriteRenderer)
+                spriteRenderer.enabled = true;
         }
 
-        private void RestorePhysics()
+        private void ClearPowerUpEffects()
         {
-            rb.simulated = true;
-            rb.gravityScale = originalGravity;
-            rb.linearVelocity = Vector2.zero;
-            rb.angularVelocity = 0f;
-        }
+            if (powerUpController == null)
+                return;
 
-        public void SetInvincible(bool value)
-        {
-            IsInvincible = value;
-            if (!value)
+            if (UsesNetworkAuthority() && !IsServer)
             {
-                state = HealthState.Alive;
-                if (spriteRenderer) spriteRenderer.enabled = true;
+                powerUpController.ForceClear();
+                return;
+            }
+
+            powerUpController.ClearActiveEffects();
+        }
+
+        private void UpdateInvincibilityVisuals()
+        {
+            if (invincibilityTimer <= 0f)
+            {
+                if (spriteRenderer)
+                    spriteRenderer.enabled = true;
+                return;
+            }
+
+            // Blink
+            blinkTimer -= Time.deltaTime;
+            if (blinkTimer <= 0f)
+            {
+                blinkTimer = blinkInterval;
+                if (spriteRenderer)
+                    spriteRenderer.enabled = !spriteRenderer.enabled;
             }
         }
 
-        public void SetRespawnPoint(Vector3 position) { }
+        private void EndInvincibilityState()
+        {
+            if (spriteRenderer)
+                spriteRenderer.enabled = true;
+            IsInvincible = false;
+            state = HealthState.Alive;
+        }
     }
 
 }

@@ -3,6 +3,7 @@ using Game.Input;
 using Game.Player;
 using Game.AI;
 using UnityEngine;
+using Unity.Netcode;
 using Game.Core;
 
 namespace Game.Systems
@@ -29,6 +30,7 @@ namespace Game.Systems
         private Transform target;
         private IPlayerEntity owner;
         private bool exploded;
+        private bool visualOnly;
         private float lifeTimer;
 
         private void Awake()
@@ -49,6 +51,7 @@ namespace Game.Systems
             target = rocketTarget;
             owner = rocketOwner;
             exploded = false;
+            visualOnly = NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer;
             lifeTimer = 0f;
             rb.linearVelocity = Vector2.down * maxSpeed * 0.6f;
             rb.simulated = true;
@@ -85,6 +88,8 @@ namespace Game.Systems
         private void Explode()
         {
             if (exploded) return;
+            bool isServer = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
+            if (!isServer && !visualOnly) return;
             exploded = true;
 
             Vector2 pos = rb.position;
@@ -107,6 +112,12 @@ namespace Game.Systems
                 }
             }
 
+            if (!isServer)
+            {
+                ProjectilePool.Instance?.ReturnRocket(this);
+                return;
+            }
+
             foreach (var hit in Physics2D.OverlapCircleAll(pos, explosionRadius))
             {
                 if (!hit.TryGetComponent<IPlayerEntity>(out var victim)) continue;
@@ -114,7 +125,7 @@ namespace Game.Systems
                 if (hit.TryGetComponent<IHealth>(out var health))
                 {
                     health.TakeDamage(1);
-                    GameEvents.RaisePlayerKilled(new KillEventData(owner, victim, PowerUpId.Rocket));
+                    RaceManager.Instance?.ReportKill(owner, victim, PowerUpId.Rocket);
                 }
             }
 

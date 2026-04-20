@@ -31,6 +31,11 @@ namespace Game.Player
         private bool colliderCached;
         private float originalGravityScale;
         private int climbableWallLayer;
+        private readonly NetworkVariable<bool> syncedIsGrounded = new(
+            false,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner
+        );
 
         public event Action OnJump;
         public event Action OnLand;
@@ -123,7 +128,10 @@ namespace Game.Player
 
         private void FixedUpdate()
         {
-            // REMOVED: client prediction / reconciliation / rollback / validation.
+            // Client prediction is intentionally disabled.
+            // See PlayerInputData.cs for the design and instructions to re-enable.
+            // Current model: owner-authoritative movement, server-confirmed jumps only.
+            // At >100ms RTT, player-controlled characters will feel slightly laggy.
             int currentTick = GetCurrentTick();
 
             HandleGround(currentTick);
@@ -221,6 +229,8 @@ namespace Game.Player
             if (currentTick < model.NextAllowedGroundCheckTick)
             {
                 model.IsGrounded = false;
+                if (IsOwner)
+                    syncedIsGrounded.Value = false;
                 return;
             }
 
@@ -242,6 +252,9 @@ namespace Game.Player
                     UpdateState(PlayerState.Running);
                 }
             }
+
+            if (IsOwner)
+                syncedIsGrounded.Value = model.IsGrounded;
         }
 
         // MODIFIED: jump buffer and coyote time are tick-based.
@@ -269,6 +282,9 @@ namespace Game.Player
 
             model.JumpsLeft = Mathf.Max(0, model.JumpsLeft - 1);
             model.NextAllowedGroundCheckTick = currentTick + SecondsToTicks(model.GroundGraceDelay);
+
+            if (IsOwner)
+                syncedIsGrounded.Value = false;
 
             view?.UpdateMovement(model.CurrentRunSpeed / model.MaxRunSpeed, false);
             view?.TriggerJump();
@@ -318,7 +334,7 @@ namespace Game.Player
             float speed = delta / Mathf.Max(Time.deltaTime, 0.0001f);
             normalizedSpeed = Mathf.Clamp01(speed / model.MaxRunSpeed);
 
-            bool isGrounded = Mathf.Abs(rb.linearVelocity.y) < 0.1f;
+            bool isGrounded = syncedIsGrounded.Value;
             view?.UpdateMovement(normalizedSpeed, isGrounded);
 
             lastPosition = transform.position;
@@ -520,6 +536,9 @@ namespace Game.Player
             model.NextAllowedGroundCheckTick = currentTick + SecondsToTicks(model.GroundGraceDelay);
             model.WallClingEndTick = currentTick;
             EndWallCling();
+
+            if (IsOwner)
+                syncedIsGrounded.Value = false;
 
             view?.TriggerJump();
 

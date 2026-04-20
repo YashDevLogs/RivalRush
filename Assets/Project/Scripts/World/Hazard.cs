@@ -3,6 +3,7 @@ using Game.Input;
 using Game.Player;
 using Game.AI;
 using UnityEngine;
+using Unity.Netcode;
 
 using Game.Core;
 
@@ -30,6 +31,7 @@ namespace Game.Systems
 
         private void OnTriggerEnter2D(Collider2D other)
         {
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
             if (canAffect != null && !canAffect(other))
                 return;
 
@@ -42,6 +44,7 @@ namespace Game.Systems
 
         public void ApplyDamage(IHealth health)
         {
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
             if (!health.IsInvincible)
                 health.TakeDamage(damage);
         }

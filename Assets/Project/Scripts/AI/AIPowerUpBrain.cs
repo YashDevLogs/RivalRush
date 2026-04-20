@@ -16,7 +16,6 @@ namespace Game.AI
         [SerializeField] private AIDecisionSystem decisionSystem = new();
 
         private readonly AIDecisionSystem fallbackDecisionSystem = new();
-        private RaceManager raceManager;
 
         public AIDecisionSystem DecisionSystem => decisionSystem ?? fallbackDecisionSystem;
 
@@ -27,8 +26,6 @@ namespace Game.AI
 
             if (powerUpController == null)
                 Debug.LogWarning($"[AIPowerUpBrain] PowerUpController is not assigned on {name}.");
-
-            raceManager = RaceManager.Instance;
         }
 
         public void UpdateContext(AIContext context)
@@ -37,7 +34,7 @@ namespace Game.AI
                 return;
 
             context.UpdatePowerUp(powerUpController);
-            context.UpdateRace(raceManager);
+            context.UpdateRace(RaceManager.Instance);
         }
 
         public bool DecideJump(AIContext context)

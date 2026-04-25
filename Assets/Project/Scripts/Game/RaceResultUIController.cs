@@ -1,12 +1,8 @@
-using Game.Systems;
-using Game.Input;
-using Game.Player;
-using Game.AI;
-using UnityEngine;
 using Game.Core;
+using Game.Player;
 using TMPro;
-using UnityEngine.SceneManagement;
 using Unity.Netcode;
+using UnityEngine;
 
 namespace Game.Systems
 {
@@ -73,7 +69,9 @@ namespace Game.Systems
                 bool isLocal = marker != null && marker == PlayerMarker.Local;
 
                 if (isLocal)
+                {
                     localPlayerRank = i + 1;
+                }
 
                 var identity = playerController != null ? playerController.PlayerIdentity : null;
                 string displayName = identity != null ? identity.DisplayName : "Unknown";
@@ -88,70 +86,65 @@ namespace Game.Systems
         private void UpdateTitle(int rank)
         {
             if (rank == 1)
+            {
                 titleText.text = "YOU WON!";
+            }
             else if (rank > 1)
+            {
                 titleText.text = $"YOU FINISHED {GetOrdinal(rank)}";
+            }
             else
+            {
                 titleText.text = "RACE FINISHED";
+            }
         }
 
         private string GetOrdinal(int number)
         {
             int rem100 = number % 100;
             if (rem100 >= 11 && rem100 <= 13)
+            {
                 return number + "TH";
+            }
 
             switch (number % 10)
             {
-                case 1: return number + "ST";
-                case 2: return number + "ND";
-                case 3: return number + "RD";
-                default: return number + "TH";
+                case 1:
+                    return number + "ST";
+                case 2:
+                    return number + "ND";
+                case 3:
+                    return number + "RD";
+                default:
+                    return number + "TH";
             }
         }
 
-        // -------------------------------------------------------
-        // Called by the "Return to Lobby" button.
-        // Tells server to reset lobby state, then each player
-        // loads MainMenu independently on their own device.
-        // Regular SceneManager (NOT NetworkManager.SceneManager)
-        // so each client returns at their own pace.
-        // -------------------------------------------------------
         public void OnReturnToLobbyPressed()
         {
-            Debug.Log("[CLIENT][UI] Return To Lobby Pressed");
+            Debug.Log("[CLIENT] Return to Lobby pressed");
 
-            var lm = LobbyManager.Instance;
-
-            if (lm == null)
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
             {
-                Debug.LogWarning("[CLIENT] LobbyManager NULL → loading MainMenu locally");
-                SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
+                Debug.LogError("[CLIENT] NetworkManager is not running.");
                 return;
             }
 
-            Debug.Log(
-                $"[CLIENT] LM Found | InstanceID: {lm.GetInstanceID()} | " +
-                $"NetID: {(lm.NetworkObject != null ? lm.NetworkObjectId : 0)} | " +
-                $"IsSpawned: {lm.IsSpawned}"
-            );
-
-            if (!lm.IsSpawned)
+            var localPlayer = NetworkManager.Singleton.LocalClient?.PlayerObject;
+            if (localPlayer == null)
             {
-                Debug.LogWarning("[CLIENT] LobbyManager NOT SPAWNED → loading MainMenu locally");
-                SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
+                Debug.LogError("[CLIENT] LocalPlayer is NULL");
                 return;
             }
 
-            Debug.Log("[CLIENT] Calling ResetForNewMatchServerRpc");
+            var playerNetwork = localPlayer.GetComponent<PlayerNetwork>();
+            if (playerNetwork == null)
+            {
+                Debug.LogError("[CLIENT] PlayerNetwork missing on PlayerObject");
+                return;
+            }
 
-            lm.DebugIdentity("Before ResetForNewMatch RPC");
-
-            lm.ResetForNewMatchServerRpc();
-
-            Debug.Log("[CLIENT] Loading MainMenu locally");
-
-            SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
+            playerNetwork.RequestReturnToLobby();
         }
     }
 }

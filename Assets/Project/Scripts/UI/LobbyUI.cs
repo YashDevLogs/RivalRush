@@ -1,11 +1,5 @@
-using Game.Systems;
-using Game.Core;
-using Game.Input;
-using Game.Player;
-using Game.AI;
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -19,10 +13,10 @@ namespace Game.Systems
         [SerializeField] private Transform playerListParent;
         [SerializeField] private PlayerSlotUI playerSlotPrefab;
 
-        // Track local ready state — reset every time lobby opens
-        private bool isReady = false;
+        private readonly List<PlayerSlotUI> slotPool = new List<PlayerSlotUI>();
 
-        private readonly List<PlayerSlotUI> slotPool = new();
+        private NetworkList<LobbyPlayerData> subscribedList;
+        private bool isReady;
 
         private void Awake()
         {
@@ -36,31 +30,42 @@ namespace Game.Systems
 
         private void OnEnable()
         {
-            StartCoroutine(WaitForLobby());
+            ReinitializeLobbyUI();
         }
 
         private void OnDisable()
         {
-            if (LobbyManager.Instance != null && LobbyManager.Instance.Players != null)
-                LobbyManager.Instance.Players.OnListChanged -= OnLobbyUpdated;
+            if (subscribedList != null)
+            {
+                subscribedList.OnListChanged -= OnLobbyUpdated;
+                subscribedList = null;
+            }
+        }
+
+        private void ReinitializeLobbyUI()
+        {
+            StopAllCoroutines();
+            StartCoroutine(WaitForLobby());
         }
 
         private IEnumerator WaitForLobby()
         {
-            while (LobbyManager.Instance == null ||
-                   LobbyManager.Instance.Players == null ||
-                   !LobbyManager.Instance.IsSpawned)
+            while (LobbyManager.Instance == null || !LobbyManager.Instance.IsSpawned)
             {
                 yield return null;
             }
 
-            // Always reset ready state when entering the lobby UI.
-            // Without this, returning from a match keeps isReady = true,
-            // and pressing Ready sends "true" when server already has "true"
-            // so Players list never changes and OnListChanged never fires.
             isReady = false;
 
-            LobbyManager.Instance.Players.OnListChanged += OnLobbyUpdated;
+            if (subscribedList != null && subscribedList != LobbyManager.Instance.Players)
+            {
+                subscribedList.OnListChanged -= OnLobbyUpdated;
+            }
+
+            subscribedList = LobbyManager.Instance.Players;
+            subscribedList.OnListChanged -= OnLobbyUpdated;
+            subscribedList.OnListChanged += OnLobbyUpdated;
+
             lobbyPanel.SetActive(true);
             RefreshUI();
         }
@@ -72,16 +77,30 @@ namespace Game.Systems
 
         private void RefreshUI()
         {
-            if (LobbyManager.Instance == null || LobbyManager.Instance.Players == null) return;
+            if (LobbyManager.Instance == null || LobbyManager.Instance.Players == null)
+            {
+                Debug.LogError("[LobbyUI] RefreshUI failed. LobbyManager is unavailable.");
+                return;
+            }
 
             foreach (var slot in slotPool)
+            {
                 slot.gameObject.SetActive(false);
+            }
 
             int slotIndex = 0;
             foreach (var player in LobbyManager.Instance.Players)
             {
-                if (player.IsAI) continue;
-                if (slotIndex >= slotPool.Count) break;
+                if (player.IsAI)
+                {
+                    continue;
+                }
+
+                if (slotIndex >= slotPool.Count)
+                {
+                    break;
+                }
+
                 var slot = slotPool[slotIndex];
                 slot.gameObject.SetActive(true);
                 slot.Setup(player.PlayerName.ToString(), player.IsReady);
@@ -89,75 +108,68 @@ namespace Game.Systems
             }
         }
 
-        // -------- BUTTONS --------
-
         public void OnCreateLobby()
         {
-            MultiplayerManager.Instance.StartHost();
+            SessionManager.Instance.CreateSession();
         }
 
         public void OnJoinLobby()
         {
-            MultiplayerManager.Instance.StartClient();
+            SessionManager.Instance.JoinSession();
         }
 
         public void OnReadyClicked()
         {
-            Debug.Log($"[CLIENT][UI] Ready Button Clicked");
+            if (!TryGetLocalPlayerNetwork(out var playerNetwork))
+            {
+                return;
+            }
 
             isReady = !isReady;
-
-            Debug.Log($"[CLIENT][UI] Toggled isReady → {isReady}");
-
-            var lm = LobbyManager.Instance;
-
-            if (lm == null)
-            {
-                Debug.LogError("[CLIENT][UI] LobbyManager.Instance is NULL");
-                return;
-            }
-
-            Debug.Log(
-                $"[CLIENT][UI] LM InstanceID: {lm.GetInstanceID()} | " +
-                $"NetID: {(lm.NetworkObject != null ? lm.NetworkObjectId : 0)} | " +
-                $"IsSpawned: {lm.IsSpawned}"
-            );
-
-            lm.DebugIdentity("Before SetReady RPC");
-
-            Debug.Log("[CLIENT][UI] Calling SetReadyServerRpc");
-
-            lm.SetReadyServerRpc(isReady);
+            playerNetwork.SendReady(isReady);
         }
 
-        // -------------------------------------------------------
-        // Leave Lobby button.
-        // Host: disbands the lobby, all clients return to MainMenu.
-        // Client: leaves gracefully, only they return to MainMenu.
-        // -------------------------------------------------------
         public void OnLeaveLobbyClicked()
         {
-            Debug.Log("[CLIENT][UI] Leave Button Clicked");
-
-            var lm = LobbyManager.Instance;
-
-            if (lm == null)
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
             {
-                Debug.LogError("[CLIENT][UI] LobbyManager.Instance NULL");
+                SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
                 return;
             }
 
-            Debug.Log(
-                $"[CLIENT][UI] LM InstanceID: {lm.GetInstanceID()} | " +
-                $"NetID: {(lm.NetworkObject != null ? lm.NetworkObjectId : 0)} | " +
-                $"IsSpawned: {lm.IsSpawned}"
-            );
+            if (!TryGetLocalPlayerNetwork(out var playerNetwork))
+            {
+                return;
+            }
 
-            lm.DebugIdentity("Before LeaveLobby RPC");
+            playerNetwork.LeaveLobby();
+        }
 
-            Debug.Log("[CLIENT][UI] Calling LeaveLobbyServerRpc");
+        private static bool TryGetLocalPlayerNetwork(out PlayerNetwork playerNetwork)
+        {
+            playerNetwork = null;
 
-            lm.LeavelobbyServerRpc();
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+            {
+                Debug.LogError("[CLIENT] NetworkManager is not running.");
+                return false;
+            }
+
+            var localPlayer = NetworkManager.Singleton.LocalClient?.PlayerObject;
+            if (localPlayer == null)
+            {
+                Debug.LogError("[CLIENT] LocalPlayer is NULL");
+                return false;
+            }
+
+            playerNetwork = localPlayer.GetComponent<PlayerNetwork>();
+            if (playerNetwork == null)
+            {
+                Debug.LogError("[CLIENT] PlayerNetwork missing on PlayerObject");
+                return false;
+            }
+
+            return true;
         }
     }
 }

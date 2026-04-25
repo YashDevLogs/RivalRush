@@ -1,11 +1,5 @@
-using Game.Systems;
-using Game.Core;
-using Game.Input;
-using Game.Player;
-using Game.AI;
-using UnityEngine;
 using Unity.Netcode;
-using System.Collections.Generic;
+using UnityEngine;
 
 namespace Game.Systems
 {
@@ -14,12 +8,14 @@ namespace Game.Systems
         [SerializeField] private Transform[] spawnPoints;
         [SerializeField] private NetworkObject playerPrefab;
 
-        private int nextSpawnIndex = 0;
-        private List<Transform> usedSpawns = new();
+        private int nextSpawnIndex;
 
         public override void OnNetworkSpawn()
         {
-            if (!IsServer) return;
+            if (!IsServer)
+            {
+                return;
+            }
         }
 
         public void SpawnAllPlayers()
@@ -34,28 +30,24 @@ namespace Game.Systems
         {
             Transform spawn = GetNextSpawn();
             NetworkObject player = Instantiate(playerPrefab, spawn.position, Quaternion.identity);
-            player.SpawnAsPlayerObject(clientId);
+            player.SpawnWithOwnership(clientId, true);
         }
 
-        // 🔥 NEW METHOD FOR AI
         public void SpawnAIPlayers(int count, NetworkObject aiPrefab)
         {
             for (int i = 0; i < count; i++)
             {
                 Transform spawn = GetNextSpawn();
-
                 NetworkObject ai = Instantiate(aiPrefab, spawn.position, Quaternion.identity);
-                ai.Spawn();
+                ai.Spawn(true);
             }
         }
 
         private Transform GetNextSpawn()
         {
             Transform spawn = spawnPoints[nextSpawnIndex % spawnPoints.Length];
-            usedSpawns.Add(spawn);
             nextSpawnIndex++;
             return spawn;
         }
     }
-
 }

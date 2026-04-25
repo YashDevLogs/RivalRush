@@ -1,0 +1,130 @@
+using Unity.Netcode;
+using UnityEngine;
+
+namespace Game.Systems
+{
+    public sealed class PlayerNetwork : NetworkBehaviour
+    {
+        public void SendReady(bool isReady)
+        {
+            if (!CanSendOwnedRpc("Ready"))
+            {
+                return;
+            }
+
+            Debug.Log($"[CLIENT] Sending Ready RPC -> {isReady}");
+            SetReadyServerRpc(isReady);
+        }
+
+        public void ReportSceneReady()
+        {
+            if (!CanSendOwnedRpc("SceneReady"))
+            {
+                return;
+            }
+
+            ReportSceneReadyServerRpc();
+        }
+
+        public void RequestReturnToLobby()
+        {
+            if (!CanSendOwnedRpc("ReturnToLobby"))
+            {
+                return;
+            }
+
+            RequestReturnToLobbyServerRpc();
+        }
+
+        public void LeaveLobby()
+        {
+            if (!CanSendOwnedRpc("LeaveLobby"))
+            {
+                return;
+            }
+
+            LeaveLobbyServerRpc();
+        }
+
+        [ServerRpc]
+        private void SetReadyServerRpc(bool isReady, ServerRpcParams rpcParams = default)
+        {
+            if (!TryGetLobbyManager(out var lobbyManager))
+            {
+                return;
+            }
+
+            ulong clientId = rpcParams.Receive.SenderClientId;
+            Debug.Log($"[SERVER] PlayerNetwork -> SetReady from {clientId}: {isReady}");
+            lobbyManager.SetReady(clientId, isReady);
+        }
+
+        [ServerRpc]
+        private void ReportSceneReadyServerRpc(ServerRpcParams rpcParams = default)
+        {
+            if (!TryGetLobbyManager(out var lobbyManager))
+            {
+                return;
+            }
+
+            lobbyManager.ReportSceneReady(rpcParams.Receive.SenderClientId);
+        }
+
+        [ServerRpc]
+        private void RequestReturnToLobbyServerRpc(ServerRpcParams rpcParams = default)
+        {
+            if (!TryGetLobbyManager(out var lobbyManager))
+            {
+                return;
+            }
+
+            lobbyManager.RequestReturnToLobby(rpcParams.Receive.SenderClientId);
+        }
+
+        [ServerRpc]
+        private void LeaveLobbyServerRpc(ServerRpcParams rpcParams = default)
+        {
+            if (!TryGetLobbyManager(out var lobbyManager))
+            {
+                return;
+            }
+
+            lobbyManager.LeaveLobby(rpcParams.Receive.SenderClientId);
+        }
+
+        private bool CanSendOwnedRpc(string rpcName)
+        {
+            if (!IsSpawned)
+            {
+                Debug.LogError($"[CLIENT] PlayerNetwork is not spawned. Cannot send {rpcName} RPC.");
+                return false;
+            }
+
+            if (!IsOwner && !IsServer)
+            {
+                Debug.LogError($"[CLIENT] PlayerNetwork is not owned locally. Cannot send {rpcName} RPC.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryGetLobbyManager(out LobbyManager lobbyManager)
+        {
+            lobbyManager = LobbyManager.Instance;
+
+            if (!IsServer)
+            {
+                return false;
+            }
+
+            if (lobbyManager == null)
+            {
+                Debug.LogError("[SERVER] LobbyManager.Instance is NULL");
+                return false;
+            }
+
+            return true;
+        }
+    }
+}

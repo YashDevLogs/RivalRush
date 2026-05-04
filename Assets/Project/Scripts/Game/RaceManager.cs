@@ -2,6 +2,7 @@
 using Game.Input;
 using Game.Player;
 using Game.AI;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
@@ -46,13 +47,7 @@ namespace Game.Systems
 
         private void Start()
         {
-            // Every client (including host) reports to LobbyManager that
-            // this scene has finished loading. LobbyManager waits for ALL
-            // clients before calling StartCountdown() on everyone.
-            // This replaces the old WaitForPlayersAndStart coroutine which
-            // had a race condition — it used a timer rather than waiting for
-            // actual client confirmation.
-            LobbyManager.Instance.ReportSceneReadyServerRpc();
+            StartCoroutine(ReportSceneReadyWhenPlayerAvailable());
         }
 
         public override void OnNetworkSpawn()
@@ -71,6 +66,38 @@ namespace Game.Systems
 
             foreach (var spawnedObject in spawnedObjects.Values)
                 RegisterPlayerServer(spawnedObject);
+        }
+
+        private IEnumerator ReportSceneReadyWhenPlayerAvailable()
+        {
+            while (NetworkManager.Singleton != null
+                   && NetworkManager.Singleton.IsClient
+                   && (NetworkManager.Singleton.LocalClient == null
+                       || NetworkManager.Singleton.LocalClient.PlayerObject == null))
+            {
+                yield return null;
+            }
+
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsClient)
+            {
+                yield break;
+            }
+
+            var localPlayer = NetworkManager.Singleton.LocalClient?.PlayerObject;
+            if (localPlayer == null)
+            {
+                Debug.LogError("[CLIENT][RACE] LocalPlayer is NULL");
+                yield break;
+            }
+
+            var playerNetwork = localPlayer.GetComponent<PlayerNetwork>();
+            if (playerNetwork == null)
+            {
+                Debug.LogError("[CLIENT][RACE] PlayerNetwork missing on PlayerObject");
+                yield break;
+            }
+
+            playerNetwork.ReportSceneReady();
         }
 
         // -------------------------------------------------------

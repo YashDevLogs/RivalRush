@@ -26,7 +26,10 @@ namespace Game.Player
             if (powerUpController == null)
                 Debug.LogWarning($"[PlayerMarker] PowerUpController is not assigned on {name}.");
 
-            IsLocal = IsOwner;
+            if (!IsLocal && IsSpawned)
+            {
+                IsLocal = IsOwner;
+            }
 
             if (IsLocal)
             {
@@ -52,6 +55,25 @@ namespace Game.Player
             }
 
             IsLocal = false;
+        }
+
+        public void SetLocalPlayer()
+        {
+            // 🔥 Override local ownership for Single Player
+            IsLocal = true;
+
+            // Maintain singleton reference
+            if (Local != null && Local != this)
+            {
+                Debug.LogWarning("[PlayerMarker] Overriding existing Local player.");
+            }
+
+            Local = this;
+
+            Debug.Log("[PlayerMarker] Local player set (Single Player)");
+
+            // Notify systems (camera, UI, etc.)
+            GameEvents.RaiseLocalPlayerSpawned();
         }
     }
 

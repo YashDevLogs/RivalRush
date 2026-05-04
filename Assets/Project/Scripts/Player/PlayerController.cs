@@ -88,10 +88,17 @@ namespace Game.Player
             }
         }
 
+        private bool wasRaceActive;
+
         private void Start()
         {
             model.JumpsLeft = model.MaxJumps;
-            UpdateState(PlayerState.Running);
+            // Force Idle on spawn — animation must not run until CanMove() is true.
+            // The existing physics gate in FixedUpdate already blocks movement;
+            // this extends the same gate to the Animator.
+            UpdateState(PlayerState.Idle);
+            view?.SetSpeed(0f);
+            wasRaceActive = false;
         }
 
         private void OnEnable()
@@ -163,6 +170,13 @@ namespace Game.Player
             }
 
             ApplyMovementTick(currentTick);
+        }
+
+
+        public void EnableLocalControl()
+        {
+            model.ControlEnabled = true;
+            model.JumpsLeft = model.MaxJumps;
         }
 
         // ADDED: helper for all tick-based gameplay windows.
@@ -321,6 +335,24 @@ namespace Game.Player
 
         private void UpdateAnimator()
         {
+            bool raceActive = RaceManager.Instance != null && RaceManager.Instance.CanMove();
+
+            // Detect the exact frame the race starts so we can push the
+            // state machine to Running — without this the player stays in
+            // Idle until the first physics tick moves it.
+            bool raceJustStarted = raceActive && !wasRaceActive;
+            wasRaceActive = raceActive;
+
+            if (raceJustStarted && model.State == PlayerState.Idle && model.ControlEnabled)
+                UpdateState(PlayerState.Running);
+
+            // Show idle until race is live — mirrors the physics gate in FixedUpdate.
+            if (!raceActive)
+            {
+                view?.UpdateMovement(0f, true);
+                return;
+            }
+
             float normalizedSpeed;
 
             if (IsLocal)
@@ -629,14 +661,11 @@ namespace Game.Player
             if (!RaceManager.Instance.CanMove())
                 return false;
 
-            // ✅ HUMAN PLAYER
             if (PlayerMarker != null)
                 return PlayerMarker.IsLocal;
 
-            // ✅ AI PLAYER (no PlayerMarker)
             return true;
         }
-
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {

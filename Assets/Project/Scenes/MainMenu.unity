@@ -4520,9 +4520,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 221968574}
-        m_TargetAssemblyTypeName: SceneLoader, Assembly-CSharp
-        m_MethodName: LoadGame
+      - m_Target: {fileID: 1981916659}
+        m_TargetAssemblyTypeName: Game.Systems.UIManager, Assembly-CSharp
+        m_MethodName: OnPlaySinglePlayer
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

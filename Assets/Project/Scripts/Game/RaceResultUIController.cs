@@ -3,6 +3,7 @@ using Game.Player;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Game.Systems
 {
@@ -122,15 +123,10 @@ namespace Game.Systems
 
         public void OnReturnToLobbyPressed()
         {
-            Debug.Log("[CLIENT] Return to Lobby pressed");
-
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
-            {
-                Debug.LogError("[CLIENT] NetworkManager is not running.");
-                return;
-            }
+            Debug.Log("[CLIENT] Return button pressed");
 
             var localPlayer = NetworkManager.Singleton.LocalClient?.PlayerObject;
+
             if (localPlayer == null)
             {
                 Debug.LogError("[CLIENT] LocalPlayer is NULL");
@@ -138,12 +134,14 @@ namespace Game.Systems
             }
 
             var playerNetwork = localPlayer.GetComponent<PlayerNetwork>();
+
             if (playerNetwork == null)
             {
-                Debug.LogError("[CLIENT] PlayerNetwork missing on PlayerObject");
+                Debug.LogError("[CLIENT] PlayerNetwork missing");
                 return;
             }
 
+            // 🔥 Request server to handle transition
             playerNetwork.RequestReturnToLobby();
         }
     }

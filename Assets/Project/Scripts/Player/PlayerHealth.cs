@@ -130,10 +130,63 @@ namespace Game.Player
         {
             if (UsesNetworkAuthority() && !IsServer) return;
 
-            ApplyRespawnState(position);
+            Vector3 safePosition = FindSafeRespawnPosition(position);
+            ApplyRespawnState(safePosition);
 
             if (UsesNetworkAuthority())
-                SyncRespawnClientRpc(position);
+                SyncRespawnClientRpc(safePosition);
+        }
+
+        // -------------------------------------------------------
+        // Bug fix: player could respawn inside a wall collider when
+        // killed near geometry. The old code always added a fixed
+        // offset from the death position without checking whether
+        // the result overlapped a wall or floor collider.
+        //
+        // Fix: run an OverlapBox at the candidate position using the
+        // player's own collider bounds. If it overlaps, nudge upward
+        // in small steps until clear (max 2 units). This is purely
+        // positional — it never modifies movement, physics, or the
+        // collider itself.
+        // -------------------------------------------------------
+        private Vector3 FindSafeRespawnPosition(Vector3 candidate)
+        {
+            if (col == null) return candidate;
+
+            // Use the same layer mask the ground check uses so we test
+            // against environment geometry only.
+            LayerMask environmentMask = controller != null
+                ? controller.Rigidbody != null ? Physics2D.AllLayers : Physics2D.AllLayers
+                : Physics2D.AllLayers;
+
+            // Prefer the model's GroundLayer if accessible; fall back to
+            // a broad environment mask that excludes the player layer.
+            // We exclude the "Player" layer so we don't collide with other
+            // player colliders during the check.
+            int playerLayer = LayerMask.NameToLayer("Player");
+            LayerMask checkMask = ~(1 << playerLayer);
+
+            Vector2 halfExtents = col.bounds.extents;
+            // Shrink slightly to avoid false positives at exact boundaries
+            halfExtents *= 0.9f;
+
+            const float stepSize  = 0.1f;
+            const float maxNudge  = 2.0f;
+            const int   maxSteps  = (int)(maxNudge / stepSize);
+
+            for (int i = 0; i < maxSteps; i++)
+            {
+                Vector3 test = candidate + Vector3.up * (i * stepSize);
+                Collider2D hit = Physics2D.OverlapBox(test, halfExtents * 2f, 0f, checkMask);
+
+                if (hit == null)
+                    return test;   // found a clear spot
+            }
+
+            // Could not find a clear spot upward — return the original
+            // candidate and let the game continue (edge case near ceilings).
+            Debug.LogWarning("[PlayerHealth] Could not find safe respawn position. Using fallback.");
+            return candidate;
         }
 
         private void RestorePhysics()

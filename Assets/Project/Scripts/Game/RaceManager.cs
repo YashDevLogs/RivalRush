@@ -22,6 +22,11 @@ namespace Game.Systems
             return Instance;
         }
 
+
+        [SerializeField] private GameObject playerPrefab;
+        [SerializeField] private GameObject aiPrefab;
+    
+
         [Header("UI")]
         [SerializeField] private TMP_Text countdownText;
 
@@ -47,33 +52,44 @@ namespace Game.Systems
 
         private void Start()
         {
+
             StartCoroutine(ReportSceneReadyWhenPlayerAvailable());
         }
 
-        public override void OnNetworkSpawn()
+        private IEnumerator StartLocalGame()
         {
-            // Nothing to auto-start here anymore.
-            // Countdown is driven by LobbyManager.StartCountdownClientRpc
-            // which calls StartCountdown() once ALL clients are ready.
-            processedFinishedPlayerIds.Clear();
+            yield return null;
 
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
-                return;
+            var spawner = FindFirstObjectByType<NetworkPlayerSpawner>();
+            if (spawner == null)
+            {
+                Debug.LogError("[RACE] No spawner found");
+                yield break;
+            }
 
-            var spawnedObjects = NetworkManager.Singleton.SpawnManager?.SpawnedObjects;
-            if (spawnedObjects == null)
-                return;
+            spawner.SpawnLocalPlayers(playerPrefab, aiPrefab, 3);
 
-            foreach (var spawnedObject in spawnedObjects.Values)
-                RegisterPlayerServer(spawnedObject);
+            StartLocalCountdown();
+        }
+
+
+        private void StartLocalCountdown()
+        {
+            Debug.Log("[RACE] Local countdown start");
+
+            currentState = RaceState.Countdown;
+
+            raceStartTime.Value = Time.time + 3.0;
+
+            if (countdownText != null)
+                countdownText.gameObject.SetActive(true);
         }
 
         private IEnumerator ReportSceneReadyWhenPlayerAvailable()
         {
             while (NetworkManager.Singleton != null
                    && NetworkManager.Singleton.IsClient
-                   && (NetworkManager.Singleton.LocalClient == null
-                       || NetworkManager.Singleton.LocalClient.PlayerObject == null))
+                   && (LobbyManager.Instance == null || !LobbyManager.Instance.IsSpawned))
             {
                 yield return null;
             }
@@ -83,21 +99,14 @@ namespace Game.Systems
                 yield break;
             }
 
-            var localPlayer = NetworkManager.Singleton.LocalClient?.PlayerObject;
-            if (localPlayer == null)
+            var lobbyManager = LobbyManager.Instance;
+            if (lobbyManager == null || !lobbyManager.IsSpawned)
             {
-                Debug.LogError("[CLIENT][RACE] LocalPlayer is NULL");
+                Debug.LogError("[CLIENT][RACE] LobbyManager is not ready.");
                 yield break;
             }
 
-            var playerNetwork = localPlayer.GetComponent<PlayerNetwork>();
-            if (playerNetwork == null)
-            {
-                Debug.LogError("[CLIENT][RACE] PlayerNetwork missing on PlayerObject");
-                yield break;
-            }
-
-            playerNetwork.ReportSceneReady();
+            lobbyManager.SubmitSceneReady();
         }
 
         // -------------------------------------------------------
@@ -120,41 +129,44 @@ namespace Game.Systems
             // via NetworkVariable in Update() and display the countdown locally
         }
 
-        private void Update()
+      private void Update()
+{
+    if (!IsSpawned) return;
+
+    if (raceStartTime.Value <= 0) return;
+
+    double currentTime = NetworkManager.Singleton.LocalTime.Time;
+    double timeLeft = raceStartTime.Value - currentTime;
+
+    // Transition into countdown state
+    if (currentState == RaceState.Waiting)
+    {
+        currentState = RaceState.Countdown;
+
+        if (countdownText != null)
+            countdownText.gameObject.SetActive(true);
+    }
+
+    if (currentState == RaceState.Countdown)
+    {
+        if (timeLeft > 0)
         {
-            if (!IsSpawned) return;
-            if (raceStartTime.Value <= 0) return; // countdown hasn't been set yet
+            int display = Mathf.CeilToInt((float)timeLeft);
 
-            double currentTime = NetworkManager.Singleton.LocalTime.Time;
-            double timeLeft = raceStartTime.Value - currentTime;
-
-            // Transition into countdown state once raceStartTime is set
-            if (currentState == RaceState.Waiting)
-            {
-                currentState = RaceState.Countdown;
-                if (countdownText != null)
-                    countdownText.gameObject.SetActive(true);
-            }
-
-            if (currentState == RaceState.Countdown)
-            {
-                if (timeLeft > 0)
-                {
-                    int display = Mathf.CeilToInt((float)timeLeft);
-                    if (countdownText != null)
-                        countdownText.text = display.ToString();
-                }
-                else
-                {
-                    StartRaceClient();
-                }
-            }
-
-            if (currentState == RaceState.Race)
-            {
-                RaceElapsedTime += Time.deltaTime;
-            }
+            if (countdownText != null)
+                countdownText.text = display.ToString();
         }
+        else
+        {
+            StartRaceClient();
+        }
+    }
+
+    if (currentState == RaceState.Race)
+    {
+        RaceElapsedTime += Time.deltaTime;
+    }
+}
 
         // ---- Client-side race start (runs on all clients via countdown reaching 0) ----
         private void StartRaceClient()
@@ -183,7 +195,11 @@ namespace Game.Systems
                 countdownText.gameObject.SetActive(false);
         }
 
-        public bool CanMove() => raceStarted.Value;
+        public bool CanMove()
+        {
+
+            return raceStarted.Value;
+        }
 
         // ---- Player Registration ----
 

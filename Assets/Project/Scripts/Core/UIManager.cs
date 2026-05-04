@@ -4,6 +4,8 @@ using Game.Input;
 using Game.Player;
 using Game.AI;
 using UnityEngine;
+using Unity.Netcode;
+using UnityEngine.SceneManagement;
 
 namespace Game.Systems
 {
@@ -22,6 +24,7 @@ namespace Game.Systems
             else
                 Destroy(gameObject);
         }
+
 
         public void ShowMain()
         {
@@ -43,5 +46,11 @@ namespace Game.Systems
             shopPanel.SetActive(false);
             settingsPanel.SetActive(true);
         }
+
+        public void OnPlaySinglePlayer()
+        {
+            SceneManager.LoadScene("SP_LevelPrototype");
+        }
+
     }
 }

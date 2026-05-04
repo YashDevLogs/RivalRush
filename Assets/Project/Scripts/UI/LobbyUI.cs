@@ -120,13 +120,13 @@ namespace Game.Systems
 
         public void OnReadyClicked()
         {
-            if (!TryGetLocalPlayerNetwork(out var playerNetwork))
+            if (!TryGetLobbyManager(out var lobbyManager))
             {
                 return;
             }
 
             isReady = !isReady;
-            playerNetwork.SendReady(isReady);
+            lobbyManager.SubmitReady(isReady);
         }
 
         public void OnLeaveLobbyClicked()
@@ -137,17 +137,17 @@ namespace Game.Systems
                 return;
             }
 
-            if (!TryGetLocalPlayerNetwork(out var playerNetwork))
+            if (!TryGetLobbyManager(out var lobbyManager))
             {
                 return;
             }
 
-            playerNetwork.LeaveLobby();
+            lobbyManager.SubmitLeaveLobby();
         }
 
-        private static bool TryGetLocalPlayerNetwork(out PlayerNetwork playerNetwork)
+        private static bool TryGetLobbyManager(out LobbyManager lobbyManager)
         {
-            playerNetwork = null;
+            lobbyManager = null;
 
             if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
             {
@@ -155,17 +155,10 @@ namespace Game.Systems
                 return false;
             }
 
-            var localPlayer = NetworkManager.Singleton.LocalClient?.PlayerObject;
-            if (localPlayer == null)
+            lobbyManager = LobbyManager.Instance;
+            if (lobbyManager == null || !lobbyManager.IsSpawned)
             {
-                Debug.LogError("[CLIENT] LocalPlayer is NULL");
-                return false;
-            }
-
-            playerNetwork = localPlayer.GetComponent<PlayerNetwork>();
-            if (playerNetwork == null)
-            {
-                Debug.LogError("[CLIENT] PlayerNetwork missing on PlayerObject");
+                Debug.LogError("[CLIENT] LobbyManager is not ready.");
                 return false;
             }
 

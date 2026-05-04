@@ -7,6 +7,7 @@ namespace Game.Systems
     {
         [SerializeField] private Transform[] spawnPoints;
         [SerializeField] private NetworkObject playerPrefab;
+        [SerializeField] private NetworkObject aiPlayerPrefab;
 
         private int nextSpawnIndex;
 
@@ -18,6 +19,22 @@ namespace Game.Systems
             }
         }
 
+
+        public void SpawnLocalPlayers(GameObject playerPrefab, GameObject aiPrefab, int aiCount)
+        {
+            Debug.Log("[Spawner] Local single-player spawn");
+
+            // Spawn player
+            Transform spawn = GetNextSpawn();
+            Instantiate(playerPrefab, spawn.position, Quaternion.identity);
+
+            // Spawn AI
+            for (int i = 0; i < aiCount; i++)
+            {
+                Transform aiSpawn = GetNextSpawn();
+                Instantiate(aiPrefab, aiSpawn.position, Quaternion.identity);
+            }
+        }
         public void SpawnAllPlayers()
         {
             foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
@@ -33,12 +50,12 @@ namespace Game.Systems
             player.SpawnWithOwnership(clientId, true);
         }
 
-        public void SpawnAIPlayers(int count, NetworkObject aiPrefab)
+        public void SpawnAIPlayers(int count)
         {
             for (int i = 0; i < count; i++)
             {
                 Transform spawn = GetNextSpawn();
-                NetworkObject ai = Instantiate(aiPrefab, spawn.position, Quaternion.identity);
+                NetworkObject ai = Instantiate(aiPlayerPrefab, spawn.position, Quaternion.identity);
                 ai.Spawn(true);
             }
         }

@@ -23,6 +23,7 @@ namespace Game.Systems
         [SerializeField] private Collider2D damageTrigger;
 
         private GameObject owner;
+        private IPlayerEntity ownerEntity;
         private bool armed;
         private bool grounded;
         private bool initialized;
@@ -46,6 +47,9 @@ namespace Game.Systems
         public void Initialize(GameObject ownerObj)
         {
             owner = ownerObj;
+            ownerEntity = ownerObj != null && ownerObj.TryGetComponent<IPlayerEntity>(out var entity)
+                ? entity
+                : null;
             armed = false;
             grounded = false;
             initialized = true;
@@ -95,12 +99,25 @@ namespace Game.Systems
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
+            if (!HasDamageAuthority()) return;
             if (!armed) return;
             if (other.gameObject == owner) return;
 
             if (other.TryGetComponent<IHealth>(out var health))
+            {
+                if (health.IsInvincible)
+                    return;
+
                 health.TakeDamage(1);
+                if (other.TryGetComponent<IPlayerEntity>(out var victim))
+                    RaceManager.Instance?.ReportKill(ownerEntity, victim, PowerUpId.Trap);
+            }
+        }
+
+        private static bool HasDamageAuthority()
+        {
+            return GameModeState.IsSinglePlayer ||
+                   (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
         }
     }
 

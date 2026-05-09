@@ -2,6 +2,7 @@ using Game.Input;
 using Game.Player;
 using Game.Systems;
 using UnityEngine;
+using Game.Core;
 
 namespace Game.Player
 {
@@ -79,7 +80,6 @@ namespace Game.Player
             inputSource = inputSourceComponent as IInputSource;
         }
 
-        // ✅ FINAL FIX (IMPORTANT)
         private bool CanProcessInput()
         {
             if (controller == null)
@@ -92,13 +92,20 @@ namespace Game.Player
             // HUMAN PLAYER (has PlayerMarker)
             if (playerMarker != null)
             {
+                if (GameModeState.IsSinglePlayer)
+                {
+                    // SP: no NGO spawn — just check IsLocal set by SetLocalPlayer()
+                    return playerMarker.IsLocal;
+                }
+
+                // MP: must be spawned and owned locally
                 if (!playerMarker.IsSpawned)
                     return false;
 
                 return playerMarker.IsLocal;
             }
 
-            // AI PLAYER (no PlayerMarker)
+            // AI PLAYER (no PlayerMarker) — always process
             return true;
         }
     }

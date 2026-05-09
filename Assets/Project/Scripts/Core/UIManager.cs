@@ -49,6 +49,13 @@ namespace Game.Systems
 
         public void OnPlaySinglePlayer()
         {
+            if (SessionManager.Instance != null)
+            {
+                SessionManager.Instance.StartSinglePlayer();
+                return;
+            }
+
+            GameModeState.Set(GameMode.SinglePlayer);
             SceneManager.LoadScene("SP_LevelPrototype");
         }
 

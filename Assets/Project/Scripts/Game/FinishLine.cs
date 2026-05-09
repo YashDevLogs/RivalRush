@@ -23,6 +23,15 @@ namespace Game.Systems
         {
             if (!other.TryGetComponent<IPlayerController>(out var racer))
                 return;
+
+            if (GameModeState.IsSinglePlayer)
+            {
+                // SP: no server authority needed — just register finish locally
+                RaceManager.Instance?.RegisterFinish(racer);
+                return;
+            }
+
+            // MP: server-authoritative
             if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
                 return;
 

@@ -40,7 +40,7 @@ namespace Game.Systems
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
+            if (!HasDamageAuthority()) return;
             if (hit) return;
             if (!other.TryGetComponent<IPlayerEntity>(out var victim)) return;
             if (!victim.IsTargetable) return;
@@ -53,6 +53,12 @@ namespace Game.Systems
 
             hit = true;
             ReturnToPool();
+        }
+
+        private static bool HasDamageAuthority()
+        {
+            return GameModeState.IsSinglePlayer ||
+                   (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
         }
 
         private void ReturnToPool()

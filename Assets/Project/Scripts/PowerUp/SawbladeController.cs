@@ -70,7 +70,7 @@ namespace Game.Systems
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
+            if (!HasDamageAuthority()) return;
             if (other.gameObject == owner) return;
             if (!other.TryGetComponent<IPlayerEntity>(out var victim)) return;
             if (!victim.IsTargetable) return;
@@ -80,6 +80,12 @@ namespace Game.Systems
                 health.TakeDamage(1);
                 RaceManager.Instance?.ReportKill(ownerEntity, victim, PowerUpId.Sawblade);
             }
+        }
+
+        private static bool HasDamageAuthority()
+        {
+            return GameModeState.IsSinglePlayer ||
+                   (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
         }
     }
 

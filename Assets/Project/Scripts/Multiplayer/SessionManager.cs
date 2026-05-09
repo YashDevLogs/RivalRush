@@ -2,6 +2,8 @@ using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Game.Systems;
+using Game.Core;
 
 namespace Game.Systems
 {
@@ -13,6 +15,9 @@ namespace Game.Systems
         [SerializeField] private NetworkManager networkManagerPrefab;
         [SerializeField] private LobbyManager lobbyManagerPrefab;
         [SerializeField] private MultiplayerManager multiplayerManagerPrefab;
+
+        [Header("Single Player")]
+        [SerializeField] private string singlePlayerSceneName = "SP_LevelPrototype";
 
         private MultiplayerManager multiplayerManagerInstance;
         private NetworkManager networkManagerInstance;
@@ -41,7 +46,6 @@ namespace Game.Systems
 
         private void Start()
         {
-
             ResetShutdownState();
         }
 
@@ -57,6 +61,9 @@ namespace Game.Systems
         {
             if (scene.name != "MainMenu")
                 return;
+
+            // Reset to multiplayer mode when returning to main menu
+            GameModeState.Set(GameMode.Multiplayer);
 
             EnsureCoreManagers();
             ResetShutdownState();
@@ -164,7 +171,7 @@ namespace Game.Systems
         }
 
         // -----------------------------------
-        // CREATE SESSION (HOST)
+        // CREATE SESSION (HOST) - Multiplayer
         // -----------------------------------
         public void CreateSession()
         {
@@ -174,6 +181,7 @@ namespace Game.Systems
                 return;
             }
 
+            GameModeState.Set(GameMode.Multiplayer);
             EnsureCoreManagers();
 
             if (NetworkManager.Singleton == null)
@@ -202,7 +210,7 @@ namespace Game.Systems
         }
 
         // -----------------------------------
-        // JOIN SESSION (CLIENT)
+        // JOIN SESSION (CLIENT) - Multiplayer
         // -----------------------------------
         public void JoinSession()
         {
@@ -212,6 +220,7 @@ namespace Game.Systems
                 return;
             }
 
+            GameModeState.Set(GameMode.Multiplayer);
             EnsureCoreManagers();
 
             if (NetworkManager.Singleton == null)
@@ -237,6 +246,24 @@ namespace Game.Systems
             }
 
             sessionActive = true;
+        }
+
+        // -----------------------------------
+        // START SINGLE PLAYER
+        // -----------------------------------
+        /// <summary>
+        /// Starts a single-player session. No networking is started.
+        /// Loads the SP scene directly. SinglePlayerBootstrap handles
+        /// spawning and race startup inside that scene.
+        /// </summary>
+        public void StartSinglePlayer()
+        {
+            Debug.Log("[SESSION] Starting Single Player...");
+
+            GameModeState.Set(GameMode.SinglePlayer);
+            sessionActive = false; // no network session
+
+            SceneManager.LoadScene(singlePlayerSceneName, LoadSceneMode.Single);
         }
 
         public void BeginShutdownToMainMenu()
@@ -282,13 +309,9 @@ namespace Game.Systems
 
             Debug.Log("[Session] Ending session");
 
-            // Shutdown network FIRST
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
-            {
                 NetworkManager.Singleton.Shutdown();
-            }
 
-            // THEN reset state
             sessionActive = false;
             lobbyManagerInstance = null;
         }

@@ -51,7 +51,7 @@ namespace Game.Systems
             target = rocketTarget;
             owner = rocketOwner;
             exploded = false;
-            visualOnly = NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer;
+            visualOnly = !HasDamageAuthority();
             lifeTimer = 0f;
             rb.linearVelocity = Vector2.down * maxSpeed * 0.6f;
             rb.simulated = true;
@@ -88,8 +88,8 @@ namespace Game.Systems
         private void Explode()
         {
             if (exploded) return;
-            bool isServer = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
-            if (!isServer && !visualOnly) return;
+            bool hasDamageAuthority = HasDamageAuthority();
+            if (!hasDamageAuthority && !visualOnly) return;
             exploded = true;
 
             Vector2 pos = rb.position;
@@ -112,7 +112,7 @@ namespace Game.Systems
                 }
             }
 
-            if (!isServer)
+            if (!hasDamageAuthority)
             {
                 ProjectilePool.Instance?.ReturnRocket(this);
                 return;
@@ -130,6 +130,12 @@ namespace Game.Systems
             }
 
             ProjectilePool.Instance?.ReturnRocket(this);
+        }
+
+        private static bool HasDamageAuthority()
+        {
+            return GameModeState.IsSinglePlayer ||
+                   (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
         }
 
     #if UNITY_EDITOR

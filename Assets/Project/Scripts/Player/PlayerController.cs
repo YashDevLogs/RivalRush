@@ -6,6 +6,7 @@ using UnityEngine;
 using System;
 using Game.Core;
 using Unity.Netcode;
+using Game.Audio;
 
 namespace Game.Player
 {
@@ -25,6 +26,10 @@ namespace Game.Player
         [SerializeField] private MonoBehaviour inputSourceComponent;
         [SerializeField] private BoxCollider2D boxCollider;
         [SerializeField] private CapsuleCollider2D capsuleCollider;
+
+        private bool wasGrounded;
+        private float lastVerticalVelocity;
+        private float maxFallVelocity;
 
         private Vector2 colliderOriginalSize;
         private Vector2 colliderOriginalOffset;
@@ -146,7 +151,7 @@ namespace Game.Player
         {
             int currentTick = GetCurrentTick();
 
-            HandleGround(currentTick);
+            lastVerticalVelocity = rb.linearVelocity.y;
 
             if (!IsLocal)
             {
@@ -164,6 +169,7 @@ namespace Game.Player
                     rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
                     UpdateState(PlayerState.Idle);
                 }
+
                 return;
             }
 
@@ -173,7 +179,18 @@ namespace Game.Player
                 return;
             }
 
+            // Apply movement FIRST
             ApplyMovementTick(currentTick);
+
+            // THEN cache strongest airborne downward velocity
+            if (!model.IsGrounded)
+            {
+                maxFallVelocity =
+                    Mathf.Min(maxFallVelocity, rb.linearVelocity.y);
+            }
+
+            // THEN evaluate landing transition
+            HandleGround(currentTick);
         }
 
         public void EnableLocalControl()
@@ -252,12 +269,14 @@ namespace Game.Player
         {
             bool wasGrounded = model.IsGrounded;
 
+            // Prevent immediate re-grounding after jump
             if (currentTick < model.NextAllowedGroundCheckTick)
             {
                 model.IsGrounded = false;
                 return;
             }
 
+            // Ground check
             model.IsGrounded = Physics2D.OverlapBox(
                 model.GroundCheck.position,
                 model.GroundCheckSize,
@@ -265,14 +284,29 @@ namespace Game.Player
                 model.GroundLayer
             );
 
+            // Landing logic
             if (model.IsGrounded)
             {
                 model.LastGroundedTick = currentTick;
                 model.JumpsLeft = model.MaxJumps;
 
+                // Transition: Airborne -> Grounded
                 if (!wasGrounded)
                 {
                     OnLand?.Invoke();
+
+                    // Local-only landing sound
+                    // Prevents AI + remote player spam
+                    // Velocity threshold prevents tiny bump spam
+                    if (IsLocal && maxFallVelocity < -4f)
+                    {
+                        Debug.Log($"Landing sound played | MaxFallVelocity: {maxFallVelocity}");
+
+                        SoundManager.PlayLocal(SoundId.Landing);
+                    }
+
+                    maxFallVelocity = 0f;
+
                     UpdateState(PlayerState.Running);
                 }
             }
@@ -307,6 +341,10 @@ namespace Game.Player
             view?.TriggerJump();
 
             OnJump?.Invoke();
+            if (IsLocal)
+            {
+                SoundManager.PlayLocal(SoundId.Jump);
+            }
             UpdateState(PlayerState.Jumping);
         }
 
@@ -707,5 +745,27 @@ namespace Game.Player
             );
         }
 #endif
+
+        public void PlayLeftFootstep()
+        {
+            if (!IsLocal)
+                return;
+
+            if (!model.IsGrounded)
+                return;
+
+            SoundManager.PlayLocal(SoundId.FootstepLeft);
+        }
+
+        public void PlayRightFootstep()
+        {
+            if (!IsLocal)
+                return;
+
+            if (!model.IsGrounded)
+                return;
+
+            SoundManager.PlayLocal(SoundId.FootstepRight);
+        }
     }
 }

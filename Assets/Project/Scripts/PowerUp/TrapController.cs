@@ -5,6 +5,7 @@ using Game.AI;
 using UnityEngine;
 using Unity.Netcode;
 using Game.Core;
+using Game.Audio;
 
 namespace Game.Systems
 {
@@ -101,16 +102,41 @@ namespace Game.Systems
         {
             if (!HasDamageAuthority()) return;
             if (!armed) return;
-            if (other.gameObject == owner) return;
+            if (other.transform.root.gameObject == owner)
+                return;
 
-            if (other.TryGetComponent<IHealth>(out var health))
+            Debug.Log($"Trap triggered by: {other.name}");
+
+            IHealth health = other.GetComponentInParent<IHealth>();
+
+            if (health == null)
             {
-                if (health.IsInvincible)
-                    return;
+                Debug.LogWarning($"No IHealth found on {other.name}");
+                return;
+            }
 
-                health.TakeDamage(1);
-                if (other.TryGetComponent<IPlayerEntity>(out var victim))
-                    RaceManager.Instance?.ReportKill(ownerEntity, victim, PowerUpId.Trap);
+            if (health.IsInvincible)
+                return;
+
+            health.TakeDamage(1);
+
+            SoundManager.PlayWorld(
+                SoundId.TrapHit,
+                other.transform.position
+            );
+
+            Debug.Log("TrapHit sound played.");
+
+            IPlayerEntity victim =
+                other.GetComponentInParent<IPlayerEntity>();
+
+            if (victim != null)
+            {
+                RaceManager.Instance?.ReportKill(
+                    ownerEntity,
+                    victim,
+                    PowerUpId.Trap
+                );
             }
         }
 

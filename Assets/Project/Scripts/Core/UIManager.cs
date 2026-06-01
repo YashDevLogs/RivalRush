@@ -1,11 +1,9 @@
-using Game.Systems;
+using Game.Audio;
 using Game.Core;
-using Game.Input;
-using Game.Player;
-using Game.AI;
+using TMPro;
 using UnityEngine;
-using Unity.Netcode;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace Game.Systems
 {
@@ -13,9 +11,24 @@ namespace Game.Systems
     {
         public static UIManager Instance;
 
+        [Header("Main Panels")]
         public GameObject mainPanel;
         public GameObject shopPanel;
         public GameObject settingsPanel;
+
+        [Header("Settings Content Panels")]
+        public GameObject profileContent;
+        public GameObject controlsContent;
+        public GameObject audioContent;
+        public GameObject socialContent;
+
+        [Header("Profile")]
+        public TMP_InputField usernameInputField;
+        public TextMeshProUGUI topPlayerNameText;
+
+        [Header("Audio")]
+        public Slider musicSlider;
+        public Slider sfxSlider;
 
         private void Awake()
         {
@@ -23,11 +36,21 @@ namespace Game.Systems
                 Instance = this;
             else
                 Destroy(gameObject);
+
+            LoadPlayerName();
         }
 
+        private void Start()
+        {
+            musicSlider.value = PlayerPrefs.GetFloat("MusicVolume", 1f);
+            sfxSlider.value = PlayerPrefs.GetFloat("SFXVolume", 1f);
+        }
+
+        #region Main Navigation
 
         public void ShowMain()
         {
+            SoundManager.Play(SoundId.ButtonClick);
             mainPanel.SetActive(true);
             shopPanel.SetActive(false);
             settingsPanel.SetActive(false);
@@ -35,6 +58,7 @@ namespace Game.Systems
 
         public void ShowShop()
         {
+            SoundManager.Play(SoundId.ButtonClick);
             mainPanel.SetActive(false);
             shopPanel.SetActive(true);
             settingsPanel.SetActive(false);
@@ -42,22 +66,106 @@ namespace Game.Systems
 
         public void ShowSettings()
         {
+            SoundManager.Play(SoundId.ButtonClick);
             mainPanel.SetActive(false);
             shopPanel.SetActive(false);
             settingsPanel.SetActive(true);
+
+            ShowProfileContent();
         }
+
+        #endregion
+
+        #region Settings Content
+
+        private void DisableAllContent()
+        {
+            profileContent.SetActive(false);
+            controlsContent.SetActive(false);
+            audioContent.SetActive(false);
+            socialContent.SetActive(false);
+        }
+
+        public void ShowProfileContent()
+        {
+            SoundManager.Play(SoundId.ButtonClick);
+            DisableAllContent();
+            profileContent.SetActive(true);
+        }
+
+        public void ShowControlsContent()
+        {
+            SoundManager.Play(SoundId.ButtonClick);
+            DisableAllContent();
+            controlsContent.SetActive(true);
+        }
+
+        public void ShowAudioContent()
+        {
+            SoundManager.Play(SoundId.ButtonClick);
+            DisableAllContent();
+            audioContent.SetActive(true);
+        }
+
+        public void ShowSocialContent()
+        {
+            SoundManager.Play(SoundId.ButtonClick);
+            DisableAllContent();
+            socialContent.SetActive(true);
+        }
+
+        #endregion
+
+        #region Username
+
+        public void SetPlayerName()
+        {
+            string playerName = usernameInputField.text;
+
+            if (string.IsNullOrWhiteSpace(playerName))
+                return;
+
+            topPlayerNameText.text = playerName;
+
+            PlayerPrefs.SetString("PLAYER_NAME", playerName);
+            PlayerPrefs.Save();
+        }
+
+        private void LoadPlayerName()
+        {
+            string savedName = PlayerPrefs.GetString("PLAYER_NAME", "Player Name");
+
+            topPlayerNameText.text = savedName;
+
+            if (usernameInputField != null)
+                usernameInputField.text = savedName;
+        }
+
+        #endregion
+
+        #region Gameplay
 
         public void OnPlaySinglePlayer()
         {
-            if (SessionManager.Instance != null)
-            {
-                SessionManager.Instance.StartSinglePlayer();
-                return;
-            }
-
+            SoundManager.Play(SoundId.ButtonClick);
             GameModeState.Set(GameMode.SinglePlayer);
             SceneManager.LoadScene("SP_LevelPrototype");
         }
 
+        #endregion
+
+        #region Exit
+
+        public void ExitGame()
+        {
+            SoundManager.Play(SoundId.ButtonClick);
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+        }
+
+        #endregion
     }
 }

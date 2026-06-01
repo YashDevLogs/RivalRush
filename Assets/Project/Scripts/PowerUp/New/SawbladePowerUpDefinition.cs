@@ -4,6 +4,7 @@ using Game.Player;
 using Game.AI;
 using UnityEngine;
 using Game.Core;
+using Game.Audio;
 
 namespace Game.Systems
 {
@@ -31,6 +32,10 @@ namespace Game.Systems
                     : Object.Instantiate(def.sawbladePrefab, spawnPos, Quaternion.identity);
 
                 blade.Initialize(context.PlayerTransform.gameObject, context.PlayerEntity);
+                SoundManager.PlayWorld(
+    SoundId.SawbladeThrow,
+    spawnPos
+);
             }
 
             public void Deactivate() { }

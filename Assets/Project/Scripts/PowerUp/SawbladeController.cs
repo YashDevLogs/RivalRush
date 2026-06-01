@@ -5,6 +5,7 @@ using Game.AI;
 using UnityEngine;
 using Unity.Netcode;
 using Game.Core;
+using Game.Audio;
 
 namespace Game.Systems
 {
@@ -78,6 +79,10 @@ namespace Game.Systems
             if (other.TryGetComponent<IHealth>(out var health))
             {
                 health.TakeDamage(1);
+                SoundManager.PlayWorld(
+    SoundId.SawBladeHit,
+    transform.position
+);
                 RaceManager.Instance?.ReportKill(ownerEntity, victim, PowerUpId.Sawblade);
             }
         }

@@ -5,6 +5,7 @@ using Game.AI;
 using UnityEngine;
 using Unity.Netcode;
 using Game.Core;
+using Game.Audio;
 
 namespace Game.Systems
 {
@@ -33,6 +34,8 @@ namespace Game.Systems
         private bool visualOnly;
         private float lifeTimer;
 
+        private AudioSource rocketLoopSource;
+
         private void Awake()
         {
             if (rb == null)
@@ -55,6 +58,10 @@ namespace Game.Systems
             lifeTimer = 0f;
             rb.linearVelocity = Vector2.down * maxSpeed * 0.6f;
             rb.simulated = true;
+            rocketLoopSource = SoundManager.PlayAttachedLoop(
+    SoundId.RocketLoop,
+    transform
+);
         }
 
         private void FixedUpdate()
@@ -97,6 +104,16 @@ namespace Game.Systems
             rb.angularVelocity = 0f;
             rb.simulated = false;
 
+            if (rocketLoopSource != null)
+            {
+                SoundManager.StopLoop(rocketLoopSource);
+                rocketLoopSource = null;
+            }
+            SoundManager.PlayWorld(
+                SoundId.RocketHit,
+                transform.position
+            );
+
             // ✅ VFXPool instead of Instantiate/Destroy
             // Destroy(vfx, lifetime) was showing up as CoroutinesDelayedCalls
             // in the profiler — Unity implements timed Destroy as a delayed call
@@ -125,6 +142,10 @@ namespace Game.Systems
                 if (hit.TryGetComponent<IHealth>(out var health))
                 {
                     health.TakeDamage(1);
+                    SoundManager.PlayWorld(
+    SoundId.Explosion,
+    transform.position
+);
                     RaceManager.Instance?.ReportKill(owner, victim, PowerUpId.Rocket);
                 }
             }
@@ -138,13 +159,13 @@ namespace Game.Systems
                    (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
         }
 
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, explosionRadius);
         }
-    #endif
+#endif
     }
 
 }

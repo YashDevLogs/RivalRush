@@ -4,6 +4,7 @@ using Game.Player;
 using Game.AI;
 using UnityEngine;
 using Game.Core;
+using Game.Audio;
 
 namespace Game.Systems
 {
@@ -31,6 +32,11 @@ namespace Game.Systems
                     : Object.Instantiate(def.trapPrefab, pos, Quaternion.identity);
 
                 trap.Initialize(context.PlayerTransform.gameObject);
+
+                SoundManager.PlayWorld(
+    SoundId.TrapPlace,
+    pos
+);
             }
 
             public void Deactivate() { }

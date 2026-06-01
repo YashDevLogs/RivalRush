@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using Game.Core;
+using Game.Audio;
 
 namespace Game.Systems
 {
@@ -122,6 +123,10 @@ namespace Game.Systems
             heldDefinition = definition;
             SetHeldPowerUpId(definition.id);
             GameEvents.RaisePowerUpPicked(definition.id);
+            if (context.PlayerEntity.IsLocal)
+{
+    SoundManager.PlayLocal(SoundId.PowerupPickup);
+}
         }
 
         public void Activate()

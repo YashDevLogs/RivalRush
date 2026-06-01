@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Game.Audio;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -110,16 +111,19 @@ namespace Game.Systems
 
         public void OnCreateLobby()
         {
+            SoundManager.Play(SoundId.ButtonClick);
             SessionManager.Instance.CreateSession();
         }
 
         public void OnJoinLobby()
         {
+            SoundManager.Play(SoundId.ButtonClick);
             SessionManager.Instance.JoinSession();
         }
 
         public void OnReadyClicked()
         {
+            SoundManager.Play(SoundId.ButtonClick);
             if (!TryGetLobbyManager(out var lobbyManager))
             {
                 return;
@@ -131,6 +135,7 @@ namespace Game.Systems
 
         public void OnLeaveLobbyClicked()
         {
+            SoundManager.Play(SoundId.ButtonClick);
             if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
             {
                 SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);

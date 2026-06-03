@@ -164,6 +164,17 @@ namespace Game.Player
 
             if (model.HasFinishedRace)
             {
+                const float finishDeceleration = 20f;
+
+                rb.linearVelocity = new Vector2(
+                    Mathf.MoveTowards(
+                        rb.linearVelocity.x,
+                        0f,
+                        finishDeceleration * Time.fixedDeltaTime
+                    ),
+                    rb.linearVelocity.y
+                );
+
                 if (Mathf.Abs(rb.linearVelocity.x) <= model.IdleSpeedThreshold)
                 {
                     rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
@@ -172,7 +183,6 @@ namespace Game.Player
 
                 return;
             }
-
             if (RaceManager.Instance == null || !RaceManager.Instance.CanMove())
             {
                 rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
@@ -527,6 +537,7 @@ namespace Game.Player
             model.HasFinishedRace = true;
             model.ControlEnabled = false;
             model.CurrentRunSpeed = 0f;
+
             RestoreCollider();
             EndWallCling();
             UpdateState(PlayerState.Disabled);

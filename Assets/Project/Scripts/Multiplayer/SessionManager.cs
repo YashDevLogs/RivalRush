@@ -1,5 +1,13 @@
 using System.Collections;
+using System;
+using System.Threading.Tasks;
 using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport.Relay;
+using Unity.Services.Authentication;
+using Unity.Services.Core;
+using Unity.Services.Relay;
+using Unity.Services.Relay.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Game.Systems;
@@ -24,8 +32,16 @@ namespace Game.Systems
         private LobbyManager lobbyManagerInstance;
         private Coroutine shutdownRoutine;
         private bool sessionActive;
+        private string relayJoinCode;
 
         public bool IsSessionActive => sessionActive;
+        public string RelayJoinCode => relayJoinCode;
+
+#if UNITY_WEBGL
+        private const string RelayConnectionType = "wss";
+#else
+        private const string RelayConnectionType = "dtls";
+#endif
 
         private void Awake()
         {
@@ -173,12 +189,17 @@ namespace Game.Systems
         // -----------------------------------
         // CREATE SESSION (HOST) - Multiplayer
         // -----------------------------------
-        public void CreateSession()
+        public async void CreateSession()
+        {
+            await CreateSessionAsync();
+        }
+
+        public async Task<string> CreateSessionAsync()
         {
             if (LobbyManager.IsShuttingDown)
             {
                 Debug.LogWarning("[SESSION] CreateSession ignored during shutdown.");
-                return;
+                return null;
             }
 
             GameModeState.Set(GameMode.Multiplayer);
@@ -187,7 +208,7 @@ namespace Game.Systems
             if (NetworkManager.Singleton == null)
             {
                 Debug.LogError("[SESSION] NetworkManager missing");
-                return;
+                return null;
             }
 
             Debug.Log($"[SESSION] IsListening: {NetworkManager.Singleton.IsListening}");
@@ -195,7 +216,23 @@ namespace Game.Systems
             if (NetworkManager.Singleton.IsListening)
             {
                 Debug.LogWarning("[SESSION] Already running");
-                return;
+                return relayJoinCode;
+            }
+
+            Debug.Log("[SESSION] Creating Relay host allocation...");
+
+            try
+            {
+                await EnsureUnityServicesAuthenticatedAsync();
+                var allocation = await RelayService.Instance.CreateAllocationAsync(LobbyManager.MaxPlayers - 1);
+                relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+                GetUnityTransport().SetRelayServerData(allocation.ToRelayServerData(RelayConnectionType));
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError($"[SESSION] Relay host setup failed: {exception}");
+                relayJoinCode = null;
+                return null;
             }
 
             Debug.Log("[SESSION] Starting Host...");
@@ -203,10 +240,13 @@ namespace Game.Systems
             if (!NetworkManager.Singleton.StartHost())
             {
                 Debug.LogError("[SESSION] StartHost failed.");
-                return;
+                relayJoinCode = null;
+                return null;
             }
 
             sessionActive = true;
+            Debug.Log($"[SESSION] Relay host started. Join code: {relayJoinCode}");
+            return relayJoinCode;
         }
 
         // -----------------------------------
@@ -214,10 +254,27 @@ namespace Game.Systems
         // -----------------------------------
         public void JoinSession()
         {
+            Debug.LogWarning("[SESSION] JoinSession requires a Relay join code.");
+        }
+
+        public async void JoinSession(string joinCode)
+        {
+            await JoinSessionAsync(joinCode);
+        }
+
+        public async Task<bool> JoinSessionAsync(string joinCode)
+        {
             if (LobbyManager.IsShuttingDown)
             {
                 Debug.LogWarning("[SESSION] JoinSession ignored during shutdown.");
-                return;
+                return false;
+            }
+
+            joinCode = joinCode?.Trim().ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(joinCode))
+            {
+                Debug.LogError("[SESSION] Relay join code is empty.");
+                return false;
             }
 
             GameModeState.Set(GameMode.Multiplayer);
@@ -226,7 +283,7 @@ namespace Game.Systems
             if (NetworkManager.Singleton == null)
             {
                 Debug.LogError("[SESSION] NetworkManager missing");
-                return;
+                return false;
             }
 
             Debug.Log($"[SESSION] IsListening: {NetworkManager.Singleton.IsListening}");
@@ -234,7 +291,23 @@ namespace Game.Systems
             if (NetworkManager.Singleton.IsListening)
             {
                 Debug.LogWarning("[SESSION] Already running");
-                return;
+                return true;
+            }
+
+            Debug.Log("[SESSION] Joining Relay allocation...");
+
+            try
+            {
+                await EnsureUnityServicesAuthenticatedAsync();
+                var joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
+                GetUnityTransport().SetRelayServerData(joinAllocation.ToRelayServerData(RelayConnectionType));
+                relayJoinCode = joinCode;
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError($"[SESSION] Relay join setup failed: {exception}");
+                relayJoinCode = null;
+                return false;
             }
 
             Debug.Log("[SESSION] Starting Client...");
@@ -242,10 +315,12 @@ namespace Game.Systems
             if (!NetworkManager.Singleton.StartClient())
             {
                 Debug.LogError("[SESSION] StartClient failed.");
-                return;
+                relayJoinCode = null;
+                return false;
             }
 
             sessionActive = true;
+            return true;
         }
 
         // -----------------------------------
@@ -314,6 +389,33 @@ namespace Game.Systems
 
             sessionActive = false;
             lobbyManagerInstance = null;
+            relayJoinCode = null;
+        }
+
+        private static async Task EnsureUnityServicesAuthenticatedAsync()
+        {
+            if (UnityServices.State != ServicesInitializationState.Initialized)
+                await UnityServices.InitializeAsync();
+
+            if (!AuthenticationService.Instance.IsSignedIn)
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+        }
+
+        private static UnityTransport GetUnityTransport()
+        {
+            var networkManager = NetworkManager.Singleton;
+            if (networkManager == null)
+            {
+                Debug.LogError("[SESSION] NetworkManager missing while configuring Relay transport.");
+                throw new InvalidOperationException("NetworkManager is missing while configuring Relay transport.");
+            }
+
+            if (!networkManager.TryGetComponent<UnityTransport>(out var transport))
+                transport = networkManager.gameObject.AddComponent<UnityTransport>();
+
+            transport.UseWebSockets = RelayConnectionType.StartsWith("ws");
+            networkManager.NetworkConfig.NetworkTransport = transport;
+            return transport;
         }
     }
 }

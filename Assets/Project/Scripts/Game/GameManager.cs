@@ -37,7 +37,7 @@ namespace Game.Systems
         {
             Debug.Log("[GameManager] Race finished. Waiting for results UI.");
 
-            // UI / analytics / progression hooks go here
+            // UI / analytics / progression hooks go here 
             // DO NOT control race logic here
         }
     }

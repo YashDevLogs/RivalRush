@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using Game.Audio;
+using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -10,6 +12,9 @@ namespace Game.Systems
     {
         [Header("UI References")]
         [SerializeField] private GameObject lobbyPanel;
+        [SerializeField] private GameObject joinLobbyPanel;
+        [SerializeField] private TMP_InputField lobbyCodeInputField;
+        [SerializeField] private TMP_Text lobbyCodeText;
         [SerializeField] private Transform playerListParent;
         [SerializeField] private PlayerSlotUI playerSlotPrefab;
 
@@ -67,6 +72,8 @@ namespace Game.Systems
             subscribedList.OnListChanged += OnLobbyUpdated;
 
             lobbyPanel.SetActive(true);
+            joinLobbyPanel?.SetActive(false);
+            RefreshLobbyCodeText();
             RefreshUI();
         }
 
@@ -108,46 +115,95 @@ namespace Game.Systems
             }
         }
 
-        public void OnCreateLobby()
+        public async void OnCreateLobby()
         {
-            SessionManager.Instance.CreateSession();
+            SoundManager.Play(SoundId.ButtonClick);
+            if (SessionManager.Instance == null)
+            {
+                Debug.LogError("[LobbyUI] SessionManager is missing.");
+                return;
+            }
+
+            string joinCode = await SessionManager.Instance.CreateSessionAsync();
+            if (!string.IsNullOrWhiteSpace(joinCode))
+                SetLobbyCodeText(joinCode);
         }
 
         public void OnJoinLobby()
         {
-            SessionManager.Instance.JoinSession();
+            SoundManager.Play(SoundId.ButtonClick);
+            joinLobbyPanel?.SetActive(true);
+        }
+
+        public async void OnJoinLobbyClicked()
+        {
+            SoundManager.Play(SoundId.ButtonClick);
+            if (SessionManager.Instance == null)
+            {
+                Debug.LogError("[LobbyUI] SessionManager is missing.");
+                return;
+            }
+
+            string joinCode = lobbyCodeInputField != null ? lobbyCodeInputField.text : string.Empty;
+            bool joined = await SessionManager.Instance.JoinSessionAsync(joinCode);
+            if (joined)
+            {
+                SetLobbyCodeText(joinCode);
+                joinLobbyPanel?.SetActive(false);
+            }
+        }
+
+        public void OnBackFromJoinLobby()
+        {
+            SoundManager.Play(SoundId.ButtonClick);
+            joinLobbyPanel?.SetActive(false);
+        }
+
+        public void OnCopyLobbyCodeClicked()
+        {
+            SoundManager.Play(SoundId.ButtonClick);
+            string code = SessionManager.Instance != null ? SessionManager.Instance.RelayJoinCode : null;
+            if (string.IsNullOrWhiteSpace(code) && lobbyCodeText != null)
+                code = lobbyCodeText.text;
+
+            if (string.IsNullOrWhiteSpace(code))
+                return;
+
+            GUIUtility.systemCopyBuffer = code.Trim();
         }
 
         public void OnReadyClicked()
         {
-            if (!TryGetLocalPlayerNetwork(out var playerNetwork))
+            SoundManager.Play(SoundId.ButtonClick);
+            if (!TryGetLobbyManager(out var lobbyManager))
             {
                 return;
             }
 
             isReady = !isReady;
-            playerNetwork.SendReady(isReady);
+            lobbyManager.SubmitReady(isReady);
         }
 
         public void OnLeaveLobbyClicked()
         {
+            SoundManager.Play(SoundId.ButtonClick);
             if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
             {
                 SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
                 return;
             }
 
-            if (!TryGetLocalPlayerNetwork(out var playerNetwork))
+            if (!TryGetLobbyManager(out var lobbyManager))
             {
                 return;
             }
 
-            playerNetwork.LeaveLobby();
+            lobbyManager.SubmitLeaveLobby();
         }
 
-        private static bool TryGetLocalPlayerNetwork(out PlayerNetwork playerNetwork)
+        private static bool TryGetLobbyManager(out LobbyManager lobbyManager)
         {
-            playerNetwork = null;
+            lobbyManager = null;
 
             if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
             {
@@ -155,21 +211,30 @@ namespace Game.Systems
                 return false;
             }
 
-            var localPlayer = NetworkManager.Singleton.LocalClient?.PlayerObject;
-            if (localPlayer == null)
+            lobbyManager = LobbyManager.Instance;
+            if (lobbyManager == null || !lobbyManager.IsSpawned)
             {
-                Debug.LogError("[CLIENT] LocalPlayer is NULL");
-                return false;
-            }
-
-            playerNetwork = localPlayer.GetComponent<PlayerNetwork>();
-            if (playerNetwork == null)
-            {
-                Debug.LogError("[CLIENT] PlayerNetwork missing on PlayerObject");
+                Debug.LogError("[CLIENT] LobbyManager is not ready.");
                 return false;
             }
 
             return true;
+        }
+
+        private void RefreshLobbyCodeText()
+        {
+            if (SessionManager.Instance == null)
+                return;
+
+            SetLobbyCodeText(SessionManager.Instance.RelayJoinCode);
+        }
+
+        private void SetLobbyCodeText(string joinCode)
+        {
+            if (lobbyCodeText == null || string.IsNullOrWhiteSpace(joinCode))
+                return;
+
+            lobbyCodeText.text = joinCode.Trim().ToUpperInvariant();
         }
     }
 }

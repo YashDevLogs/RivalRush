@@ -22,7 +22,7 @@ namespace Game.Systems
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
+            if (!HasPickupAuthority()) return;
             if (!other.TryGetComponent(out PowerUpController controller))
                 return;
 
@@ -34,6 +34,12 @@ namespace Game.Systems
 
             var def = availablePowerUps[Random.Range(0, availablePowerUps.Length)];
             controller.Pickup(def);
+        }
+
+        private static bool HasPickupAuthority()
+        {
+            return GameModeState.IsSinglePlayer ||
+                   (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
         }
     }
 

@@ -13,5 +13,6 @@ namespace Game.Core
         Rigidbody2D Rigidbody { get; }
         bool IsTargetable { get; }
         void Kill();
+        bool IsLocal { get; }
     }
 }

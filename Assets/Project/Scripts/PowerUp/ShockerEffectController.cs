@@ -57,7 +57,7 @@ namespace Game.Systems
 
         private void ApplyDamage()
         {
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
+            if (!HasDamageAuthority()) return;
             if (damageApplied) return;
             damageApplied = true;
 
@@ -73,6 +73,12 @@ namespace Game.Systems
                     RaceManager.Instance?.ReportKill(ownerEntity, victim, PowerUpId.Shocker);
                 }
             }
+        }
+
+        private static bool HasDamageAuthority()
+        {
+            return GameModeState.IsSinglePlayer ||
+                   (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
         }
     }
 

@@ -16,8 +16,8 @@ namespace Game.Systems
             if (particles == null)
                 particles = new ParticleSystem[0];
 
-            if (particles.Length == 0)
-                Debug.LogWarning($"[PooledParticleVisual] Particle systems are not assigned on {name}.");
+           if (particles.Length == 0)
+    return;
         }
 
         public void Play()

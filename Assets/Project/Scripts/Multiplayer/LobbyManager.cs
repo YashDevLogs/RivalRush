@@ -9,11 +9,11 @@ namespace Game.Systems
     public class LobbyManager : NetworkBehaviour
     {
         public static LobbyManager Instance { get; private set; }
+        public static bool IsShuttingDown = false;
 
         public const int MaxPlayers = 4;
         public const int MinPlayers = 2;
 
-        [SerializeField] private NetworkObject aiPlayerPrefab;
 
         public NetworkList<LobbyPlayerData> Players { get; private set; } = new NetworkList<LobbyPlayerData>();
 
@@ -41,13 +41,9 @@ namespace Game.Systems
                 Debug.LogWarning($"[LobbyManager][OnNetworkSpawn] Duplicate instance detected. NetId: {NetworkObjectId}");
 
                 if (IsServer)
-                {
                     NetworkObject.Despawn(true);
-                }
                 else
-                {
                     Destroy(gameObject);
-                }
 
                 return;
             }
@@ -58,20 +54,13 @@ namespace Game.Systems
                 NetworkManager.Singleton.OnClientDisconnectCallback += HandleClientDisconnected;
 
                 if (NetworkManager.Singleton.SceneManager != null)
-                {
                     NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
-                }
             }
 
-            if (!IsServer)
-            {
-                return;
-            }
+            if (!IsServer) return;
 
             foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
-            {
                 AddPlayer(client.ClientId);
-            }
         }
 
         public override void OnNetworkDespawn()
@@ -82,9 +71,7 @@ namespace Game.Systems
                 NetworkManager.Singleton.OnClientDisconnectCallback -= HandleClientDisconnected;
 
                 if (NetworkManager.Singleton.SceneManager != null)
-                {
                     NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
-                }
             }
 
             bool isFullShutdown = NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening;
@@ -98,36 +85,23 @@ namespace Game.Systems
 
         private void HandleClientConnected(ulong clientId)
         {
-            if (!IsServer)
-            {
-                return;
-            }
-
+            if (!IsServer) return;
             AddPlayer(clientId);
         }
 
         private void HandleClientDisconnected(ulong clientId)
         {
-            if (!IsServer)
-            {
-                return;
-            }
-
+            if (!IsServer) return;
             RemovePlayer(clientId);
             loadedClients.Remove(clientId);
         }
 
         public void AddPlayer(ulong clientId)
         {
-            if (!IsServer)
-            {
-                return;
-            }
+            if (!IsServer) return;
 
             if (FindPlayerIndex(clientId) != -1 || CountHumanPlayers() >= MaxPlayers)
-            {
                 return;
-            }
 
             var name = new FixedString32Bytes($"Player{CountHumanPlayers() + 1}");
             Players.Add(new LobbyPlayerData(clientId, name, false, false));
@@ -136,24 +110,17 @@ namespace Game.Systems
 
         public void RemovePlayer(ulong clientId)
         {
-            if (!IsServer)
-            {
-                return;
-            }
+            if (!IsServer) return;
 
             int index = FindPlayerIndex(clientId);
             if (index != -1)
-            {
                 Players.RemoveAt(index);
-            }
         }
 
         public void SetReady(ulong clientId, bool ready)
         {
-            if (!IsServer || gameStarting)
-            {
-                return;
-            }
+
+            if (!IsServer || gameStarting) return;
 
             Debug.Log($"[SERVER] Players Count: {Players.Count}");
 
@@ -179,12 +146,91 @@ namespace Game.Systems
             }
         }
 
+        public void SubmitReady(bool ready)
+        {
+            if (!CanSubmitLobbyRequest("Ready"))
+                return;
+
+            Debug.Log($"[CLIENT] Sending Ready RPC -> {ready}");
+            SetReadyRequestServerRpc(ready);
+        }
+
+        public void SubmitSceneReady()
+        {
+            if (!CanSubmitLobbyRequest("SceneReady"))
+                return;
+
+            ReportSceneReadyRequestServerRpc();
+        }
+
+        public void SubmitReturnToLobby()
+        {
+            if (!CanSubmitLobbyRequest("ReturnToLobby"))
+                return;
+
+            RequestReturnToLobbyRequestServerRpc();
+        }
+
+        public void SubmitLeaveLobby()
+        {
+            if (!CanSubmitLobbyRequest("LeaveLobby"))
+                return;
+
+            LeaveLobbyRequestServerRpc();
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void SetReadyRequestServerRpc(bool ready, ServerRpcParams rpcParams = default)
+        {
+            ulong clientId = rpcParams.Receive.SenderClientId;
+            Debug.Log($"[SERVER] LobbyManager -> SetReady from {clientId}: {ready}");
+            SetReady(clientId, ready);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void ReportSceneReadyRequestServerRpc(ServerRpcParams rpcParams = default)
+        {
+            ReportSceneReady(rpcParams.Receive.SenderClientId);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void RequestReturnToLobbyRequestServerRpc(ServerRpcParams rpcParams = default)
+        {
+            RequestReturnToLobby(rpcParams.Receive.SenderClientId);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void LeaveLobbyRequestServerRpc(ServerRpcParams rpcParams = default)
+        {
+            LeaveLobby(rpcParams.Receive.SenderClientId);
+        }
+
+        private bool CanSubmitLobbyRequest(string requestName)
+        {
+            if (IsShuttingDown)
+            {
+                Debug.LogWarning($"[CLIENT] Ignoring {requestName} during shutdown.");
+                return false;
+            }
+
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+            {
+                Debug.LogError($"[CLIENT] NetworkManager is not running. Cannot send {requestName}.");
+                return false;
+            }
+
+            if (!IsSpawned)
+            {
+                Debug.LogError($"[CLIENT] LobbyManager is not spawned. Cannot send {requestName}.");
+                return false;
+            }
+
+            return true;
+        }
+
         public void ReportSceneReady(ulong clientId)
         {
-            if (!IsServer)
-            {
-                return;
-            }
+            if (!IsServer) return;
 
             loadedClients.Add(clientId);
 
@@ -201,32 +247,27 @@ namespace Game.Systems
 
         public void RequestReturnToLobby(ulong clientId)
         {
-            if (!IsServer)
-            {
-                return;
-            }
-
+            if (!IsServer) return;
             Debug.Log($"[SERVER] ReturnToLobby requested by {clientId}");
             HandleReturnToLobby();
         }
 
         public void LeaveLobby(ulong clientId)
         {
-            if (!IsServer)
-            {
-                return;
-            }
+            if (!IsServer) return;
 
             bool callerIsHost = clientId == NetworkManager.Singleton.LocalClientId;
             Debug.Log($"[SERVER] LeaveLobby from client {clientId} | isHost: {callerIsHost}");
 
             if (callerIsHost)
             {
+                Debug.Log($"[SERVER] IsListening: {NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening}");
                 DisbandLobbyClientRpc();
                 return;
             }
 
             RemovePlayer(clientId);
+            Debug.Log($"[SERVER] IsListening: {NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening}");
             KickClientRpc(new ClientRpcParams
             {
                 Send = new ClientRpcSendParams
@@ -236,13 +277,31 @@ namespace Game.Systems
             });
         }
 
-        private void HandleReturnToLobby()
+        // ── NEW: name sync ────────────────────────────────────────────────
+        // Called by PlayerNetwork.SendNameServerRpc when a client pushes
+        // their stored name from PlayerDataManager after joining the lobby.
+        // Updates the Players NetworkList so all clients see the correct name.
+        public void UpdatePlayerName(ulong clientId, FixedString32Bytes name)
         {
-            if (!IsServer)
+            if (!IsServer) return;
+
+            int index = FindPlayerIndex(clientId);
+            if (index == -1)
             {
+                Debug.LogWarning($"[SERVER] UpdatePlayerName: client {clientId} not found.");
                 return;
             }
 
+            var player = Players[index];
+            player.PlayerName = name;
+            Players[index] = player;
+            Debug.Log($"[SERVER] Player {clientId} name updated to: {name}");
+        }
+        // ─────────────────────────────────────────────────────────────────
+
+        private void HandleReturnToLobby()
+        {
+            if (!IsServer) return;
             ResetForNewMatch();
             Debug.Log("[SERVER] Loading MainMenu via NGO SceneManager");
             NetworkManager.Singleton.SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
@@ -257,10 +316,7 @@ namespace Game.Systems
 
         public void ResetForNewMatch()
         {
-            if (!IsServer)
-            {
-                return;
-            }
+            if (!IsServer) return;
 
             RemoveAIPlayers();
 
@@ -281,34 +337,49 @@ namespace Game.Systems
         [ClientRpc]
         private void DisbandLobbyClientRpc()
         {
-            Debug.Log("[CLIENT] DisbandLobby -> shutting down NGO then loading MainMenu.");
-            NetworkManager.Singleton.Shutdown();
-            SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
+            BeginClientShutdown("DisbandLobby");
         }
 
         [ClientRpc]
         private void KickClientRpc(ClientRpcParams rpcParams = default)
         {
-            Debug.Log("[CLIENT] Kicked -> shutting down NGO then loading MainMenu.");
-            NetworkManager.Singleton.Shutdown();
+            BeginClientShutdown("KickClient");
+        }
+
+        private static void BeginClientShutdown(string source)
+        {
+            if (IsShuttingDown)
+            {
+                Debug.LogWarning($"[CLIENT] Ignoring duplicate shutdown from {source}.");
+                return;
+            }
+
+            IsShuttingDown = true;
+
+            bool isListening = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
+            Debug.Log($"[CLIENT] IsListening: {isListening}");
+            Debug.Log("[CLIENT] Shutting down NGO...");
+
+            if (isListening)
+                NetworkManager.Singleton.Shutdown();
+
+            if (SessionManager.Instance != null)
+            {
+                SessionManager.Instance.BeginShutdownToMainMenu();
+                return;
+            }
+
+            Debug.LogWarning("[CLIENT] SessionManager missing during shutdown. Loading MainMenu immediately.");
             SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
         }
 
         private bool AreAllPlayersReady()
         {
             int humans = CountHumanPlayers();
-            if (humans < MinPlayers)
-            {
-                return false;
-            }
+            if (humans < MinPlayers) return false;
 
             foreach (var player in Players)
-            {
-                if (!player.IsAI && !player.IsReady)
-                {
-                    return false;
-                }
-            }
+                if (!player.IsAI && !player.IsReady) return false;
 
             return true;
         }
@@ -331,12 +402,7 @@ namespace Game.Systems
         private void RemoveAIPlayers()
         {
             for (int i = Players.Count - 1; i >= 0; i--)
-            {
-                if (Players[i].IsAI)
-                {
-                    Players.RemoveAt(i);
-                }
-            }
+                if (Players[i].IsAI) Players.RemoveAt(i);
         }
 
         private void HandleSceneLoaded(
@@ -345,11 +411,7 @@ namespace Game.Systems
             List<ulong> completed,
             List<ulong> timedOut)
         {
-            if (!IsServer || !gameStarting || sceneName != "LevelPrototype")
-            {
-                return;
-            }
-
+            if (!IsServer || !gameStarting || sceneName != "LevelPrototype") return;
             SpawnPlayers();
         }
 
@@ -362,35 +424,25 @@ namespace Game.Systems
                 return;
             }
 
-            spawner.SpawnAIPlayers(pendingAISpawnCount, aiPlayerPrefab);
+            // Spawn AI players first
+            spawner.SpawnAIPlayers(pendingAISpawnCount);
+
+            // Then spawn all human players
             spawner.SpawnAllPlayers();
         }
 
         private int CountHumanPlayers()
         {
             int count = 0;
-
             foreach (var player in Players)
-            {
-                if (!player.IsAI)
-                {
-                    count++;
-                }
-            }
-
+                if (!player.IsAI) count++;
             return count;
         }
 
         private int FindPlayerIndex(ulong clientId)
         {
             for (int i = 0; i < Players.Count; i++)
-            {
-                if (Players[i].ClientId == clientId)
-                {
-                    return i;
-                }
-            }
-
+                if (Players[i].ClientId == clientId) return i;
             return -1;
         }
     }

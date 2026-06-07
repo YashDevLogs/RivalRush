@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using Game.Core;
+using Game.Audio;
 
 namespace Game.Systems
 {
@@ -26,6 +27,7 @@ namespace Game.Systems
         private IPowerUpEffect activeEffect;
         private IPowerUpEffect mirroredEffect;
         private PowerUpContext context;
+        private PowerUpId localHeldPowerUpId = PowerUpId.None;
         private PowerUpId activePowerUpId = PowerUpId.None;
         private PowerUpId mirroredPowerUpId = PowerUpId.None;
 
@@ -33,7 +35,7 @@ namespace Game.Systems
         // Zero allocation per activation
         private float effectTimeRemaining = -1f;
 
-        public bool HasPowerUp => heldPowerUpId.Value != PowerUpId.None || heldDefinition != null;
+        public bool HasPowerUp => GetHeldPowerUpId() != PowerUpId.None || heldDefinition != null;
         public event Action<PowerUpId> OnPowerUpChanged;
 
         [SerializeField] private PowerUpAssets sharedAssets;
@@ -42,7 +44,7 @@ namespace Game.Systems
         [SerializeField] private MonoBehaviour healthComponent;
         [SerializeField] private MonoBehaviour playerEntityComponent;
 
-        public PowerUpDefinition CurrentDefinition => heldDefinition ?? ResolveDefinition(heldPowerUpId.Value);
+        public PowerUpDefinition CurrentDefinition => heldDefinition ?? ResolveDefinition(GetHeldPowerUpId());
 
         private void Awake()
         {
@@ -100,7 +102,7 @@ namespace Game.Systems
 
         private void Update()
         {
-            if (!IsServer) return;
+            if (!HasGameplayAuthority()) return;
             if (effectTimeRemaining <= 0f) return;
 
             effectTimeRemaining -= Time.deltaTime;
@@ -114,17 +116,27 @@ namespace Game.Systems
 
         public void Pickup(PowerUpDefinition definition)
         {
-            if (!IsServer) return;
+            if (!HasGameplayAuthority()) return;
             if (definition == null) return;
             if (HasPowerUp) return;
 
             heldDefinition = definition;
-            heldPowerUpId.Value = definition.id;
+            SetHeldPowerUpId(definition.id);
             GameEvents.RaisePowerUpPicked(definition.id);
+            if (context.PlayerEntity.IsLocal)
+{
+    SoundManager.PlayLocal(SoundId.PowerupPickup);
+}
         }
 
         public void Activate()
         {
+            if (GameModeState.IsSinglePlayer)
+            {
+                ActivateServerAuthority();
+                return;
+            }
+
             if (IsSpawned && !IsServer)
             {
                 if (!IsOwner)
@@ -145,10 +157,10 @@ namespace Game.Systems
 
         private void ActivateServerAuthority()
         {
-            if (!IsServer) return;
+            if (!HasGameplayAuthority()) return;
             if (!HasPowerUp) return;
 
-            heldDefinition ??= ResolveDefinition(heldPowerUpId.Value);
+            heldDefinition ??= ResolveDefinition(GetHeldPowerUpId());
             if (heldDefinition == null)
                 return;
 
@@ -166,12 +178,12 @@ namespace Game.Systems
                 effectTimeRemaining = definition.duration;
 
             heldDefinition = null;
-            heldPowerUpId.Value = PowerUpId.None;
+            SetHeldPowerUpId(PowerUpId.None);
         }
 
         public void ForceClear()
         {
-            if (!IsServer)
+            if (!HasGameplayAuthority())
             {
                 ClearMirroredEffect();
                 return;
@@ -180,12 +192,12 @@ namespace Game.Systems
             DeactivateCurrentEffect();
             effectTimeRemaining = -1f;
             heldDefinition = null;
-            heldPowerUpId.Value = PowerUpId.None;
+            SetHeldPowerUpId(PowerUpId.None);
         }
 
         public void ClearActiveEffects()
         {
-            if (!IsServer) return;
+            if (!HasGameplayAuthority()) return;
             DeactivateCurrentEffect();
             effectTimeRemaining = -1f;
         }
@@ -234,6 +246,34 @@ namespace Game.Systems
             PowerUpDefinition resolvedDefinition = ResolveDefinition(powerUpId);
             if (resolvedDefinition != null)
                 heldDefinition = resolvedDefinition;
+        }
+
+        private bool HasGameplayAuthority()
+        {
+            return GameModeState.IsSinglePlayer || IsServer;
+        }
+
+        private PowerUpId GetHeldPowerUpId()
+        {
+            return GameModeState.IsSinglePlayer || !IsSpawned
+                ? localHeldPowerUpId
+                : heldPowerUpId.Value;
+        }
+
+        private void SetHeldPowerUpId(PowerUpId powerUpId)
+        {
+            if (GameModeState.IsSinglePlayer || !IsSpawned)
+            {
+                PowerUpId previousValue = localHeldPowerUpId;
+                if (previousValue == powerUpId)
+                    return;
+
+                localHeldPowerUpId = powerUpId;
+                HandleHeldPowerUpChanged(previousValue, powerUpId);
+                return;
+            }
+
+            heldPowerUpId.Value = powerUpId;
         }
 
         private void BroadcastMirroredActivation(PowerUpDefinition definition)

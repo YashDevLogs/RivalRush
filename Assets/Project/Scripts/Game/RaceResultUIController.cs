@@ -3,6 +3,7 @@ using Game.Player;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Game.Systems
 {
@@ -69,9 +70,7 @@ namespace Game.Systems
                 bool isLocal = marker != null && marker == PlayerMarker.Local;
 
                 if (isLocal)
-                {
                     localPlayerRank = i + 1;
-                }
 
                 var identity = playerController != null ? playerController.PlayerIdentity : null;
                 string displayName = identity != null ? identity.DisplayName : "Unknown";
@@ -86,51 +85,42 @@ namespace Game.Systems
         private void UpdateTitle(int rank)
         {
             if (rank == 1)
-            {
                 titleText.text = "YOU WON!";
-            }
             else if (rank > 1)
-            {
                 titleText.text = $"YOU FINISHED {GetOrdinal(rank)}";
-            }
             else
-            {
                 titleText.text = "RACE FINISHED";
-            }
         }
 
         private string GetOrdinal(int number)
         {
             int rem100 = number % 100;
             if (rem100 >= 11 && rem100 <= 13)
-            {
                 return number + "TH";
-            }
 
             switch (number % 10)
             {
-                case 1:
-                    return number + "ST";
-                case 2:
-                    return number + "ND";
-                case 3:
-                    return number + "RD";
-                default:
-                    return number + "TH";
+                case 1: return number + "ST";
+                case 2: return number + "ND";
+                case 3: return number + "RD";
+                default: return number + "TH";
             }
         }
 
         public void OnReturnToLobbyPressed()
         {
-            Debug.Log("[CLIENT] Return to Lobby pressed");
+            Debug.Log("[CLIENT] Return button pressed");
 
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+            if (GameModeState.IsSinglePlayer)
             {
-                Debug.LogError("[CLIENT] NetworkManager is not running.");
+                // SP: just load main menu directly — no NGO involved
+                SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
                 return;
             }
 
+            // MP: route through PlayerNetwork (owned object RPC pattern)
             var localPlayer = NetworkManager.Singleton.LocalClient?.PlayerObject;
+
             if (localPlayer == null)
             {
                 Debug.LogError("[CLIENT] LocalPlayer is NULL");
@@ -138,9 +128,10 @@ namespace Game.Systems
             }
 
             var playerNetwork = localPlayer.GetComponent<PlayerNetwork>();
+
             if (playerNetwork == null)
             {
-                Debug.LogError("[CLIENT] PlayerNetwork missing on PlayerObject");
+                Debug.LogError("[CLIENT] PlayerNetwork missing");
                 return;
             }
 

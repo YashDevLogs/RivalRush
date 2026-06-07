@@ -5,6 +5,7 @@ using Game.AI;
 using UnityEngine;
 using Unity.Netcode;
 using Game.Core;
+using Game.Audio;
 
 namespace Game.Systems
 {
@@ -23,6 +24,7 @@ namespace Game.Systems
         [SerializeField] private Collider2D damageTrigger;
 
         private GameObject owner;
+        private IPlayerEntity ownerEntity;
         private bool armed;
         private bool grounded;
         private bool initialized;
@@ -46,6 +48,9 @@ namespace Game.Systems
         public void Initialize(GameObject ownerObj)
         {
             owner = ownerObj;
+            ownerEntity = ownerObj != null && ownerObj.TryGetComponent<IPlayerEntity>(out var entity)
+                ? entity
+                : null;
             armed = false;
             grounded = false;
             initialized = true;
@@ -95,12 +100,50 @@ namespace Game.Systems
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
+            if (!HasDamageAuthority()) return;
             if (!armed) return;
-            if (other.gameObject == owner) return;
+            if (other.transform.root.gameObject == owner)
+                return;
 
-            if (other.TryGetComponent<IHealth>(out var health))
-                health.TakeDamage(1);
+            Debug.Log($"Trap triggered by: {other.name}");
+
+            IHealth health = other.GetComponentInParent<IHealth>();
+
+            if (health == null)
+            {
+                Debug.LogWarning($"No IHealth found on {other.name}");
+                return;
+            }
+
+            if (health.IsInvincible)
+                return;
+
+            health.TakeDamage(1);
+
+            SoundManager.PlayWorld(
+                SoundId.TrapHit,
+                other.transform.position
+            );
+
+            Debug.Log("TrapHit sound played.");
+
+            IPlayerEntity victim =
+                other.GetComponentInParent<IPlayerEntity>();
+
+            if (victim != null)
+            {
+                RaceManager.Instance?.ReportKill(
+                    ownerEntity,
+                    victim,
+                    PowerUpId.Trap
+                );
+            }
+        }
+
+        private static bool HasDamageAuthority()
+        {
+            return GameModeState.IsSinglePlayer ||
+                   (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
         }
     }
 

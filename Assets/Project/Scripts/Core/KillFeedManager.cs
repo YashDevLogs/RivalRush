@@ -61,8 +61,8 @@ namespace Game.Systems
 
         private void HandleKill(KillEventData data)
         {
-            string killerName = data.KillerIdentity != null ? data.KillerIdentity.DisplayName : "Unknown";
-            string victimName = data.VictimIdentity != null ? data.VictimIdentity.DisplayName : "Unknown";
+            string killerName = !string.IsNullOrWhiteSpace(data.KillerName) ? data.KillerName : "Unknown";
+            string victimName = !string.IsNullOrWhiteSpace(data.VictimName) ? data.VictimName : "Unknown";
             string powerUpName = data.PowerUpId.ToString();
 
             string message =

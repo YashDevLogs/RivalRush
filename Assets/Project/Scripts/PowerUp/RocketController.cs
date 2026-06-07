@@ -5,6 +5,7 @@ using Game.AI;
 using UnityEngine;
 using Unity.Netcode;
 using Game.Core;
+using Game.Audio;
 
 namespace Game.Systems
 {
@@ -33,6 +34,8 @@ namespace Game.Systems
         private bool visualOnly;
         private float lifeTimer;
 
+        private AudioSource rocketLoopSource;
+
         private void Awake()
         {
             if (rb == null)
@@ -51,10 +54,14 @@ namespace Game.Systems
             target = rocketTarget;
             owner = rocketOwner;
             exploded = false;
-            visualOnly = NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer;
+            visualOnly = !HasDamageAuthority();
             lifeTimer = 0f;
             rb.linearVelocity = Vector2.down * maxSpeed * 0.6f;
             rb.simulated = true;
+            rocketLoopSource = SoundManager.PlayAttachedLoop(
+    SoundId.RocketLoop,
+    transform
+);
         }
 
         private void FixedUpdate()
@@ -88,14 +95,24 @@ namespace Game.Systems
         private void Explode()
         {
             if (exploded) return;
-            bool isServer = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
-            if (!isServer && !visualOnly) return;
+            bool hasDamageAuthority = HasDamageAuthority();
+            if (!hasDamageAuthority && !visualOnly) return;
             exploded = true;
 
             Vector2 pos = rb.position;
             rb.linearVelocity = Vector2.zero;
             rb.angularVelocity = 0f;
             rb.simulated = false;
+
+            if (rocketLoopSource != null)
+            {
+                SoundManager.StopLoop(rocketLoopSource);
+                rocketLoopSource = null;
+            }
+            SoundManager.PlayWorld(
+                SoundId.RocketHit,
+                transform.position
+            );
 
             // ✅ VFXPool instead of Instantiate/Destroy
             // Destroy(vfx, lifetime) was showing up as CoroutinesDelayedCalls
@@ -112,7 +129,7 @@ namespace Game.Systems
                 }
             }
 
-            if (!isServer)
+            if (!hasDamageAuthority)
             {
                 ProjectilePool.Instance?.ReturnRocket(this);
                 return;
@@ -125,6 +142,10 @@ namespace Game.Systems
                 if (hit.TryGetComponent<IHealth>(out var health))
                 {
                     health.TakeDamage(1);
+                    SoundManager.PlayWorld(
+    SoundId.Explosion,
+    transform.position
+);
                     RaceManager.Instance?.ReportKill(owner, victim, PowerUpId.Rocket);
                 }
             }
@@ -132,13 +153,19 @@ namespace Game.Systems
             ProjectilePool.Instance?.ReturnRocket(this);
         }
 
-    #if UNITY_EDITOR
+        private static bool HasDamageAuthority()
+        {
+            return GameModeState.IsSinglePlayer ||
+                   (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
+        }
+
+#if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, explosionRadius);
         }
-    #endif
+#endif
     }
 
 }

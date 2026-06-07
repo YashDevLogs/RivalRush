@@ -54,6 +54,10 @@ namespace Game.Player
         private float invincibilityTimer;
         private float blinkTimer;
 
+        private const float RespawnSearchStep = 0.1f;
+        private const int RespawnSearchHorizontalSteps = 20;
+        private const int RespawnSearchVerticalSteps = 20;
+
         private void Awake()
         {
             if (controller == null)
@@ -130,10 +134,175 @@ namespace Game.Player
         {
             if (UsesNetworkAuthority() && !IsServer) return;
 
-            ApplyRespawnState(position);
+            Vector3 safePosition = FindSafeRespawnPosition(position);
+            ApplyRespawnState(safePosition);
 
             if (UsesNetworkAuthority())
-                SyncRespawnClientRpc(position);
+                SyncRespawnClientRpc(safePosition);
+        }
+
+        // Validate the actual respawned collider shape, then choose the
+        // nearest clear point around the intended spawn if geometry blocks it.
+        private Vector3 FindSafeRespawnPosition(Vector3 candidate)
+        {
+            if (col == null) return candidate;
+
+            int blockerMask = GetRespawnBlockerMask();
+
+            if (TryFindClearRespawnPosition(candidate, blockerMask, out Vector3 safePosition))
+                return safePosition;
+
+            if (TryFindClearRespawnPosition(lastDeathPosition, blockerMask, out safePosition))
+                return safePosition;
+
+            Debug.LogError("[PlayerHealth] Could not find a clear respawn position near the candidate or death position.");
+            return candidate;
+        }
+
+        private bool TryFindClearRespawnPosition(Vector3 origin, int blockerMask, out Vector3 safePosition)
+        {
+            if (IsRespawnPositionClear(origin, blockerMask))
+            {
+                safePosition = origin;
+                return true;
+            }
+
+            int maxRadius = Mathf.Max(RespawnSearchHorizontalSteps, RespawnSearchVerticalSteps);
+
+            for (int radius = 1; radius <= maxRadius; radius++)
+            {
+                bool found = false;
+                Vector2 bestOffset = Vector2.zero;
+                float bestScore = float.MaxValue;
+
+                for (int y = -radius; y <= radius; y++)
+                {
+                    if (Mathf.Abs(y) > RespawnSearchVerticalSteps)
+                        continue;
+
+                    for (int x = -radius; x <= radius; x++)
+                    {
+                        if (Mathf.Abs(x) > RespawnSearchHorizontalSteps)
+                            continue;
+
+                        if (Mathf.Max(Mathf.Abs(x), Mathf.Abs(y)) != radius)
+                            continue;
+
+                        Vector2 offset = new Vector2(x * RespawnSearchStep, y * RespawnSearchStep);
+                        Vector3 testPosition = origin + (Vector3)offset;
+
+                        if (!IsRespawnPositionClear(testPosition, blockerMask))
+                            continue;
+
+                        float score = offset.sqrMagnitude;
+                        if (!found || IsBetterRespawnOffset(offset, score, bestOffset, bestScore))
+                        {
+                            found = true;
+                            bestOffset = offset;
+                            bestScore = score;
+                        }
+                    }
+                }
+
+                if (found)
+                {
+                    safePosition = origin + (Vector3)bestOffset;
+                    return true;
+                }
+            }
+
+            safePosition = origin;
+            return false;
+        }
+
+        private bool IsBetterRespawnOffset(Vector2 offset, float score, Vector2 bestOffset, float bestScore)
+        {
+            if (score < bestScore - 0.0001f)
+                return true;
+
+            if (score > bestScore + 0.0001f)
+                return false;
+
+            bool offsetIsAbove = offset.y >= 0f;
+            bool bestIsAbove = bestOffset.y >= 0f;
+            if (offsetIsAbove != bestIsAbove)
+                return offsetIsAbove;
+
+            float absX = Mathf.Abs(offset.x);
+            float bestAbsX = Mathf.Abs(bestOffset.x);
+            if (!Mathf.Approximately(absX, bestAbsX))
+                return absX < bestAbsX;
+
+            return offset.y > bestOffset.y;
+        }
+
+        private bool IsRespawnPositionClear(Vector3 position, int blockerMask)
+        {
+            Collider2D[] hits = GetRespawnOverlaps(position, blockerMask);
+
+            for (int i = 0; i < hits.Length; i++)
+            {
+                if (IsRespawnBlockingCollider(hits[i]))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private Collider2D[] GetRespawnOverlaps(Vector3 position, int blockerMask)
+        {
+            float angle = transform.eulerAngles.z;
+
+            if (col is CapsuleCollider2D capsule)
+            {
+                Vector2 center = (Vector2)position + (Vector2)transform.TransformVector(capsule.offset);
+                Vector2 size = Vector2.Scale(capsule.size, Abs(transform.lossyScale));
+                return Physics2D.OverlapCapsuleAll(center, size, capsule.direction, angle, blockerMask);
+            }
+
+            if (col is BoxCollider2D box)
+            {
+                Vector2 center = (Vector2)position + (Vector2)transform.TransformVector(box.offset);
+                Vector2 size = Vector2.Scale(box.size, Abs(transform.lossyScale));
+                return Physics2D.OverlapBoxAll(center, size, angle, blockerMask);
+            }
+
+            Vector2 boundsOffset = col.bounds.center - transform.position;
+            return Physics2D.OverlapBoxAll((Vector2)position + boundsOffset, col.bounds.size, angle, blockerMask);
+        }
+
+        private bool IsRespawnBlockingCollider(Collider2D hit)
+        {
+            if (hit == null || hit == col || hit.isTrigger)
+                return false;
+
+            if (hit.transform == transform || hit.transform.IsChildOf(transform))
+                return false;
+
+            return true;
+        }
+
+        private int GetRespawnBlockerMask()
+        {
+            int blockerMask = Physics2D.GetLayerCollisionMask(gameObject.layer);
+            if (blockerMask == 0)
+                blockerMask = Physics2D.AllLayers;
+
+            ClearLayerFromMask(ref blockerMask, "Player");
+            ClearLayerFromMask(ref blockerMask, "AI");
+            return blockerMask;
+        }
+
+        private static void ClearLayerFromMask(ref int mask, string layerName)
+        {
+            int layer = LayerMask.NameToLayer(layerName);
+            if (layer >= 0)
+                mask &= ~(1 << layer);
+        }
+
+        private static Vector2 Abs(Vector3 value)
+        {
+            return new Vector2(Mathf.Abs(value.x), Mathf.Abs(value.y));
         }
 
         private void RestorePhysics()
@@ -213,6 +382,9 @@ namespace Game.Player
 
         private void ApplyRespawnState(Vector3 position)
         {
+            if (rb != null)
+                rb.position = (Vector2)position;
+
             transform.position = position;
 
             ClearPowerUpEffects();

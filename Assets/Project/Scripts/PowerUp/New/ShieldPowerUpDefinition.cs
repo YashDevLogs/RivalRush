@@ -4,6 +4,7 @@ using Game.Player;
 using Game.AI;
 using UnityEngine;
 using Game.Core;
+using Game.Audio;
 
 namespace Game.Systems
 {
@@ -33,6 +34,7 @@ namespace Game.Systems
                 }
 
                 ctx.Health.SetInvincible(true);
+                SoundManager.Play(SoundId.ShieldPop);
 
                 // ✅ Pool instead of Instantiate
                 // VFXPool handles the shield visual lifecycle — no Destroy on Deactivate
@@ -70,6 +72,7 @@ namespace Game.Systems
 
                     visual = null;
                     pooledVisual = null;
+                    SoundManager.Play(SoundId.ShieldPop);
                 }
             }
         }

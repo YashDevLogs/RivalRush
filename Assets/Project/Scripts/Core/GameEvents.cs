@@ -279,8 +279,8 @@ namespace Game.Core
         {
             if (value is KillEventData killEventData)
             {
-                string killer = killEventData.KillerIdentity != null ? killEventData.KillerIdentity.DisplayName : "Unknown";
-                string victim = killEventData.VictimIdentity != null ? killEventData.VictimIdentity.DisplayName : "Unknown";
+                string killer = !string.IsNullOrWhiteSpace(killEventData.KillerName) ? killEventData.KillerName : "Unknown";
+                string victim = !string.IsNullOrWhiteSpace(killEventData.VictimName) ? killEventData.VictimName : "Unknown";
                 return $"Killer={killer}, Victim={victim}, PowerUp={killEventData.PowerUpId}";
             }
 

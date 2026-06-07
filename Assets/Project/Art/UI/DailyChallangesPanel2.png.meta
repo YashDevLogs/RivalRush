@@ -1,0 +1,1560 @@
+fileFormatVersion: 2
+guid: 41b1e8fcd65d4d94a9a6fa6c9e910b3d
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1279337167322597030
+    second: DailyChallangesPanel2_0
+  - first:
+      213: -1828542737880403789
+    second: DailyChallangesPanel2_1
+  - first:
+      213: 5795816004695746427
+    second: DailyChallangesPanel2_2
+  - first:
+      213: 3582396059652020588
+    second: DailyChallangesPanel2_3
+  - first:
+      213: -8243726515070707852
+    second: DailyChallangesPanel2_4
+  - first:
+      213: 6113048335831166098
+    second: DailyChallangesPanel2_5
+  - first:
+      213: 2714953937494638888
+    second: DailyChallangesPanel2_6
+  - first:
+      213: 2911768278467415474
+    second: DailyChallangesPanel2_7
+  - first:
+      213: 7752839480486622085
+    second: DailyChallangesPanel2_8
+  - first:
+      213: 5138869592717432605
+    second: DailyChallangesPanel2_9
+  - first:
+      213: -6610038602486827430
+    second: DailyChallangesPanel2_10
+  - first:
+      213: 809855600968182672
+    second: DailyChallangesPanel2_11
+  - first:
+      213: -988240646171031692
+    second: DailyChallangesPanel2_12
+  - first:
+      213: -6678460663629581199
+    second: DailyChallangesPanel2_13
+  - first:
+      213: -7444086093808322621
+    second: DailyChallangesPanel2_14
+  - first:
+      213: 1060639785811303186
+    second: DailyChallangesPanel2_15
+  - first:
+      213: -8995181535043790046
+    second: DailyChallangesPanel2_16
+  - first:
+      213: -2849202245138718916
+    second: DailyChallangesPanel2_17
+  - first:
+      213: -2013965846935738871
+    second: DailyChallangesPanel2_18
+  - first:
+      213: 51059697529826990
+    second: DailyChallangesPanel2_19
+  - first:
+      213: 5509608254441443541
+    second: DailyChallangesPanel2_20
+  - first:
+      213: -7924619696763198492
+    second: DailyChallangesPanel2_21
+  - first:
+      213: 6539618454359735524
+    second: DailyChallangesPanel2_22
+  - first:
+      213: -8592189126023072745
+    second: DailyChallangesPanel2_23
+  - first:
+      213: 7692658129504640145
+    second: DailyChallangesPanel2_24
+  - first:
+      213: 1840166707917919520
+    second: DailyChallangesPanel2_25
+  - first:
+      213: 7866086674844852492
+    second: DailyChallangesPanel2_26
+  - first:
+      213: 488095989039877912
+    second: DailyChallangesPanel2_27
+  - first:
+      213: 752173354088548289
+    second: DailyChallangesPanel2_28
+  - first:
+      213: 8463630186829557361
+    second: DailyChallangesPanel2_29
+  - first:
+      213: -8368802730212145473
+    second: DailyChallangesPanel2_30
+  - first:
+      213: 1701021943765197712
+    second: DailyChallangesPanel2_31
+  - first:
+      213: 2738440631299758813
+    second: DailyChallangesPanel2_32
+  - first:
+      213: 3234532872516875405
+    second: DailyChallangesPanel2_33
+  - first:
+      213: 2324287289746809289
+    second: DailyChallangesPanel2_34
+  - first:
+      213: 6296730705693870793
+    second: DailyChallangesPanel2_35
+  - first:
+      213: -8186372213825037377
+    second: DailyChallangesPanel2_36
+  - first:
+      213: -7672740907626172404
+    second: DailyChallangesPanel2_37
+  - first:
+      213: 7978389337402610482
+    second: DailyChallangesPanel2_38
+  - first:
+      213: 2921734194023611645
+    second: DailyChallangesPanel2_39
+  - first:
+      213: -2839161137038654932
+    second: DailyChallangesPanel2_40
+  - first:
+      213: -5052125368113546703
+    second: DailyChallangesPanel2_41
+  - first:
+      213: 2056411072752792642
+    second: DailyChallangesPanel2_42
+  - first:
+      213: 9140875382040269619
+    second: DailyChallangesPanel2_43
+  - first:
+      213: -6904592087295219384
+    second: DailyChallangesPanel2_44
+  - first:
+      213: 7251002298793542157
+    second: DailyChallangesPanel2_45
+  - first:
+      213: 5820284776987629679
+    second: DailyChallangesPanel2_46
+  - first:
+      213: 5757473313729310788
+    second: DailyChallangesPanel2_47
+  - first:
+      213: 2286627374371822525
+    second: DailyChallangesPanel2_48
+  - first:
+      213: -4184910762862914058
+    second: DailyChallangesPanel2_49
+  - first:
+      213: 8972022935664448449
+    second: DailyChallangesPanel2_50
+  - first:
+      213: 3114154552390776399
+    second: DailyChallangesPanel2_51
+  - first:
+      213: 3234506202026168514
+    second: DailyChallangesPanel2_52
+  - first:
+      213: 2931958283918097798
+    second: DailyChallangesPanel2_53
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 113
+        height: 1024
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6a6c73e106e11c110800000000000000
+      internalID: 1279337167322597030
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_1
+      rect:
+        serializedVersion: 2
+        x: 123
+        y: 0
+        width: 1403
+        height: 1024
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b0b4046116bf96e0800000000000000
+      internalID: -1828542737880403789
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_2
+      rect:
+        serializedVersion: 2
+        x: 926
+        y: 1016
+        width: 92
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b77e96fd2ffde6050800000000000000
+      internalID: 5795816004695746427
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_3
+      rect:
+        serializedVersion: 2
+        x: 994
+        y: 1008
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c6951546c3a37b130800000000000000
+      internalID: 3582396059652020588
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_4
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 1006
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 477ddb36966689d80800000000000000
+      internalID: -8243726515070707852
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_5
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 990
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 29c6208b219e5d450800000000000000
+      internalID: 6113048335831166098
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_6
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 998
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8218ae1c8347da520800000000000000
+      internalID: 2714953937494638888
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_7
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 974
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2bd0d4272dda86820800000000000000
+      internalID: 2911768278467415474
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_8
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 982
+        width: 6
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 58377036e6e979b60800000000000000
+      internalID: 7752839480486622085
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_9
+      rect:
+        serializedVersion: 2
+        x: 1088
+        y: 978
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d179afceaaee05740800000000000000
+      internalID: 5138869592717432605
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_10
+      rect:
+        serializedVersion: 2
+        x: 80
+        y: 940
+        width: 9
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a56372b99ec6444a0800000000000000
+      internalID: -6610038602486827430
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_11
+      rect:
+        serializedVersion: 2
+        x: 994
+        y: 952
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 09ba117d06f2d3b00800000000000000
+      internalID: 809855600968182672
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_12
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 867
+        width: 8
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4778f544e501942f0800000000000000
+      internalID: -988240646171031692
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_13
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 854
+        width: 8
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 17470f119675153a0800000000000000
+      internalID: -6678460663629581199
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_14
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 846
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3c7312d532b41b890800000000000000
+      internalID: -7444086093808322621
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_15
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 822
+        width: 6
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 21bdde3044628be00800000000000000
+      internalID: 1060639785811303186
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_16
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 797
+        width: 7
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 22bdf896d02ba2380800000000000000
+      internalID: -8995181535043790046
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_17
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 814
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c3fd24d57a99578d0800000000000000
+      internalID: -2849202245138718916
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_18
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 791
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 90660af8bb4fc04e0800000000000000
+      internalID: -2013965846935738871
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_19
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 725
+        width: 8
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eaeaa9d368665b000800000000000000
+      internalID: 51059697529826990
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_20
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 739
+        width: 6
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5d0da89248f067c40800000000000000
+      internalID: 5509608254441443541
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_21
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 686
+        width: 8
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4e3ad5a4f58160290800000000000000
+      internalID: -7924619696763198492
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_22
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 630
+        width: 8
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4ec73baf55461ca50800000000000000
+      internalID: 6539618454359735524
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_23
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 622
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 714bb64638962c880800000000000000
+      internalID: -8592189126023072745
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_24
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 534
+        width: 6
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 19c15a3bfcfc1ca60800000000000000
+      internalID: 7692658129504640145
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_25
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 526
+        width: 6
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 02592f80fd5998910800000000000000
+      internalID: 1840166707917919520
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_26
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 486
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c01af8a8724f92d60800000000000000
+      internalID: 7866086674844852492
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_27
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 470
+        width: 6
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 81fc30b47b016c600800000000000000
+      internalID: 488095989039877912
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_28
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 448
+        width: 8
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1c746fb2ea1407a00800000000000000
+      internalID: 752173354088548289
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_29
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 430
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 17eaf3c00dad47570800000000000000
+      internalID: 8463630186829557361
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_30
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 398
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fb6c266b14a0cdb80800000000000000
+      internalID: -8368802730212145473
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_31
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 390
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 093e449027e3b9710800000000000000
+      internalID: 1701021943765197712
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_32
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 336
+        width: 8
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dda5e1bce35e00620800000000000000
+      internalID: 2738440631299758813
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_33
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 326
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d8431b0a28e53ec20800000000000000
+      internalID: 3234532872516875405
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_34
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 276
+        width: 8
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9c16055b9f6814020800000000000000
+      internalID: 2324287289746809289
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_35
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 246
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9ca8d2f173b726750800000000000000
+      internalID: 6296730705693870793
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_36
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 230
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fbb94d348d9246e80800000000000000
+      internalID: -8186372213825037377
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_37
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 236
+        width: 6
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c007553ebc2f48590800000000000000
+      internalID: -7672740907626172404
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_38
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 220
+        width: 8
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 23395afb4dee8be60800000000000000
+      internalID: 7978389337402610482
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_39
+      rect:
+        serializedVersion: 2
+        x: 79
+        y: 166
+        width: 10
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dfcb3eaf4c51c8820800000000000000
+      internalID: 2921734194023611645
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_40
+      rect:
+        serializedVersion: 2
+        x: 994
+        y: 168
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c2287b60df54998d0800000000000000
+      internalID: -2839161137038654932
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_41
+      rect:
+        serializedVersion: 2
+        x: 1041
+        y: 168
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 13a3ad8bebe33e9b0800000000000000
+      internalID: -5052125368113546703
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_42
+      rect:
+        serializedVersion: 2
+        x: 995
+        y: 154
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2443c9fa9f6d98c10800000000000000
+      internalID: 2056411072752792642
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_43
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 134
+        width: 7
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3339f92cab9eade70800000000000000
+      internalID: 9140875382040269619
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_44
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 91
+        width: 8
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 849abc52416fd20a0800000000000000
+      internalID: -6904592087295219384
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_45
+      rect:
+        serializedVersion: 2
+        x: 994
+        y: 96
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d02412d5c2cb0a460800000000000000
+      internalID: 7251002298793542157
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_46
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 86
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f6816ffda2ec5c050800000000000000
+      internalID: 5820284776987629679
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_47
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 70
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 44070a47977a6ef40800000000000000
+      internalID: 5757473313729310788
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_48
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 54
+        width: 6
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dbbdd1f5b7bbbbf10800000000000000
+      internalID: 2286627374371822525
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_49
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 30
+        width: 7
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6f5d8d275d53ce5c0800000000000000
+      internalID: -4184910762862914058
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_50
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 22
+        width: 6
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1c3dfecf257038c70800000000000000
+      internalID: 8972022935664448449
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_51
+      rect:
+        serializedVersion: 2
+        x: 994
+        y: 24
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f46faeed013b73b20800000000000000
+      internalID: 3114154552390776399
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_52
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 0
+        width: 7
+        height: 5
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2c0519be04643ec20800000000000000
+      internalID: 3234506202026168514
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DailyChallangesPanel2_53
+      rect:
+        serializedVersion: 2
+        x: 1041
+        y: 0
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 68db339668860b820800000000000000
+      internalID: 2931958283918097798
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      DailyChallangesPanel2_0: 1279337167322597030
+      DailyChallangesPanel2_1: -1828542737880403789
+      DailyChallangesPanel2_10: -6610038602486827430
+      DailyChallangesPanel2_11: 809855600968182672
+      DailyChallangesPanel2_12: -988240646171031692
+      DailyChallangesPanel2_13: -6678460663629581199
+      DailyChallangesPanel2_14: -7444086093808322621
+      DailyChallangesPanel2_15: 1060639785811303186
+      DailyChallangesPanel2_16: -8995181535043790046
+      DailyChallangesPanel2_17: -2849202245138718916
+      DailyChallangesPanel2_18: -2013965846935738871
+      DailyChallangesPanel2_19: 51059697529826990
+      DailyChallangesPanel2_2: 5795816004695746427
+      DailyChallangesPanel2_20: 5509608254441443541
+      DailyChallangesPanel2_21: -7924619696763198492
+      DailyChallangesPanel2_22: 6539618454359735524
+      DailyChallangesPanel2_23: -8592189126023072745
+      DailyChallangesPanel2_24: 7692658129504640145
+      DailyChallangesPanel2_25: 1840166707917919520
+      DailyChallangesPanel2_26: 7866086674844852492
+      DailyChallangesPanel2_27: 488095989039877912
+      DailyChallangesPanel2_28: 752173354088548289
+      DailyChallangesPanel2_29: 8463630186829557361
+      DailyChallangesPanel2_3: 3582396059652020588
+      DailyChallangesPanel2_30: -8368802730212145473
+      DailyChallangesPanel2_31: 1701021943765197712
+      DailyChallangesPanel2_32: 2738440631299758813
+      DailyChallangesPanel2_33: 3234532872516875405
+      DailyChallangesPanel2_34: 2324287289746809289
+      DailyChallangesPanel2_35: 6296730705693870793
+      DailyChallangesPanel2_36: -8186372213825037377
+      DailyChallangesPanel2_37: -7672740907626172404
+      DailyChallangesPanel2_38: 7978389337402610482
+      DailyChallangesPanel2_39: 2921734194023611645
+      DailyChallangesPanel2_4: -8243726515070707852
+      DailyChallangesPanel2_40: -2839161137038654932
+      DailyChallangesPanel2_41: -5052125368113546703
+      DailyChallangesPanel2_42: 2056411072752792642
+      DailyChallangesPanel2_43: 9140875382040269619
+      DailyChallangesPanel2_44: -6904592087295219384
+      DailyChallangesPanel2_45: 7251002298793542157
+      DailyChallangesPanel2_46: 5820284776987629679
+      DailyChallangesPanel2_47: 5757473313729310788
+      DailyChallangesPanel2_48: 2286627374371822525
+      DailyChallangesPanel2_49: -4184910762862914058
+      DailyChallangesPanel2_5: 6113048335831166098
+      DailyChallangesPanel2_50: 8972022935664448449
+      DailyChallangesPanel2_51: 3114154552390776399
+      DailyChallangesPanel2_52: 3234506202026168514
+      DailyChallangesPanel2_53: 2931958283918097798
+      DailyChallangesPanel2_6: 2714953937494638888
+      DailyChallangesPanel2_7: 2911768278467415474
+      DailyChallangesPanel2_8: 7752839480486622085
+      DailyChallangesPanel2_9: 5138869592717432605
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

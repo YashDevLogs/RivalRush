@@ -6,6 +6,7 @@ using UnityEngine;
 using System;
 using Game.Core;
 using Unity.Netcode;
+using Game.Audio;
 
 namespace Game.Player
 {
@@ -26,15 +27,20 @@ namespace Game.Player
         [SerializeField] private BoxCollider2D boxCollider;
         [SerializeField] private CapsuleCollider2D capsuleCollider;
 
+        private bool wasGrounded;
+        private float lastVerticalVelocity;
+        private float maxFallVelocity;
+
         private Vector2 colliderOriginalSize;
         private Vector2 colliderOriginalOffset;
         private bool colliderCached;
         private float originalGravityScale;
         private int climbableWallLayer;
-        private readonly NetworkVariable<bool> syncedIsGrounded = new(
-            false,
+
+        private readonly NetworkVariable<PlayerState> syncedVisualState = new(
+            PlayerState.Idle,
             NetworkVariableReadPermission.Everyone,
-            NetworkVariableWritePermission.Owner
+            NetworkVariableWritePermission.Server
         );
 
         public event Action OnJump;
@@ -74,8 +80,7 @@ namespace Game.Player
             if (playerIdentity == null)
                 Debug.LogWarning($"[PlayerController] No PlayerIdentity assigned on {name}");
 
-            if (model == null)
-                return;
+            if (model == null) return;
 
             model.MaxRunSpeed = model.BaseMaxRunSpeed;
 
@@ -88,19 +93,27 @@ namespace Game.Player
             }
         }
 
+        private bool wasRaceActive;
+
         private void Start()
         {
             model.JumpsLeft = model.MaxJumps;
-            UpdateState(PlayerState.Running);
-        }
+            UpdateState(PlayerState.Idle);
+            view?.SetSpeed(0f);
+            wasRaceActive = false;
 
-        private void OnEnable()
-        {
-            lastPosition = transform.position;
+            // SP: register with RaceManager here (no OnNetworkSpawn in SP)
+            if (GameModeState.IsSinglePlayer)
+            {
+                RestoreSinglePlayerPhysics();
+                RaceManager.Instance?.RegisterPlayerLocal(this, this);
+            }
         }
 
         public override void OnNetworkSpawn()
         {
+            syncedVisualState.OnValueChanged += HandleSyncedVisualStateChanged;
+
             string contextPrefix = IsServer ? "[SERVER]" : "[CLIENT]";
             Debug.Log(
                 $"{contextPrefix}[PLAYER] Spawned '{name}' | IsOwner: {IsOwner} | IsLocal: {IsLocal} | NetworkObjectId: {NetworkObjectId}"
@@ -108,9 +121,17 @@ namespace Game.Player
 
             if (IsServer)
             {
+                syncedVisualState.Value = model != null ? model.State : PlayerState.Idle;
                 RaceManager.Instance?.RegisterPlayer(this, this);
             }
 
+            if (!IsLocal)
+                ApplySyncedVisualState(syncedVisualState.Value, false);
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            syncedVisualState.OnValueChanged -= HandleSyncedVisualStateChanged;
         }
 
         private void Update()
@@ -128,18 +149,13 @@ namespace Game.Player
 
         private void FixedUpdate()
         {
-            // Client prediction is intentionally disabled.
-            // See PlayerInputData.cs for the design and instructions to re-enable.
-            // Current model: owner-authoritative movement, server-confirmed jumps only.
-            // At >100ms RTT, player-controlled characters will feel slightly laggy.
             int currentTick = GetCurrentTick();
 
-            HandleGround(currentTick);
+            lastVerticalVelocity = rb.linearVelocity.y;
 
             if (!IsLocal)
             {
-                // Remote players should never process local input here.
-                // They only simulate movement/state updates.
+                // Remote players in MP — no local input processing
             }
             else
             {
@@ -148,24 +164,63 @@ namespace Game.Player
 
             if (model.HasFinishedRace)
             {
+                const float finishDeceleration = 20f;
+
+                rb.linearVelocity = new Vector2(
+                    Mathf.MoveTowards(
+                        rb.linearVelocity.x,
+                        0f,
+                        finishDeceleration * Time.fixedDeltaTime
+                    ),
+                    rb.linearVelocity.y
+                );
+
                 if (Mathf.Abs(rb.linearVelocity.x) <= model.IdleSpeedThreshold)
                 {
                     rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
                     UpdateState(PlayerState.Idle);
                 }
+
                 return;
             }
-
             if (RaceManager.Instance == null || !RaceManager.Instance.CanMove())
             {
                 rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
                 return;
             }
 
+            // Apply movement FIRST
             ApplyMovementTick(currentTick);
+
+            // THEN cache strongest airborne downward velocity
+            if (!model.IsGrounded)
+            {
+                maxFallVelocity =
+                    Mathf.Min(maxFallVelocity, rb.linearVelocity.y);
+            }
+
+            // THEN evaluate landing transition
+            HandleGround(currentTick);
         }
 
-        // ADDED: helper for all tick-based gameplay windows.
+        public void EnableLocalControl()
+        {
+            model.ControlEnabled = true;
+            model.JumpsLeft = model.MaxJumps;
+
+            if (GameModeState.IsSinglePlayer)
+                RestoreSinglePlayerPhysics();
+        }
+
+        private void RestoreSinglePlayerPhysics()
+        {
+            if (rb == null) return;
+
+            rb.simulated = true;
+            rb.bodyType = RigidbodyType2D.Dynamic;
+            rb.gravityScale = originalGravityScale;
+        }
+
         private int SecondsToTicks(float seconds)
         {
             int tickRate = TickManager.Instance != null ? TickManager.Instance.TickRate : 60;
@@ -177,7 +232,6 @@ namespace Game.Player
             return TickManager.Instance != null ? TickManager.Instance.CurrentTick : 0;
         }
 
-        // MODIFIED: timing is tick-based only.
         private void ApplyMovementTick(int currentTick)
         {
             if (model.State == PlayerState.WallCling)
@@ -221,19 +275,18 @@ namespace Game.Player
                 UpdateState(PlayerState.Falling);
         }
 
-        // MODIFIED: ground timing uses ticks instead of Time.time.
         private void HandleGround(int currentTick)
         {
             bool wasGrounded = model.IsGrounded;
 
+            // Prevent immediate re-grounding after jump
             if (currentTick < model.NextAllowedGroundCheckTick)
             {
                 model.IsGrounded = false;
-                if (IsOwner)
-                    syncedIsGrounded.Value = false;
                 return;
             }
 
+            // Ground check
             model.IsGrounded = Physics2D.OverlapBox(
                 model.GroundCheck.position,
                 model.GroundCheckSize,
@@ -241,23 +294,34 @@ namespace Game.Player
                 model.GroundLayer
             );
 
+            // Landing logic
             if (model.IsGrounded)
             {
                 model.LastGroundedTick = currentTick;
                 model.JumpsLeft = model.MaxJumps;
 
+                // Transition: Airborne -> Grounded
                 if (!wasGrounded)
                 {
                     OnLand?.Invoke();
+
+                    // Local-only landing sound
+                    // Prevents AI + remote player spam
+                    // Velocity threshold prevents tiny bump spam
+                    if (IsLocal && maxFallVelocity < -4f)
+                    {
+                        Debug.Log($"Landing sound played | MaxFallVelocity: {maxFallVelocity}");
+
+                        SoundManager.PlayLocal(SoundId.Landing);
+                    }
+
+                    maxFallVelocity = 0f;
+
                     UpdateState(PlayerState.Running);
                 }
             }
-
-            if (IsOwner)
-                syncedIsGrounded.Value = model.IsGrounded;
         }
 
-        // MODIFIED: jump buffer and coyote time are tick-based.
         private void TryConsumeBufferedJump(int currentTick)
         {
             if (model.IsWallClinging) return;
@@ -283,61 +347,41 @@ namespace Game.Player
             model.JumpsLeft = Mathf.Max(0, model.JumpsLeft - 1);
             model.NextAllowedGroundCheckTick = currentTick + SecondsToTicks(model.GroundGraceDelay);
 
-            if (IsOwner)
-                syncedIsGrounded.Value = false;
-
             view?.UpdateMovement(model.CurrentRunSpeed / model.MaxRunSpeed, false);
             view?.TriggerJump();
 
-            // ✅ ONLY OWNER calls ServerRpc
-            if (IsOwner)
-            {
-                NotifyJumpServerRpc();
-            }
-            else if (IsServer)
-            {
-                // AI or server-controlled players
-                PlayJumpClientRpc();
-            }
-
             OnJump?.Invoke();
+            if (IsLocal)
+            {
+                SoundManager.PlayLocal(SoundId.Jump);
+            }
             UpdateState(PlayerState.Jumping);
         }
 
-        [ServerRpc]
-        private void NotifyJumpServerRpc()
-        {
-            PlayJumpClientRpc();
-        }
-
-        [ClientRpc]
-        private void PlayJumpClientRpc()
-        {
-            if (IsLocal) return;
-            view?.TriggerJump();
-        }
-
-        private Vector3 lastPosition;
-
         private void UpdateAnimator()
         {
-            float normalizedSpeed;
+            bool raceActive = RaceManager.Instance != null && RaceManager.Instance.CanMove();
 
-            if (IsLocal)
+            bool raceJustStarted = raceActive && !wasRaceActive;
+            wasRaceActive = raceActive;
+
+            if (raceJustStarted && model.State == PlayerState.Idle && model.ControlEnabled)
+                UpdateState(PlayerState.Running);
+
+            if (!raceActive)
             {
-                normalizedSpeed = model.CurrentRunSpeed / model.MaxRunSpeed;
+                view?.UpdateMovement(0f, true);
+                return;
+            }
+
+            if (IsLocal || GameModeState.IsSinglePlayer)
+            {
+                float normalizedSpeed = GetLocalNormalizedAnimationSpeed();
                 view?.UpdateMovement(normalizedSpeed, model.IsGrounded);
                 return;
             }
 
-            float delta = (transform.position - lastPosition).magnitude;
-            float speed = delta / Mathf.Max(Time.deltaTime, 0.0001f);
-            normalizedSpeed = Mathf.Clamp01(speed / model.MaxRunSpeed);
-
-            bool isGrounded = syncedIsGrounded.Value;
-            view?.UpdateMovement(normalizedSpeed, isGrounded);
-
-            lastPosition = transform.position;
+            ApplySyncedVisualState(syncedVisualState.Value, false);
         }
 
         private void UpdateState(PlayerState newState)
@@ -345,6 +389,77 @@ namespace Game.Player
             if (model.State == newState) return;
             model.State = newState;
             OnStateChanged?.Invoke(newState);
+            SyncVisualState(newState);
+        }
+
+        private float GetLocalNormalizedAnimationSpeed()
+        {
+            if (model.MaxRunSpeed <= 0f)
+                return 0f;
+
+            return Mathf.Clamp01(model.CurrentRunSpeed / model.MaxRunSpeed);
+        }
+
+        private static bool IsGroundedVisualState(PlayerState state)
+        {
+            return state == PlayerState.Idle
+                || state == PlayerState.Running
+                || state == PlayerState.Sliding;
+        }
+
+        private static float GetSyncedAnimationSpeed(PlayerState state)
+        {
+            return state switch
+            {
+                PlayerState.Running => 1f,
+                PlayerState.Jumping => 1f,
+                PlayerState.Falling => 1f,
+                PlayerState.Sliding => 1f,
+                PlayerState.WallCling => 0f,
+                _ => 0f
+            };
+        }
+
+        private void SyncVisualState(PlayerState state)
+        {
+            if (GameModeState.IsSinglePlayer || !IsSpawned)
+                return;
+
+            if (IsServer)
+            {
+                if (syncedVisualState.Value != state)
+                    syncedVisualState.Value = state;
+                return;
+            }
+
+            if (IsOwner)
+                SubmitVisualStateServerRpc(state);
+        }
+
+        [ServerRpc]
+        private void SubmitVisualStateServerRpc(PlayerState state)
+        {
+            if (syncedVisualState.Value != state)
+                syncedVisualState.Value = state;
+        }
+
+        private void HandleSyncedVisualStateChanged(PlayerState previousState, PlayerState currentState)
+        {
+            if (IsLocal)
+                return;
+
+            ApplySyncedVisualState(currentState, previousState != currentState);
+        }
+
+        private void ApplySyncedVisualState(PlayerState state, bool stateChanged)
+        {
+            if (model != null)
+                model.State = state;
+
+            view?.UpdateMovement(GetSyncedAnimationSpeed(state), IsGroundedVisualState(state));
+
+            if (stateChanged && state == PlayerState.Jumping)
+                view?.TriggerJump();
         }
 
         public bool TryGetInputSource(out IInputSource inputSource)
@@ -422,6 +537,7 @@ namespace Game.Player
             model.HasFinishedRace = true;
             model.ControlEnabled = false;
             model.CurrentRunSpeed = 0f;
+
             RestoreCollider();
             EndWallCling();
             UpdateState(PlayerState.Disabled);
@@ -537,15 +653,7 @@ namespace Game.Player
             model.WallClingEndTick = currentTick;
             EndWallCling();
 
-            if (IsOwner)
-                syncedIsGrounded.Value = false;
-
             view?.TriggerJump();
-
-            if (!IsServer)
-                NotifyJumpServerRpc();
-            else
-                PlayJumpClientRpc();
 
             OnJump?.Invoke();
             UpdateState(PlayerState.Jumping);
@@ -629,11 +737,9 @@ namespace Game.Player
             if (!RaceManager.Instance.CanMove())
                 return false;
 
-            // ✅ HUMAN PLAYER
             if (PlayerMarker != null)
                 return PlayerMarker.IsLocal;
 
-            // ✅ AI PLAYER (no PlayerMarker)
             return true;
         }
 
@@ -650,6 +756,27 @@ namespace Game.Player
             );
         }
 #endif
-    }
 
+        public void PlayLeftFootstep()
+        {
+            if (!IsLocal)
+                return;
+
+            if (!model.IsGrounded)
+                return;
+
+            SoundManager.PlayLocal(SoundId.FootstepLeft);
+        }
+
+        public void PlayRightFootstep()
+        {
+            if (!IsLocal)
+                return;
+
+            if (!model.IsGrounded)
+                return;
+
+            SoundManager.PlayLocal(SoundId.FootstepRight);
+        }
+    }
 }

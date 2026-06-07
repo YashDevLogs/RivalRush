@@ -5,6 +5,7 @@ using Game.AI;
 using UnityEngine;
 using Unity.Netcode;
 using Game.Core;
+using Game.Audio;
 
 namespace Game.Systems
 {
@@ -40,7 +41,7 @@ namespace Game.Systems
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
+            if (!HasDamageAuthority()) return;
             if (hit) return;
             if (!other.TryGetComponent<IPlayerEntity>(out var victim)) return;
             if (!victim.IsTargetable) return;
@@ -48,11 +49,21 @@ namespace Game.Systems
             if (other.TryGetComponent<IHealth>(out var health))
             {
                 health.TakeDamage(1);
+                SoundManager.PlayWorld(
+    SoundId.BulletHit,
+    transform.position
+);
                 RaceManager.Instance?.ReportKill(ownerPlayerEntity, victim, PowerUpId.Revolver);
             }
 
             hit = true;
             ReturnToPool();
+        }
+
+        private static bool HasDamageAuthority()
+        {
+            return GameModeState.IsSinglePlayer ||
+                   (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
         }
 
         private void ReturnToPool()

@@ -4,7 +4,6 @@ using Game.Player;
 using Game.AI;
 using UnityEngine;
 using Unity.Netcode;
-
 using Game.Core;
 
 namespace Game.Systems
@@ -29,11 +28,16 @@ namespace Game.Systems
             canAffect = filter;
         }
 
+        private bool IsAuthority()
+        {
+            if (GameModeState.IsSinglePlayer) return true;
+            return NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
+        }
+
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
-            if (canAffect != null && !canAffect(other))
-                return;
+            if (!IsAuthority()) return;
+            if (canAffect != null && !canAffect(other)) return;
 
             if (other.TryGetComponent<IHealth>(out var health) && !health.IsInvincible)
             {
@@ -44,10 +48,9 @@ namespace Game.Systems
 
         public void ApplyDamage(IHealth health)
         {
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
+            if (!IsAuthority()) return;
             if (!health.IsInvincible)
                 health.TakeDamage(damage);
         }
     }
-
 }

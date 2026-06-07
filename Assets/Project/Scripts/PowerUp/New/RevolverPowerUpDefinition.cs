@@ -4,6 +4,7 @@ using Game.Player;
 using Game.AI;
 using UnityEngine;
 using Game.Core;
+using Game.Audio;
 
 namespace Game.Systems
 {
@@ -39,6 +40,10 @@ namespace Game.Systems
                     : Object.Instantiate(def.bulletPrefab, spawnPos, Quaternion.identity);
 
                 bullet.Initialize(context.PlayerEntity);
+                SoundManager.PlayWorld(
+    SoundId.Gunshot,
+    context.PlayerTransform.position
+);
             }
 
             public void Deactivate() { }

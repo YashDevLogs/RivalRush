@@ -15,6 +15,8 @@ namespace Game.AI
         [SerializeField] private PlayerHealth health;
         [SerializeField] private PlayerIdentity playerIdentity;
 
+        public bool IsLocal => false;
+
         public Transform Transform => transform;
         public Rigidbody2D Rigidbody => rb;
         public PlayerIdentity PlayerIdentity => playerIdentity;

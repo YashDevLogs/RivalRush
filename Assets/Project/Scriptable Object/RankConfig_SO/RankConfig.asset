@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fae8d32c4b85e140a10bbbea07ce9f1, type: 3}
+  m_Name: RankConfig
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Progression.RankDatabase
+  Ranks:
+  - Rank: 0
+    MinMedals: 0
+    MaxMedals: 100
+    BadgeSprite: {fileID: 21300000, guid: 4ab9b8f4f19c1a2469e0fbc17e6b6c64, type: 3}
+  - Rank: 1
+    MinMedals: 100
+    MaxMedals: 300
+    BadgeSprite: {fileID: 21300000, guid: 5c0fed873e660544699932fcbf58583b, type: 3}
+  - Rank: 2
+    MinMedals: 300
+    MaxMedals: 700
+    BadgeSprite: {fileID: 21300000, guid: fb647d77df0a3364a89e3ae144b88dd5, type: 3}
+  - Rank: 3
+    MinMedals: 700
+    MaxMedals: 1500
+    BadgeSprite: {fileID: 21300000, guid: f916aa4494cd0e54aabe431560a937b8, type: 3}
+  - Rank: 4
+    MinMedals: 1500
+    MaxMedals: 3000
+    BadgeSprite: {fileID: 21300000, guid: 8c5a929697c71d44fa397c2a23241920, type: 3}
+  - Rank: 5
+    MinMedals: 3000
+    MaxMedals: 6000
+    BadgeSprite: {fileID: 21300000, guid: 357926fea24a8a3409023bed2d1d419c, type: 3}
+  - Rank: 6
+    MinMedals: 6000
+    MaxMedals: 999999
+    BadgeSprite: {fileID: 21300000, guid: 73b6e5370a26c1745abcd92692530089, type: 3}

@@ -37,13 +37,17 @@ namespace Game.Systems
             else
                 Destroy(gameObject);
 
-            LoadPlayerName();
+
         }
 
         private void Start()
         {
+            LoadPlayerName();
+
             musicSlider.value = PlayerPrefs.GetFloat("MusicVolume", 1f);
             sfxSlider.value = PlayerPrefs.GetFloat("SFXVolume", 1f);
+
+
         }
 
         #region Main Navigation
@@ -120,27 +124,36 @@ namespace Game.Systems
 
         public void SetPlayerName()
         {
+            if (usernameInputField == null)
+                return;
+
             string playerName = usernameInputField.text;
 
             if (string.IsNullOrWhiteSpace(playerName))
                 return;
 
-            topPlayerNameText.text = playerName;
+            if (topPlayerNameText != null)
+                topPlayerNameText.text = playerName;
 
-            PlayerPrefs.SetString("PLAYER_NAME", playerName);
-            PlayerPrefs.Save();
+            PlayerDataManager.Instance?.SetPlayerName(playerName);
         }
 
         private void LoadPlayerName()
         {
-            string savedName = PlayerPrefs.GetString("PLAYER_NAME", "Player Name");
+            if (PlayerDataManager.Instance == null)
+            {
+                Debug.LogError("[UI] PlayerDataManager missing");
+                return;
+            }
 
-            topPlayerNameText.text = savedName;
+            string savedName = PlayerDataManager.Instance.PlayerName;
+
+            if (topPlayerNameText != null)
+                topPlayerNameText.text = savedName;
 
             if (usernameInputField != null)
                 usernameInputField.text = savedName;
         }
-
         #endregion
 
         #region Gameplay

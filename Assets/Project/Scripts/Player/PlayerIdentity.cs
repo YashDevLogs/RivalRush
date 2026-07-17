@@ -21,10 +21,18 @@ namespace Game.Player
         };
 
         public string DisplayName => displayName;
-        public bool   IsHuman     => isHuman;
+        public bool IsHuman => isHuman;
 
         private void Awake()
         {
+
+            Debug.Log($"[PlayerIdentity] PlayerDataManager Exists: {PlayerDataManager.Instance != null}");
+
+            if (PlayerDataManager.Instance != null)
+            {
+                Debug.Log($"[PlayerIdentity] Saved Name = {PlayerDataManager.Instance.PlayerName}");
+            }
+
             if (isHuman)
             {
                 // Prefer the persisted name from PlayerDataManager.

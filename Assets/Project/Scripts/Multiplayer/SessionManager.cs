@@ -226,6 +226,14 @@ namespace Game.Systems
                 await EnsureUnityServicesAuthenticatedAsync();
                 var allocation = await RelayService.Instance.CreateAllocationAsync(LobbyManager.MaxPlayers - 1);
                 relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+
+                Debug.Log($"[RELAY] ConnectionType = {RelayConnectionType}");
+
+                Debug.Log($"[RELAY] Host Allocation:");
+                Debug.Log($"[RELAY] AllocationId = {allocation.AllocationId}");
+                Debug.Log($"[RELAY] Region = {allocation.Region}");
+                Debug.Log($"[RELAY] Server = {allocation.RelayServer.IpV4}");
+                Debug.Log($"[RELAY] Port = {allocation.RelayServer.Port}");
                 GetUnityTransport().SetRelayServerData(allocation.ToRelayServerData(RelayConnectionType));
             }
             catch (System.Exception exception)
@@ -300,6 +308,13 @@ namespace Game.Systems
             {
                 await EnsureUnityServicesAuthenticatedAsync();
                 var joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
+
+                Debug.Log($"[RELAY] ConnectionType = {RelayConnectionType}");
+
+                Debug.Log($"[RELAY] Join Allocation:");
+                Debug.Log($"[RELAY] Region = {joinAllocation.Region}");
+                Debug.Log($"[RELAY] Server = {joinAllocation.RelayServer.IpV4}");
+                Debug.Log($"[RELAY] Port = {joinAllocation.RelayServer.Port}");
                 GetUnityTransport().SetRelayServerData(joinAllocation.ToRelayServerData(RelayConnectionType));
                 relayJoinCode = joinCode;
             }

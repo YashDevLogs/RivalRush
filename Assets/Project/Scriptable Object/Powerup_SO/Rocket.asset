@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RocketPowerUpDefinition
   id: 5
   category: 0
-  icon: {fileID: 21300000, guid: 2bf099c5c87058e4f8bba23a831b71d3, type: 3}
+  icon: {fileID: 21300000, guid: 1b67b6444df0b444aa752303f8bccf74, type: 3}
   duration: 0
   rocketPrefab: {fileID: 8745557650370189044, guid: 589132191d2c9084f943b890785fa938, type: 3}
+  verticalOffset: 8
+  horizontalOffset: 6

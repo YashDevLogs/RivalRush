@@ -5,6 +5,7 @@ using Game.Player;
 using Game.AI;
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 namespace Game.Systems
 {
@@ -12,6 +13,9 @@ namespace Game.Systems
     {
         private Camera cam;
         [SerializeField] private SpriteRenderer firstTileRenderer;
+        [SerializeField] private RectTransform firstTileRect;
+
+        private bool isUI;
         private readonly List<Transform> tiles = new();
         private float tileWidth;
 
@@ -37,7 +41,23 @@ namespace Game.Systems
                 return;
             }
 
-            tileWidth = firstTileRenderer.bounds.size.x;
+            isUI = firstTileRect != null;
+
+            if (isUI)
+            {
+                tileWidth = firstTileRect.rect.width;
+            }
+            else
+            {
+                if (firstTileRenderer == null)
+                {
+                    Debug.LogError("[ParallaxRepeater] First Tile SpriteRenderer is not assigned.");
+                    enabled = false;
+                    return;
+                }
+
+                tileWidth = firstTileRenderer.bounds.size.x;
+            }
         }
 
         private void LateUpdate()
@@ -46,7 +66,11 @@ namespace Game.Systems
 
             Transform leftMost = GetLeftMostTile();
 
-            if (camX - leftMost.position.x > tileWidth * 1.5f)
+            float leftX = isUI
+                ? leftMost.GetComponent<RectTransform>().anchoredPosition.x
+                : leftMost.position.x;
+
+            if (camX - leftX > tileWidth * 1.5f)
             {
                 MoveTileToFront(leftMost);
             }
@@ -56,11 +80,24 @@ namespace Game.Systems
         {
             Transform rightMost = GetRightMostTile();
 
-            tile.position = new Vector3(
-                rightMost.position.x + tileWidth,
-                tile.position.y,
-                tile.position.z
-            );
+            if (isUI)
+            {
+                RectTransform tileRect = tile.GetComponent<RectTransform>();
+                RectTransform rightRect = rightMost.GetComponent<RectTransform>();
+
+                tileRect.anchoredPosition = new Vector2(
+                    rightRect.anchoredPosition.x + tileWidth,
+                    tileRect.anchoredPosition.y
+                );
+            }
+            else
+            {
+                tile.position = new Vector3(
+                    rightMost.position.x + tileWidth,
+                    tile.position.y,
+                    tile.position.z
+                );
+            }
         }
 
         private Transform GetLeftMostTile()
@@ -69,21 +106,46 @@ namespace Game.Systems
 
             foreach (var tile in tiles)
             {
-                if (tile.position.x < leftMost.position.x)
-                    leftMost = tile;
+                if (isUI)
+                {
+                    if (tile.GetComponent<RectTransform>().anchoredPosition.x <
+                        leftMost.GetComponent<RectTransform>().anchoredPosition.x)
+                    {
+                        leftMost = tile;
+                    }
+                }
+                else
+                {
+                    if (tile.position.x < leftMost.position.x)
+                    {
+                        leftMost = tile;
+                    }
+                }
             }
 
             return leftMost;
         }
-
         private Transform GetRightMostTile()
         {
             Transform rightMost = tiles[0];
 
             foreach (var tile in tiles)
             {
-                if (tile.position.x > rightMost.position.x)
-                    rightMost = tile;
+                if (isUI)
+                {
+                    if (tile.GetComponent<RectTransform>().anchoredPosition.x >
+                        rightMost.GetComponent<RectTransform>().anchoredPosition.x)
+                    {
+                        rightMost = tile;
+                    }
+                }
+                else
+                {
+                    if (tile.position.x > rightMost.position.x)
+                    {
+                        rightMost = tile;
+                    }
+                }
             }
 
             return rightMost;

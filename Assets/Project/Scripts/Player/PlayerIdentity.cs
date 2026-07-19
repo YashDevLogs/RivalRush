@@ -21,22 +21,54 @@ namespace Game.Player
         };
 
         public string DisplayName => displayName;
-        public bool   IsHuman     => isHuman;
+        public bool IsHuman => isHuman;
+        public int AvatarId { get; private set; }
 
         private void Awake()
         {
+            Debug.Log($"[PlayerIdentity] PlayerDataManager Exists: {PlayerDataManager.Instance != null}");
+
+            if (PlayerDataManager.Instance != null)
+            {
+                Debug.Log($"[PlayerIdentity] Saved Name = {PlayerDataManager.Instance.PlayerName}");
+            }
+
             if (isHuman)
             {
-                // Prefer the persisted name from PlayerDataManager.
-                // Falls back to the Inspector value so the prefab still
-                // works in scenes that don't have PlayerDataManager present.
-                string saved = PlayerDataManager.Instance?.PlayerName;
-                SetDisplayName(!string.IsNullOrWhiteSpace(saved) ? saved : humanDisplayName);
+                // Human Name
+                string savedName = PlayerDataManager.Instance?.PlayerName;
+
+                SetDisplayName(
+                    !string.IsNullOrWhiteSpace(savedName)
+                        ? savedName
+                        : humanDisplayName);
+
+                // Human Avatar
+                int avatarId = PlayerDataManager.Instance != null
+                    ? PlayerDataManager.Instance.AvatarId
+                    : 0;
+
+                SetAvatar(avatarId);
             }
-            else if (string.IsNullOrWhiteSpace(displayName))
+            else
             {
-                AssignRandomName();
+                // AI Name
+                if (string.IsNullOrWhiteSpace(displayName))
+                    AssignRandomName();
+
+                // AI Avatar
+                AssignRandomAvatar();
             }
+        }
+
+        public void SetAvatar(int avatarId)
+        {
+            AvatarId = avatarId;
+        }
+
+        private void AssignRandomAvatar()
+        {
+            AvatarId = Random.Range(1, 5);
         }
 
         public void AssignRandomName()

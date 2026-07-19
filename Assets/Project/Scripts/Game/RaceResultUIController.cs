@@ -1,5 +1,6 @@
 using Game.Core;
 using Game.Player;
+using Game.Progression;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
@@ -17,6 +18,8 @@ namespace Game.Systems
         [Header("Colors")]
         [SerializeField] private Color localPlayerColor = Color.yellow;
         [SerializeField] private Color defaultColor = Color.white;
+
+        private bool rewardsGranted;
 
         private void Awake()
         {
@@ -80,6 +83,16 @@ namespace Game.Systems
             }
 
             UpdateTitle(localPlayerRank);
+
+            if (!rewardsGranted &&
+                localPlayerRank > 0)
+            {
+                rewardsGranted = true;
+
+                ProgressionManager.Instance
+                    .AwardRaceRewards(
+                        localPlayerRank);
+            }
         }
 
         private void UpdateTitle(int rank)

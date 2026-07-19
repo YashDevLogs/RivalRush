@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpeedBoostPowerUpDefinition
   id: 1
   category: 3
-  icon: {fileID: 21300000, guid: bb446700f11e8bf4ca06bc6ef8c7a842, type: 3}
+  icon: {fileID: 21300000, guid: a49c03d7006bd934d9d8bcb4f91ca121, type: 3}
   duration: 5
   speedMultiplier: 2

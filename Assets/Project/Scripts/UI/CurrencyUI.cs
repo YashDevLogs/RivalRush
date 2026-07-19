@@ -1,10 +1,6 @@
-using Game.Systems;
-using Game.Core;
-using Game.Input;
-using Game.Player;
-using Game.AI;
 using TMPro;
 using UnityEngine;
+using Game.Core;
 
 namespace Game.Systems
 {
@@ -12,43 +8,44 @@ namespace Game.Systems
     {
         [SerializeField] private TMP_Text coinText;
 
-        void Awake()
+        private void Awake()
         {
             if (coinText == null)
             {
                 coinText = GetComponent<TMP_Text>();
+
                 if (coinText != null)
-                    Debug.LogWarning($"[CurrencyUI] TMP_Text is not assigned on {name}; using same-GameObject fallback. Assign it in the Inspector.");
-                else
-                    Debug.LogWarning($"[CurrencyUI] TMP_Text is not assigned on {name}.");
+                    Debug.LogWarning(
+                        $"[CurrencyUI] TMP_Text is not assigned on {name}; using same-GameObject fallback."
+                    );
             }
         }
 
-        void OnEnable()
+        private void OnEnable()
         {
-            CurrencyManager.CurrencyChanged += UpdateUI;
+            PlayerDataManager.CoinsChanged += UpdateUI;
         }
 
-        void OnDisable()
+        private void OnDisable()
         {
-            CurrencyManager.CurrencyChanged -= UpdateUI;
+            PlayerDataManager.CoinsChanged -= UpdateUI;
         }
 
-        void Start()
+        private void Start()
         {
             UpdateUI();
         }
 
-        void UpdateUI()
+        private void UpdateUI()
         {
             if (coinText == null)
                 return;
 
-            if (CurrencyManager.Instance == null)
+            if (PlayerDataManager.Instance == null)
                 return;
 
-            coinText.text = "Coins: " + CurrencyManager.Instance.GetCoins();
+            coinText.text =
+                "Coins: " + PlayerDataManager.Instance.Coins;
         }
     }
-
 }

@@ -1,5 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
+using Unity.Collections;
+using Game.Core;
 
 namespace Game.Systems
 {
@@ -125,6 +127,44 @@ namespace Game.Systems
             }
 
             return true;
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            Debug.Log($"[PlayerNetwork] OnNetworkSpawn | IsOwner: {IsOwner}");
+
+            if (!IsOwner)
+                return;
+
+            string playerName = PlayerDataManager.Instance != null
+                ? PlayerDataManager.Instance.PlayerName
+                : "Player";
+
+            Debug.Log($"[PlayerNetwork] Sending player name: {playerName}");
+
+        }
+
+        [ServerRpc]
+        private void SendPlayerNameServerRpc(
+          FixedString32Bytes playerName,
+           ServerRpcParams rpcParams = default)
+        {
+            Debug.Log($"[SERVER] Received player name: {playerName}");
+
+            if (!TryGetLobbyManager(out var lobbyManager))
+                return;
+
+            lobbyManager.UpdatePlayerName(
+                rpcParams.Receive.SenderClientId,
+                playerName);
+        }
+
+        public void SendPlayerName(string playerName)
+        {
+            if (!CanSendOwnedRpc("PlayerName"))
+                return;
+
+            SendPlayerNameServerRpc(playerName);
         }
     }
 }

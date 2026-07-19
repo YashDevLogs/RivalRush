@@ -51,6 +51,12 @@ namespace Game.Systems
         private enum RaceState { Waiting, Countdown, Race, Finished }
         private RaceState currentState = RaceState.Waiting;
 
+        [SerializeField] private Transform raceStart;
+        [SerializeField] private Transform raceFinish;
+
+        public Transform RaceStart => raceStart;
+        public Transform RaceFinish => raceFinish;
+
         private void Awake()
         {
             Instance = this;

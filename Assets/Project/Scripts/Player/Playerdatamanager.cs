@@ -17,6 +17,7 @@ namespace Game.Core
         private const string KeyMedals = "Medals";
 
         private const string KeyCash = "Cash";
+        private const string KeyAvatarId = "AvatarId";
 
         public string PlayerName { get; private set; } = "Racer";
 
@@ -32,6 +33,11 @@ namespace Game.Core
         public int Medals { get; private set; }
 
         public static event Action DataChanged;
+
+        public int AvatarId { get; private set; }
+
+
+
 
         private void Awake()
         {
@@ -60,6 +66,8 @@ namespace Game.Core
             XP = PlayerPrefs.GetInt(KeyXP, 0);
 
             Medals = PlayerPrefs.GetInt(KeyMedals, 0);
+
+            AvatarId = PlayerPrefs.GetInt(KeyAvatarId, 0);
         }
 
         public void Save()
@@ -76,10 +84,27 @@ namespace Game.Core
 
             PlayerPrefs.SetInt(KeyMedals, Medals);
 
+            PlayerPrefs.SetInt(KeyAvatarId, AvatarId);
+
             PlayerPrefs.Save();
 
             DataChanged?.Invoke();
+
+
         }
+
+        #region Avatar
+
+        public void SetAvatar(int avatarId)
+        {
+            AvatarId = Mathf.Max(0, avatarId);
+
+            Save();
+
+            Debug.Log($"[PlayerData] Avatar = {AvatarId}");
+        }
+
+        #endregion
 
         #region Name
 
@@ -119,8 +144,8 @@ namespace Game.Core
             if (Coins < 0)
                 Coins = 0;
 
-                    Debug.Log(
-        $"[PlayerData] Coins = {Coins}");
+            Debug.Log(
+$"[PlayerData] Coins = {Coins}");
 
             Save();
 

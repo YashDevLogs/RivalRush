@@ -29,6 +29,12 @@ namespace Game.UI
         [SerializeField]
         private Image rankBadgeImage;
 
+        [SerializeField]
+        private Image avatarImage;
+
+        [SerializeField]
+        private AvatarDatabase avatarDatabase;
+
 
         private void OnEnable()
         {
@@ -53,6 +59,12 @@ namespace Game.UI
             var data = PlayerDataManager.Instance;
 
             playerNameText.text = data.PlayerName;
+
+            if (avatarImage != null && avatarDatabase != null)
+            {
+                avatarImage.sprite =
+                    avatarDatabase.GetAvatar(data.AvatarId);
+            }
 
             levelText.text = $"Level {data.Level}";
 

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Game.Core;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -106,6 +107,14 @@ namespace Game.Systems
             var name = new FixedString32Bytes($"Player{CountHumanPlayers() + 1}");
             Players.Add(new LobbyPlayerData(clientId, name, false, false));
             Debug.Log($"[SERVER] Added player {clientId} as {name}");
+            RequestPlayerNameClientRpc(
+    new ClientRpcParams
+    {
+        Send = new ClientRpcSendParams
+        {
+            TargetClientIds = new[] { clientId }
+        }
+    });
         }
 
         public void RemovePlayer(ulong clientId)
@@ -444,6 +453,25 @@ namespace Game.Systems
             for (int i = 0; i < Players.Count; i++)
                 if (Players[i].ClientId == clientId) return i;
             return -1;
+        }
+
+        [ClientRpc]
+        private void RequestPlayerNameClientRpc(ClientRpcParams rpcParams = default)
+        {
+            string playerName = PlayerDataManager.Instance != null
+                ? PlayerDataManager.Instance.PlayerName
+                : "Player";
+
+            foreach (var player in FindObjectsByType<PlayerNetwork>(FindObjectsSortMode.None))
+            {
+                if (!player.IsOwner)
+                    continue;
+
+                player.SendPlayerName(playerName);
+                return;
+            }
+
+            Debug.LogError("[CLIENT] Could not find local PlayerNetwork.");
         }
     }
 }

@@ -9,19 +9,9 @@ using UnityEngine.UI;
 
 namespace Game.Systems
 {
-
     [System.Serializable]
     public sealed class ParallaxLayer : MonoBehaviour
     {
-
-        public enum ParallaxMode
-        {
-            Camera,
-            AutoScroll
-        }
-
-
-
         [Header("Movement")]
         [Tooltip("0 = static, 1 = same speed as camera")]
         [Range(0f, 1f)]
@@ -47,11 +37,6 @@ namespace Game.Systems
 
         private float driftTime;
 
-        [SerializeField] private ParallaxMode movementMode = ParallaxMode.Camera;
-        [SerializeField] private float autoScrollSpeed = 1f;
-
-        public ParallaxMode MovementMode => movementMode;
-
         public void Initialize(Vector3 camPos)
         {
             lastCamPos = camPos;
@@ -71,56 +56,23 @@ namespace Game.Systems
 
         public void Tick(Vector3 camPos)
         {
-            // -----------------------------
-            // Horizontal Movement
-            // -----------------------------
+            Vector3 delta = camPos - lastCamPos;
 
-            if (movementMode == ParallaxMode.Camera)
+            if (isUI)
             {
-                Vector3 delta = camPos - lastCamPos;
-
-                if (isUI)
-                {
-                    rectTransform.anchoredPosition += new Vector2(
-                        delta.x * parallaxFactor,
-                        0f
-                    );
-                }
-                else
-                {
-                    transform.position += new Vector3(
-                        delta.x * parallaxFactor,
-                        0f,
-                        0f
-                    );
-                }
-
-                lastCamPos = camPos;
+                rectTransform.anchoredPosition += new Vector2(
+                    delta.x * parallaxFactor,
+                    0f
+                );
             }
-            else // Auto Scroll
+            else
             {
-                float move = autoScrollSpeed * Time.deltaTime;
-
-                if (isUI)
-                {
-                    rectTransform.anchoredPosition += new Vector2(
-                        -move,
-                        0f
-                    );
-                }
-                else
-                {
-                    transform.position += new Vector3(
-                        -move,
-                        0f,
-                        0f
-                    );
-                }
+                transform.position += new Vector3(
+                    delta.x * parallaxFactor,
+                    0f,
+                    0f
+                );
             }
-
-            // -----------------------------
-            // Vertical Drift
-            // -----------------------------
 
             if (verticalDriftAmplitude > 0f)
             {
@@ -146,6 +98,8 @@ namespace Game.Systems
                     );
                 }
             }
+
+            lastCamPos = camPos;
         }
     }
 

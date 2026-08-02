@@ -32,34 +32,34 @@ namespace Game.Progression
         public void AwardRaceRewards(int placement)
         {
 
-              Debug.Log(
-        $"[Rewards] Awarding rewards for place {placement}");
+            Debug.Log(
+      $"[Rewards] Awarding rewards for place {placement}");
 
             RaceRewardData rewards =
                 RaceRewardConfig.GetReward(placement);
 
-    Debug.Log(
-        $"[Rewards] Coins:{rewards.Coins} XP:{rewards.XP} Medals:{rewards.Medals}");
+            Debug.Log(
+                $"[Rewards] Coins:{rewards.Coins} XP:{rewards.XP} Medals:{rewards.Medals}");
 
-           PlayerDataManager data =
-    PlayerDataManager.Instance;
+            PlayerDataManager data =
+     PlayerDataManager.Instance;
 
-Debug.Log(
-    $"[Rewards] PlayerDataManager = {data}");
+            Debug.Log(
+                $"[Rewards] PlayerDataManager = {data}");
 
-if (data == null)
-{
-    Debug.LogError(
-        "[Rewards] PlayerDataManager NULL");
+            if (data == null)
+            {
+                Debug.LogError(
+                    "[Rewards] PlayerDataManager NULL");
 
-    return;
-}
+                return;
+            }
 
-Debug.Log(
-    "[Rewards] Calling AddCoins");
+            Debug.Log(
+                "[Rewards] Calling AddCoins");
 
             data.AddCoins(rewards.Coins);
-            
+
 
             data.AddXP(rewards.XP);
 
@@ -118,5 +118,10 @@ Debug.Log(
         }
 
         #endregion
+
+        public RaceRewardData GetRaceRewards(int placement)
+        {
+            return RaceRewardConfig.GetReward(placement);
+        }
     }
 }

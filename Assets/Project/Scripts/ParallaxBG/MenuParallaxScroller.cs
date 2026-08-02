@@ -25,6 +25,8 @@ namespace Game.Systems
 
         private float _driftTime;
 
+        private float _tileWidth;
+
         #region Unity
 
         private void Awake()
@@ -39,6 +41,7 @@ namespace Game.Systems
 
                 _tiles.Add(rect);
                 _startY.Add(rect.anchoredPosition.y);
+                _tileWidth = _tiles[0].rect.width;
             }
 
             if (_tiles.Count == 0)
@@ -79,25 +82,22 @@ namespace Game.Systems
 
         #region Recycling
 
-        private void RecycleTiles()
-        {
-            RectTransform leftMost = GetLeftMost();
-            RectTransform rightMost = GetRightMost();
+       private void RecycleTiles()
+{
+    RectTransform leftMost = GetLeftMost();
+    RectTransform rightMost = GetRightMost();
 
-            float leftWidth =
-                leftMost.rect.width * leftMost.lossyScale.x;
+   if (leftMost.anchoredPosition.x <= -_tileWidth)
+{
+    float overshoot =
+        leftMost.anchoredPosition.x + _tileWidth;
 
-            if (leftMost.anchoredPosition.x <= -leftWidth)
-            {
-                float rightWidth =
-                    rightMost.rect.width * rightMost.lossyScale.x;
-
-                leftMost.anchoredPosition = new Vector2(
-                    rightMost.anchoredPosition.x + rightWidth,
-                    leftMost.anchoredPosition.y
-                );
-            }
-        }
+    leftMost.anchoredPosition = new Vector2(
+        rightMost.anchoredPosition.x + _tileWidth + overshoot,
+        leftMost.anchoredPosition.y
+    );
+}
+}
 
         private RectTransform GetLeftMost()
         {

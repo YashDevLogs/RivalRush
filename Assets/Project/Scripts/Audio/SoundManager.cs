@@ -169,7 +169,6 @@ namespace Game.Audio
 
             source.Play();
 
-            Debug.Log($"Playing sound: {soundId}");
         }
 
         public static void PlayLocal(SoundId soundId)

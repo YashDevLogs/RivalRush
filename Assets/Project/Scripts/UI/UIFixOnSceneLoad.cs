@@ -3,6 +3,7 @@ using UnityEngine.EventSystems;
 
 public class UIFixOnSceneLoad : MonoBehaviour
 {
+    [System.Obsolete]
     void Start()
     {
         Time.timeScale = 1f;

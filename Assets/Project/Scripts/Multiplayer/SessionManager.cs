@@ -94,7 +94,6 @@ namespace Game.Systems
             if (LobbyManager.Instance != null)
                 lobbyManagerInstance = LobbyManager.Instance;
 
-            Debug.Log("[SESSION] Reset shutdown state");
         }
 
         private void EnsureCoreManagers()

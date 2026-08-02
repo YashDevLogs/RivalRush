@@ -29,8 +29,12 @@ namespace Game.Systems
         {
             Debug.Log("[SinglePlayer] Bootstrapping");
 
+            ShuffleSpawnPoints();
+
             SpawnPlayer();
+
             SpawnAI();
+
             StartRace();
         }
 
@@ -80,6 +84,16 @@ namespace Game.Systems
             }
 
             race.StartCountdown();
+        }
+        private void ShuffleSpawnPoints()
+        {
+            for (int i = spawnPoints.Length - 1; i > 0; i--)
+            {
+                int random = Random.Range(0, i + 1);
+
+                (spawnPoints[i], spawnPoints[random]) =
+                    (spawnPoints[random], spawnPoints[i]);
+            }
         }
     }
 }

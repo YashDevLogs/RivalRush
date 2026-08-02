@@ -80,7 +80,6 @@ namespace Game.Systems
                     markerUI.Setup(
                         avatar,
                         playerName);
-                    Debug.Log($"Created marker for {playerName}");
                 }
 
                 Vector2 pos = marker.anchoredPosition;

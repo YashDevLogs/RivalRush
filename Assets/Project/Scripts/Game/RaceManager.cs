@@ -57,9 +57,14 @@ namespace Game.Systems
         public Transform RaceStart => raceStart;
         public Transform RaceFinish => raceFinish;
 
+        [SerializeField] private RaceProgressManager raceProgressManager;
+
         private void Awake()
         {
             Instance = this;
+
+            if (raceProgressManager == null)
+                raceProgressManager = FindFirstObjectByType<RaceProgressManager>();
         }
 
         private void Start()
@@ -101,7 +106,6 @@ namespace Game.Systems
         // -------------------------------------------------------
         public void StartCountdown()
         {
-            Debug.Log($"{GetContextPrefix()}[RACE] StartCountdown called.");
 
             if (GameModeState.IsSinglePlayer)
             {
@@ -121,7 +125,6 @@ namespace Game.Systems
 
             double delay = 3.0;
             raceStartTime.Value = NetworkManager.Singleton.LocalTime.Time + delay;
-            Debug.Log($"[SERVER][RACE] Race start time set to {raceStartTime.Value}.");
         }
 
         private void Update()
@@ -203,8 +206,6 @@ namespace Game.Systems
                 countdownText.text = "GO!";
                 Invoke(nameof(HideCountdown), 0.5f);
             }
-
-            Debug.Log("[SP][RACE] Race started.");
             GameEvents.RaiseRaceStarted();
         }
 
@@ -222,8 +223,6 @@ namespace Game.Systems
                 countdownText.text = "GO!";
                 Invoke(nameof(HideCountdown), 0.5f);
             }
-
-            Debug.Log($"{GetContextPrefix()}[RACE] Race started.");
             GameEvents.RaiseRaceStarted();
         }
 
@@ -250,7 +249,6 @@ namespace Game.Systems
         public void RegisterPlayerLocal(IPlayerController controller, IPlayerEntity entity)
         {
             TrackPlayer(controller, entity);
-            Debug.Log($"[SP][RACE] Registered player '{GetPlayerDebugName(controller)}'.");
         }
 
         public void RegisterPlayerServer(NetworkObject playerObject)
@@ -264,7 +262,6 @@ namespace Game.Systems
 
             if (TrackPlayer(controller, controller as IPlayerEntity))
             {
-                Debug.Log($"[SERVER][RACE] Registered player '{GetPlayerDebugName(controller)}' | NetworkObjectId: {playerObject.NetworkObjectId}");
                 SyncPlayerRegisteredClientRpc(playerObject.NetworkObjectId);
             }
         }
@@ -279,7 +276,6 @@ namespace Game.Systems
 
             if (TrackPlayer(controller, entity))
             {
-                Debug.Log($"[SERVER][RACE] Registered player '{GetPlayerDebugName(controller)}'.");
 
                 if (TryGetNetworkObjectId(controller, out ulong playerObjectId))
                     SyncPlayerRegisteredClientRpc(playerObjectId);
@@ -328,10 +324,10 @@ namespace Game.Systems
             if (finishOrder.Contains(player)) return;
 
             finishOrder.Add(player);
-            ApplyPlayerFinishStateSP(player);
 
-            Debug.Log($"[SP][RACE] Finish registered for '{GetPlayerDebugName(player)}'.");
-            Debug.Log($"[SP][RACE] Finish order: {GetFinishOrderDebugString()}");
+            raceProgressManager?.MarkFinished(player);
+
+            ApplyPlayerFinishStateSP(player);
 
             if (finishOrder.Count >= racers.Count)
                 EndRaceLocal();
@@ -353,9 +349,10 @@ namespace Game.Systems
             if (finishOrder.Contains(player)) return;
 
             finishOrder.Add(player);
+
+            raceProgressManager?.MarkFinished(player);
+
             ApplyPlayerFinishStateOnce(player);
-            Debug.Log($"[SERVER][RACE] Finish registered for '{GetPlayerDebugName(player)}'.");
-            Debug.Log($"[SERVER][RACE] Finish order: {GetFinishOrderDebugString()}");
 
             if (TryGetNetworkObjectId(player, out ulong playerObjectId))
                 SyncPlayerFinishedClientRpc(playerObjectId);
@@ -370,7 +367,6 @@ namespace Game.Systems
         {
             currentState = RaceState.Finished;
             localRaceStarted = false;
-            Debug.Log($"[SP][RACE] Race ended. Final order: {GetFinishOrderDebugString()}");
             GameEvents.RaiseRaceFinished();
         }
 
@@ -384,7 +380,6 @@ namespace Game.Systems
 
             currentState = RaceState.Finished;
             raceStarted.Value = false;
-            Debug.Log($"[SERVER][RACE] Race ended. Final order: {GetFinishOrderDebugString()}");
             EndRaceClientRpc(BuildFinishOrderObjectIds());
         }
 
@@ -409,13 +404,52 @@ namespace Game.Systems
 
             var spawnedObjects = NetworkManager.Singleton.SpawnManager?.SpawnedObjects;
             if (spawnedObjects == null) return;
-            if (!spawnedObjects.TryGetValue(playerObjectId, out var networkObject)) return;
+
+            Debug.Log($"RPC Register {playerObjectId}");
+
+            if (!spawnedObjects.TryGetValue(playerObjectId, out var networkObject))
+            {
+                StartCoroutine(RegisterPlayerWhenSpawned(playerObjectId));
+                return;
+            }
             if (!networkObject.TryGetComponent<IPlayerController>(out var player)) return;
 
             networkObject.TryGetComponent<IPlayerEntity>(out var entity);
             TrackPlayer(player, entity);
+
         }
 
+        private IEnumerator RegisterPlayerWhenSpawned(ulong playerObjectId)
+        {
+            const float timeout = 5f;
+            float elapsed = 0f;
+
+            while (elapsed < timeout)
+            {
+                if (NetworkManager.Singleton == null)
+                    yield break;
+
+                var spawned = NetworkManager.Singleton.SpawnManager.SpawnedObjects;
+
+                if (spawned.TryGetValue(playerObjectId, out var networkObject))
+                {
+                    if (networkObject.TryGetComponent<IPlayerController>(out var player))
+                    {
+                        networkObject.TryGetComponent<IPlayerEntity>(out var entity);
+
+                        TrackPlayer(player, entity);
+                    }
+
+                    yield break;
+                }
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            Debug.LogWarning(
+                $"[RaceManager] Timed out waiting for player {playerObjectId} to spawn.");
+        }
         [ClientRpc]
         private void SyncPlayerFinishedClientRpc(ulong playerObjectId)
         {

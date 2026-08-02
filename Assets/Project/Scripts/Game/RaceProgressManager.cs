@@ -28,6 +28,10 @@ namespace Game.Systems
         private float raceFinishX;
         private float raceDistance;
 
+        private readonly Dictionary<IPlayerEntity, float> startPositions = new();
+
+        private readonly HashSet<IPlayerEntity> finishedRacers = new();
+
         #region Unity
 
         private void Awake()
@@ -57,9 +61,19 @@ namespace Game.Systems
 
             foreach (IPlayerEntity racer in racers)
             {
+                if (!startPositions.ContainsKey(racer))
+                {
+                    startPositions.Add(
+                        racer,
+                        racer.Transform.position.x);
+                }
+
                 float progress = CalculateProgress(racer);
 
-                progressData.Add(new RaceProgressData(racer, progress));
+                progressData.Add(
+                    new RaceProgressData(
+                        racer,
+                        progress));
             }
 
             progressData.Sort((a, b) => b.Progress.CompareTo(a.Progress));
@@ -70,17 +84,33 @@ namespace Game.Systems
             if (racer == null)
                 return 0f;
 
-            float currentX = racer.Transform.position.x;
+            if (finishedRacers.Contains(racer))
+                return 1f;
+
+            float startX = startPositions[racer];
+
+            float distanceTravelled =
+                racer.Transform.position.x - startX;
 
             float normalized =
-                Mathf.InverseLerp(
-                    raceStartX,
-                    raceFinishX,
-                    currentX);
+                distanceTravelled / raceDistance;
 
             return Mathf.Clamp01(normalized);
         }
+        public void MarkFinished(IPlayerController controller)
+        {
+            if (controller is not IPlayerEntity entity)
+            {
+                Debug.LogError("MarkFinished: controller is NOT an IPlayerEntity.");
+                return;
+            }
 
+            Debug.Log($"MarkFinished -> {entity.Transform.name}");
+
+            finishedRacers.Add(entity);
+
+            Debug.Log($"Finished Count = {finishedRacers.Count}");
+        }
         #endregion
     }
 }

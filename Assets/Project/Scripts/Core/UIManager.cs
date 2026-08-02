@@ -18,6 +18,7 @@ namespace Game.Systems
 
         [Header("Settings Content Panels")]
         public GameObject profileContent;
+        public GameObject InfoContent;
         public GameObject controlsContent;
         public GameObject audioContent;
         public GameObject socialContent;
@@ -88,6 +89,7 @@ namespace Game.Systems
             controlsContent.SetActive(false);
             audioContent.SetActive(false);
             socialContent.SetActive(false);
+            InfoContent.SetActive(false);
         }
 
         public void ShowProfileContent()
@@ -116,6 +118,13 @@ namespace Game.Systems
             SoundManager.Play(SoundId.ButtonClick);
             DisableAllContent();
             socialContent.SetActive(true);
+        }
+
+        public void ShowInfoContent()
+        {
+            SoundManager.Play(SoundId.ButtonClick);
+            DisableAllContent();
+            InfoContent.SetActive(true);
         }
 
         #endregion
